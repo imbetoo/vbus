@@ -4,10 +4,10 @@ export default function IconButton({ icon: Icon, label, className = '', ...props
     <button
       type="button"
       aria-label={label}
-      className={`flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition active:bg-ice-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600 dark:text-steel-300 dark:active:bg-white/10 dark:focus-visible:ring-steel-300 ${className}`}
+      className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition active:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${className}`}
       {...props}
     >
-      <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} aria-hidden="true" />
+      <Icon className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden="true" />
     </button>
   );
 }

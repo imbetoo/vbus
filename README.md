@@ -25,8 +25,9 @@ npm run lint     # oxlint
 ```
 src/
 ├── components/
-│   ├── ui/      # componentes genéricos (GlassCard, IconButton, IconTile, PingDot)
-│   └── bus/     # dominio de autobuses (RouteCard, BusLineItem, LineBadge, ArrivalTime)
+│   ├── ui/           # genéricos (GlassCard, IconHeading, Sheet, MeshBackground…)
+│   ├── bus/          # dominio de autobuses (RouteCard, BusLineItem, LineBadge, ArrivalTime)
+│   └── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
 ├── data/        # datos de ejemplo (mockRoutes)
 ├── hooks/       # acceso a datos (useRoutes; futuro: VigoBusAPI)
 ├── screens/     # pantallas completas (Dashboard)
@@ -46,7 +47,11 @@ Definida en `tailwind.config.js`:
 | `steel-300` | `#8AA9C4` | Iconos, acentos sutiles               |
 | `slate-600` | `#3E5C76` | Botones principales, acentos          |
 | `navy-900`  | `#1D2D44` | Títulos masivos, texto primario       |
+| `graphite`  | `#272727` | Tarjetas (fondo al 50 %, borde 4px)   |
 | `urgent`    | `#FF3B30` | Llegada en menos de 3 minutos         |
+
+Tipografía: Inter (Google Fonts). El fondo es un mesh gradient animado con
+estos mismos tonos (`src/components/ui/MeshBackground.jsx`).
 
 ## Datos
 

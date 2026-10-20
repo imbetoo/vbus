@@ -1,8 +1,8 @@
-/** Icono decorativo sobre una pastilla de esquinas redondeadas. */
-export default function IconTile({ icon: Icon }) {
+/** Icono decorativo sobre una pastilla grafito de esquinas redondeadas. */
+export default function IconTile({ icon: Icon, strokeWidth = 2 }) {
   return (
-    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ice-100 text-slate-600 dark:bg-white/10 dark:text-steel-300">
-      <Icon className="h-[22px] w-[22px]" strokeWidth={2} aria-hidden="true" />
+    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-graphite text-white">
+      <Icon className="h-6 w-6" strokeWidth={strokeWidth} aria-hidden="true" />
     </span>
   );
 }
