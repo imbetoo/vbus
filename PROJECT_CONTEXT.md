@@ -66,7 +66,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   exactamente a la vez (nada de transiciones de color por elemento).
 - **Hojas y modales:** entran **y salen** animados (`useAnimatedDialog`): la
   hoja inferior sube/baja deslizándose y el menú de ajustes funde y escala
-  (95 % → 100 %); el resto de la pantalla se oscurece y desenfoca.
+  (95 % → 100 %); el resto de la pantalla se oscurece y desenfoca. Mientras
+  hay un diálogo abierto el mesh se pausa (no se ve y así el desenfoque no se
+  recalcula en cada fotograma).
+- **Acordeones:** los pasos de la hoja se despliegan con `grid-template-rows`
+  0fr → 1fr en 450 ms con la curva de hojas de iOS
+  `cubic-bezier(0.32, 0.72, 0, 1)` (`ease-smooth`); el contenido aparece con
+  un ligero retardo y se desvanece rápido al plegar.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

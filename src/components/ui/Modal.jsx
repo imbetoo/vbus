@@ -17,7 +17,7 @@ export default function Modal({ open, onClose, labelledBy, className = '', child
       ref={ref}
       aria-labelledby={labelledBy}
       {...dialogProps}
-      className={`m-auto scale-95 rounded-[32px] border-2 border-white/10 bg-graphite/85 p-0 text-white opacity-0 shadow-2xl shadow-black/30 backdrop-blur-xl transition-all duration-300 ease-spring backdrop:bg-black/0 backdrop:backdrop-blur-none backdrop:transition-all backdrop:duration-300 backdrop:ease-spring data-[shown]:scale-100 data-[shown]:opacity-100 data-[shown]:backdrop:bg-black/30 data-[shown]:backdrop:backdrop-blur-md motion-reduce:transition-none motion-reduce:backdrop:transition-none ${className}`}
+      className={`m-auto scale-95 rounded-[32px] border-2 border-white/10 bg-graphite/90 p-0 text-white opacity-0 shadow-2xl shadow-black/30 transition-all duration-300 ease-spring backdrop:bg-black/0 backdrop:backdrop-blur-none backdrop:transition-all backdrop:duration-300 backdrop:ease-spring data-[shown]:scale-100 data-[shown]:opacity-100 data-[shown]:backdrop:bg-black/30 data-[shown]:backdrop:backdrop-blur-md motion-reduce:transition-none motion-reduce:backdrop:transition-none ${className}`}
     >
       {mounted && children}
     </dialog>

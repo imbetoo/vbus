@@ -85,6 +85,9 @@ export default {
       // Curva tipo "spring" de Apple para transiciones de interfaz.
       transitionTimingFunction: {
         spring: 'cubic-bezier(0.25, 1, 0.5, 1)',
+        // Curva de las hojas de iOS: arranque más suave que `spring`, ideal
+        // para animar alturas sin que el inicio se perciba como un salto.
+        smooth: 'cubic-bezier(0.32, 0.72, 0, 1)',
       },
     },
   },

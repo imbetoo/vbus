@@ -35,3 +35,10 @@ html.theme-switching *::before,
 html.theme-switching *::after {
   transition: none !important;
 }
+
+/* Con una hoja o modal abierto el fondo queda oscurecido y desenfocado, así
+   que el mesh se pausa: sin él, el desenfoque no se recalcula en cada
+   fotograma y las animaciones del diálogo (p. ej. el acordeón) van fluidas. */
+html:has(dialog[open]) [class*='animate-mesh'] {
+  animation-play-state: paused;
+}
