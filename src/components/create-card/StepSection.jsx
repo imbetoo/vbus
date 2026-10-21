@@ -20,8 +20,25 @@ export default function StepSection({ icon, title, subtitle, open, onToggle, chi
         <IconHeading icon={icon} title={title} subtitle={subtitle} wrap />
       </button>
 
-      <div id={panelId} hidden={!open} className="px-4 pb-4">
-        {children}
+      {/* Acordeón: `grid-template-rows` 0fr → 1fr anima la altura real del
+          contenido sin medirla en JS. Plegado queda `inert` (sin foco). */}
+      <div
+        id={panelId}
+        inert={!open}
+        className={`grid transition-[grid-template-rows,opacity] duration-500 ease-spring motion-reduce:transition-none ${
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
+          {/* `pt-1` deja sitio al anillo de foco del buscador. */}
+          <div
+            className={`px-4 pb-4 pt-1 transition-transform duration-500 ease-spring motion-reduce:transition-none ${
+              open ? 'translate-y-0' : '-translate-y-2'
+            }`}
+          >
+            {children}
+          </div>
+        </div>
       </div>
     </section>
   );
