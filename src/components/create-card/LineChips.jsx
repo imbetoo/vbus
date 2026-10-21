@@ -1,4 +1,5 @@
 import LineBadge from '../bus/LineBadge';
+import { PRESSABLE } from '../ui/pressable';
 
 /** Selector múltiple de líneas: cada badge es un botón que se marca. */
 export default function LineChips({ lines, selected, onToggle }) {
@@ -16,7 +17,7 @@ export default function LineChips({ lines, selected, onToggle }) {
               color={color}
               aria-pressed={pressed}
               onClick={() => onToggle(line)}
-              className={`transition duration-300 ease-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+              className={`${PRESSABLE} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
                 pressed ? 'ring-2 ring-white ring-offset-2 ring-offset-graphite' : 'opacity-50'
               }`}
             />

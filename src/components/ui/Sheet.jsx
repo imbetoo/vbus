@@ -23,7 +23,7 @@ export default function Sheet({ open, onClose, labelledBy, children }) {
         // Solo el fondo (::backdrop) recibe el clic directamente en el dialog.
         if (event.target === event.currentTarget) onClose();
       }}
-      className="fixed inset-x-0 bottom-0 top-auto m-0 mx-auto h-[72dvh] max-h-none w-full max-w-md animate-sheet-up rounded-t-[32px] border border-b-0 border-white/15 bg-graphite/70 shadow-2xl shadow-black/20 p-0 text-white backdrop-blur-md motion-reduce:animate-none backdrop:bg-black/10 backdrop:backdrop-blur-lg"
+      className="fixed inset-x-0 bottom-0 top-auto m-0 mx-auto h-[72dvh] max-h-none w-full max-w-md animate-sheet-up rounded-t-[32px] border-[3px] border-b-0 border-graphite/85 bg-graphite/70 shadow-2xl shadow-black/20 p-0 text-white backdrop-blur-md motion-reduce:animate-none backdrop:bg-black/10 backdrop:backdrop-blur-lg"
     >
       {open && (
         <div className="flex h-full flex-col overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-5">

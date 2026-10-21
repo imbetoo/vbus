@@ -14,6 +14,9 @@ const orbit = (a, b, c) => ({
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  // El tema lo decide la clase `dark` en <html> (botón Sol/Luna o, si el
+  // usuario no ha elegido, la preferencia del sistema).
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {

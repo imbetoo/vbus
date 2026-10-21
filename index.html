@@ -17,8 +17,21 @@
     <meta name="apple-mobile-web-app-title" content="vBus" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>vBus</title>
+    <!-- Aplica el tema antes del primer pintado para evitar un destello. -->
+    <script>
+      try {
+        var theme = localStorage.getItem('vbus:theme');
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+      } catch (e) {
+        // Sin almacenamiento disponible: se queda en modo claro.
+      }
+    </script>
   </head>
-  <body>
+  <!-- `ontouchstart` hace que iOS Safari aplique los estados :active. -->
+  <body ontouchstart="">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

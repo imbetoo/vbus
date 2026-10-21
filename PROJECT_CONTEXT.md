@@ -44,11 +44,19 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rosáceo sobre lienzo `#F8F6FC`. `radial-gradient` en CSS puro y `@keyframes`
   lentos que solo animan `transform`, con velo blanco al 40 % y grano fino
   estático. Sin lag (60 fps).
-- **Tarjetas (Liquid Glass):** `bg-[#272727]/50`, `backdrop-blur-md`, borde de
-  1px `border-white/15` (reflejo de luz), `shadow-xl shadow-black/10`. Bordes
-  muy redondeados (`rounded-[32px]`).
-- **Físicas:** transiciones de 300 ms con curva `cubic-bezier(0.25, 1, 0.5, 1)`
-  (`ease-spring`) en tarjetas, botones, chevrons y hoja inferior.
+- **Tarjetas (cristal):** `bg-[#272727]/50`, `backdrop-blur-md`, borde de 3px
+  `border-[#272727]/85`, `shadow-xl shadow-black/10`. Bordes muy redondeados
+  (`rounded-[32px]`). Mismo borde en los pasos de la hoja inferior, la propia
+  hoja y el menú de ajustes.
+- **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
+  hoja rebotan con `active:scale-[0.97]` en 400 ms y curva
+  `cubic-bezier(0.25, 1, 0.5, 1)` (`ease-spring`), definido una sola vez en
+  `src/components/ui/pressable.js`.
+- **Tema:** claro/oscuro con el botón Sol/Luna de la cabecera (se recuerda en
+  LocalStorage; si no se ha elegido, sigue al sistema). El cambio funde los
+  colores en 700 ms.
+- **Ajustes:** engranaje en la cabecera que abre un menú flotante centrado
+  (entra y sale con fundido + escalado del 95 % al 100 %).
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

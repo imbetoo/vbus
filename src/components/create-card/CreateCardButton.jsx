@@ -10,7 +10,7 @@ export default function CreateCardButton({ onClick }) {
       type="button"
       aria-haspopup="dialog"
       onClick={onClick}
-      className="w-full text-left transition duration-300 ease-spring active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white motion-reduce:transition-none"
+      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
     >
       <IconHeading
         icon={Plus}

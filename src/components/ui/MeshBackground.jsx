@@ -29,8 +29,8 @@ export default function MeshBackground() {
       {BLOBS.map((blob) => (
         <div key={blob} className={`absolute will-change-transform motion-reduce:animate-none ${blob}`} />
       ))}
-      <div className="absolute inset-0 bg-white/40 dark:bg-navy-900/55" />
-      <div className="absolute inset-0 bg-grain bg-[length:160px_160px] opacity-[0.06] dark:opacity-[0.04]" />
+      <div className="absolute inset-0 bg-white/40 transition-colors duration-700 ease-in-out dark:bg-navy-900/55" />
+      <div className="absolute inset-0 bg-grain bg-[length:160px_160px] opacity-[0.06] transition-opacity duration-700 ease-in-out dark:opacity-[0.04]" />
     </div>
   );
 }
