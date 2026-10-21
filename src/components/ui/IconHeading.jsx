@@ -1,8 +1,7 @@
 import IconTile from './IconTile';
 
 /**
- * Cabecera de tarjeta: pastilla de icono, título extrabold y subtítulo
- * semibold. Por defecto recorta el texto; con `wrap` lo deja partirse.
+ * Cabecera de tarjeta: pastilla de icono, título bold y subtítulo medium. Por defecto recorta el texto; con `wrap` lo deja partirse.
  */
 export default function IconHeading({
   icon,
@@ -21,11 +20,11 @@ export default function IconHeading({
       <span className="min-w-0">
         <Title
           id={titleId}
-          className={`block ${fit} text-xl/tight font-extrabold tracking-tight min-[400px]:text-2xl/tight`}
+          className={`block ${fit} text-xl/tight font-bold tracking-[-0.015em] min-[400px]:text-2xl/tight`}
         >
           {title}
         </Title>
-        <span className={`block ${fit} text-base font-semibold text-white/90`}>{subtitle}</span>
+        <span className={`block ${fit} text-base font-medium text-white/85`}>{subtitle}</span>
       </span>
     </span>
   );

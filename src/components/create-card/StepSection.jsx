@@ -6,13 +6,13 @@ export default function StepSection({ icon, title, subtitle, open, onToggle, chi
   const panelId = useId();
 
   return (
-    <section className="rounded-3xl bg-graphite/40 shadow-lg shadow-black/10">
+    <section className="rounded-3xl border border-white/10 bg-white/5 shadow-lg shadow-black/10">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={onToggle}
-        className="flex w-full rounded-3xl p-4 text-left transition active:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="flex w-full rounded-3xl p-4 text-left transition duration-300 ease-spring active:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
         <IconHeading icon={icon} title={title} subtitle={subtitle} wrap />
       </button>

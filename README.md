@@ -47,11 +47,13 @@ Definida en `tailwind.config.js`:
 | `steel-300` | `#8AA9C4` | Iconos, acentos sutiles               |
 | `slate-600` | `#3E5C76` | Botones principales, acentos          |
 | `navy-900`  | `#1D2D44` | Títulos masivos, texto primario       |
-| `graphite`  | `#272727` | Tarjetas (fondo al 50 %, borde 4px)   |
+| `graphite`  | `#272727` | Tarjetas Liquid Glass (fondo al 50 %) |
+| `pearl`     | `#F8F6FC` | Lienzo del fondo perla                |
 | `urgent`    | `#FF3B30` | Llegada en menos de 3 minutos         |
 
-Tipografía: Inter (Google Fonts). El fondo es un mesh gradient animado con
-estos mismos tonos (`src/components/ui/MeshBackground.jsx`).
+Tipografía: Inter (Google Fonts). El fondo es un mesh gradient animado
+"perla iridiscente" (azul `#A2C2FC`, lavanda `#E2B7FC`, blanco, índigo y azul
+rosáceo) en `src/components/ui/MeshBackground.jsx`.
 
 ## Datos
 

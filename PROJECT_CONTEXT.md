@@ -27,11 +27,11 @@ nativas de Tailwind:
 
 | Elemento | Ejemplo | Tamaño orientativo | Peso |
 | --- | --- | --- | --- |
-| Títulos principales | "Buenos días", "Mis rutas" | `text-4xl` – `text-5xl` (escalas masivas) | `font-extrabold` |
-| Títulos de tarjeta | "Ir al instituto" | `text-3xl` – `text-4xl`, `tracking-tight` | `font-extrabold` |
-| Subtítulos y textos secundarios | "Desde Torrecedeira, 75", "Ver más autobuses" | `text-lg` – `text-xl` | `font-semibold` |
-| Nombres de ruta | "Chapela por G. Barbón" | `text-2xl` – `text-3xl` | `font-bold` |
-| Badges de línea | "C3d" | Equivalente a los subtítulos | `font-semibold` |
+| Títulos principales | "Buenos días", "Mis rutas" | `text-4xl` – `text-5xl` (escalas masivas) | `font-bold` ("Buenos días": `font-semibold`) |
+| Títulos de tarjeta | "Ir al instituto" | `text-3xl` – `text-4xl`, `tracking-tight` | `font-bold` |
+| Subtítulos y textos secundarios | "Desde Torrecedeira, 75", "Ver más autobuses" | `text-lg` – `text-xl` | `font-medium` |
+| Nombres de ruta | "Chapela por G. Barbón" | `text-2xl` – `text-3xl` | `font-semibold` |
+| Badges de línea | "C3d" | Equivalente a los subtítulos | `font-medium` |
 
 Los tamaños finales (sm, md, lg, xl, 2xl…) se pueden ajustar para que el diseño
 sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
@@ -39,12 +39,16 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 ### Elementos visuales
 
-- **Fondo:** mesh gradient animado (inspirado en Apple Music "Now Playing").
-  Implementado con `radial-gradient` en CSS puro y `@keyframes` lentos y
-  suaves. Sin lag.
-- **Tarjetas:** `bg-[#272727]/50` (50 % de opacidad), `backdrop-blur-md`
-  (blur ~4px), `border-[4px] border-[#272727]` (100 % de opacidad). Bordes muy
-  redondeados (`rounded-[32px]`).
+- **Fondo:** mesh gradient animado "perla iridiscente" (inspirado en Apple
+  Music): azul `#A2C2FC`, lavanda `#E2B7FC`, blanco perla, índigo y azul
+  rosáceo sobre lienzo `#F8F6FC`. `radial-gradient` en CSS puro y `@keyframes`
+  lentos que solo animan `transform`, con velo blanco al 40 % y grano fino
+  estático. Sin lag (60 fps).
+- **Tarjetas (Liquid Glass):** `bg-[#272727]/50`, `backdrop-blur-md`, borde de
+  1px `border-white/15` (reflejo de luz), `shadow-xl shadow-black/10`. Bordes
+  muy redondeados (`rounded-[32px]`).
+- **Físicas:** transiciones de 300 ms con curva `cubic-bezier(0.25, 1, 0.5, 1)`
+  (`ease-spring`) en tarjetas, botones, chevrons y hoja inferior.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

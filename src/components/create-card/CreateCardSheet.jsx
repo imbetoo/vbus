@@ -56,7 +56,7 @@ function CreateCardForm({ titleId, onClose }) {
           onToggle={() => toggleStep('stop')}
         >
           <StopSearchField value={query} onChange={setQuery} />
-          <p className="mt-3 text-sm font-semibold text-white/60">
+          <p className="mt-3 text-sm font-medium text-white/60">
             La búsqueda de paradas llegará con los datos en tiempo real.
           </p>
         </StepSection>
@@ -71,7 +71,7 @@ function CreateCardForm({ titleId, onClose }) {
           {stop ? (
             <LineChips lines={stop.lines} selected={selectedLines} onToggle={toggleLine} />
           ) : (
-            <p className="text-base font-semibold text-white/70">Selecciona primero una parada.</p>
+            <p className="text-base font-medium text-white/70">Selecciona primero una parada.</p>
           )}
         </StepSection>
       </div>
@@ -80,7 +80,7 @@ function CreateCardForm({ titleId, onClose }) {
         <button
           type="button"
           disabled={!canCreate}
-          className="h-14 w-full rounded-2xl bg-white text-lg font-bold text-black transition active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-graphite disabled:opacity-40"
+          className="h-14 w-full rounded-2xl bg-white text-lg font-semibold text-black transition duration-300 ease-spring active:scale-[0.98] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-graphite disabled:opacity-40"
         >
           Crear tarjeta
         </button>

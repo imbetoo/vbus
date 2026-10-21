@@ -2,7 +2,7 @@
 export default function ArrivalTime({ minutes, urgent }) {
   return (
     <span
-      className={`whitespace-nowrap text-lg font-bold tabular-nums ${urgent ? 'text-urgent' : 'text-white'}`}
+      className={`whitespace-nowrap text-lg font-semibold tabular-nums ${urgent ? 'text-urgent' : 'text-white'}`}
     >
       {minutes <= 0 ? (
         'Llegando'

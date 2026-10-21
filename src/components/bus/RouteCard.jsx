@@ -21,7 +21,7 @@ export default function RouteCard({ title, stopName, icon, buses, moreBuses = []
     <GlassCard as="section" aria-label={title}>
       <IconHeading icon={Icon} title={title} subtitle={`Desde ${stopName}`} titleAs="h2" />
 
-      <div className="mx-1 mb-1 mt-3 border-t-2 border-graphite" />
+      <div className="mx-1 mb-1 mt-3 border-t border-white/10" />
 
       <ul className="px-1">
         {buses.map((bus) => (

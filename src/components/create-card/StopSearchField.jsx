@@ -23,7 +23,7 @@ export default function StopSearchField({ value, onChange }) {
         placeholder="Dirección o código de parada"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-2xl bg-white/10 pl-11 pr-4 text-lg font-semibold text-white placeholder:font-medium placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/80 [&::-webkit-search-cancel-button]:hidden"
+        className="h-12 w-full rounded-2xl bg-white/10 pl-11 pr-4 text-lg font-medium text-white placeholder:font-normal placeholder:text-white/50 transition duration-300 ease-spring focus:outline-none focus:ring-2 focus:ring-white/80 [&::-webkit-search-cancel-button]:hidden"
       />
     </div>
   );
