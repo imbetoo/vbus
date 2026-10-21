@@ -2,8 +2,8 @@ import { BusFront, Plus, X } from 'lucide-react';
 import { useId, useState } from 'react';
 import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
+import PillButton from '../ui/PillButton';
 import Sheet from '../ui/Sheet';
-import { PRESSABLE } from '../ui/pressable';
 import LineChips from './LineChips';
 import StepSection from './StepSection';
 import StopSearchField from './StopSearchField';
@@ -78,13 +78,10 @@ function CreateCardForm({ titleId, onClose }) {
       </div>
 
       <div className="mt-auto pt-6">
-        <button
-          type="button"
-          disabled={!canCreate}
-          className={`h-14 w-full rounded-2xl bg-white text-lg font-semibold text-black active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-graphite disabled:opacity-40 ${PRESSABLE}`}
-        >
+        <PillButton disabled={!canCreate}>
+          <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
           Crear tarjeta
-        </button>
+        </PillButton>
       </div>
     </>
   );

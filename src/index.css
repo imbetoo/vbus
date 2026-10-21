@@ -12,6 +12,26 @@
   }
 
   body {
-    @apply bg-pearl font-sans text-navy-900 antialiased transition-colors duration-700 ease-in-out dark:bg-navy-900 dark:text-white;
+    @apply bg-pearl font-sans text-navy-900 antialiased dark:bg-navy-900 dark:text-white;
   }
+}
+
+/*
+ * Cambio de tema (ver `useTheme`): View Transitions captura la página antes y
+ * después y funde el fotograma entero a la vez, así fondo, textos, bordes y
+ * botones cambian exactamente al mismo tiempo. Transiciones por elemento no
+ * sirven aquí: los colores heredados encadenan transiciones y se desfasan.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 500ms;
+  animation-timing-function: ease-in-out;
+}
+
+/* Durante el cambio, sin transiciones propias: el estado nuevo se pinta ya
+   terminado y lo único que se anima es el fundido. */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
 }

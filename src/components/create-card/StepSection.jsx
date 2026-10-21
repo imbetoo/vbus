@@ -8,7 +8,7 @@ export default function StepSection({ icon, title, subtitle, open, onToggle, chi
 
   return (
     <section
-      className={`rounded-3xl border-[3px] border-graphite/85 bg-white/5 shadow-lg shadow-black/10 ${PRESSABLE}`}
+      className={`rounded-3xl border border-white/10 bg-white/[0.06] shadow-lg shadow-black/10 ${PRESSABLE}`}
     >
       <button
         type="button"

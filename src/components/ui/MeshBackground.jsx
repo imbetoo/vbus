@@ -17,7 +17,7 @@ const BLOBS = [
 /**
  * Fondo "mesh gradient" perla iridiscente (inspirado en Apple Music). Las
  * manchas solo animan `transform`, así la GPU las mueve sin repintar. Encima
- * van dos capas estáticas: un velo blanco que pasteliza los tonos y un grano
+ * van dos capas estáticas: un velo ligero que suaviza los tonos y un grano
  * fino que da el acabado de luz helada sin el coste de un `backdrop-blur`.
  */
 export default function MeshBackground() {
@@ -29,8 +29,8 @@ export default function MeshBackground() {
       {BLOBS.map((blob) => (
         <div key={blob} className={`absolute will-change-transform motion-reduce:animate-none ${blob}`} />
       ))}
-      <div className="absolute inset-0 bg-white/40 transition-colors duration-700 ease-in-out dark:bg-navy-900/55" />
-      <div className="absolute inset-0 bg-grain bg-[length:160px_160px] opacity-[0.06] transition-opacity duration-700 ease-in-out dark:opacity-[0.04]" />
+      <div className="absolute inset-0 bg-white/15 dark:bg-navy-900/45" />
+      <div className="absolute inset-0 bg-grain bg-[length:160px_160px] opacity-[0.06] dark:opacity-[0.04]" />
     </div>
   );
 }

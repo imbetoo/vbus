@@ -42,21 +42,31 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Fondo:** mesh gradient animado "perla iridiscente" (inspirado en Apple
   Music): azul `#A2C2FC`, lavanda `#E2B7FC`, blanco perla, índigo y azul
   rosáceo sobre lienzo `#F8F6FC`. `radial-gradient` en CSS puro y `@keyframes`
-  lentos que solo animan `transform`, con velo blanco al 40 % y grano fino
-  estático. Sin lag (60 fps).
-- **Tarjetas (cristal):** `bg-[#272727]/50`, `backdrop-blur-md`, borde de 3px
-  `border-[#272727]/85`, `shadow-xl shadow-black/10`. Bordes muy redondeados
-  (`rounded-[32px]`). Mismo borde en los pasos de la hoja inferior, la propia
-  hoja y el menú de ajustes.
+  lentos que solo animan `transform`, con velo blanco al 15 % (navy al 45 % en
+  oscuro) y grano fino estático. Sin lag (60 fps).
+- **Tarjetas (cristal):** `bg-[#272727]/50` con degradado interior sutil,
+  `backdrop-blur-md`, borde de 2px (`border-white/15` en claro,
+  `border-[#272727]/60` en oscuro), sombra `shadow-glass` (brillo de 1px en el
+  canto superior + sombra exterior suave), `rounded-[32px]` y `p-5`.
+- **Estilo Bento / Soft Dark (referencia: extensión del usuario):** hojas y
+  modales grafito casi opacos con asa, título + X circular; contenedores
+  internos `rounded-3xl bg-white/[0.06] border border-white/10`; inputs
+  `rounded-2xl bg-white/10` con borde y anillo azul iOS (`accent` `#0A84FF`) al
+  enfocar; acción principal en píldora blanca a todo el ancho (`PillButton`).
+- **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
+  sutiles (`bg-white/60` en claro, `bg-white/10` en oscuro), alineados con el
+  título "Mis rutas".
 - **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
   hoja rebotan con `active:scale-[0.97]` en 400 ms y curva
   `cubic-bezier(0.25, 1, 0.5, 1)` (`ease-spring`), definido una sola vez en
   `src/components/ui/pressable.js`.
 - **Tema:** claro/oscuro con el botón Sol/Luna de la cabecera (se recuerda en
-  LocalStorage; si no se ha elegido, sigue al sistema). El cambio funde los
-  colores en 700 ms.
-- **Ajustes:** engranaje en la cabecera que abre un menú flotante centrado
-  (entra y sale con fundido + escalado del 95 % al 100 %).
+  LocalStorage; si no se ha elegido, sigue al sistema). El cambio usa View
+  Transitions: la página entera funde en 500 ms `ease-in-out`, así todo cambia
+  exactamente a la vez (nada de transiciones de color por elemento).
+- **Hojas y modales:** entran **y salen** animados (`useAnimatedDialog`): la
+  hoja inferior sube/baja deslizándose y el menú de ajustes funde y escala
+  (95 % → 100 %); el resto de la pantalla se oscurece y desenfoca.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

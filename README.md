@@ -27,9 +27,11 @@ src/
 ├── components/
 │   ├── ui/           # genéricos (GlassCard, IconHeading, Sheet, MeshBackground…)
 │   ├── bus/          # dominio de autobuses (RouteCard, BusLineItem, LineBadge, ArrivalTime)
-│   └── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
+│   ├── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
+│   └── settings/     # botón de tema y menú de ajustes
 ├── data/        # datos de ejemplo (mockRoutes)
-├── hooks/       # acceso a datos (useRoutes; futuro: VigoBusAPI)
+├── hooks/       # useRoutes (futuro: VigoBusAPI), useTheme, useAnimatedDialog
+├── lib/         # utilidades (motion)
 ├── screens/     # pantallas completas (Dashboard)
 ├── App.jsx
 ├── index.css    # directivas de Tailwind y estilos base
@@ -50,6 +52,7 @@ Definida en `tailwind.config.js`:
 | `graphite`  | `#272727` | Tarjetas Liquid Glass (fondo al 50 %) |
 | `pearl`     | `#F8F6FC` | Lienzo del fondo perla                |
 | `urgent`    | `#FF3B30` | Llegada en menos de 3 minutos         |
+| `accent`    | `#0A84FF` | Foco de inputs (azul de iOS)          |
 
 Tipografía: Inter (Google Fonts). El fondo es un mesh gradient animado
 "perla iridiscente" (azul `#A2C2FC`, lavanda `#E2B7FC`, blanco, índigo y azul

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { prefersReducedMotion } from '../lib/motion';
 
 const STORAGE_KEY = 'vbus:theme';
 
@@ -24,12 +26,28 @@ export function useTheme() {
 
   const toggleTheme = useCallback(() => {
     const next = theme === 'dark' ? 'light' : 'dark';
+    const root = document.documentElement;
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Sin almacenamiento: el cambio dura solo esta sesión.
     }
-    setTheme(next);
+
+    const apply = () => {
+      root.classList.toggle('dark', next === 'dark');
+      flushSync(() => setTheme(next));
+    };
+
+    // Sin View Transitions (o con movimiento reducido) el cambio es inmediato.
+    if (!document.startViewTransition || prefersReducedMotion()) {
+      apply();
+      return;
+    }
+    // Fundido de la página entera en 500 ms (ver `index.css`).
+    root.classList.add('theme-switching');
+    document
+      .startViewTransition(apply)
+      .finished.finally(() => root.classList.remove('theme-switching'));
   }, [theme]);
 
   return { theme, toggleTheme };

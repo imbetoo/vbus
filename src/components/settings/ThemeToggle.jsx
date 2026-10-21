@@ -13,7 +13,7 @@ export default function ThemeToggle({ theme, onToggle }) {
       label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
       onClick={onToggle}
     >
-      <span className="relative h-[22px] w-[22px]" aria-hidden="true">
+      <span className="relative h-5 w-5" aria-hidden="true">
         <Sun
           className={`${ICON} ${isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-50 opacity-0'}`}
           strokeWidth={2.25}

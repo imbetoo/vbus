@@ -17,20 +17,22 @@ export default function Dashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+1rem)]">
-      <header className="text-black transition-colors duration-700 ease-in-out dark:text-white">
-        <div className="flex items-center justify-end gap-2">
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
-          <IconButton
-            tone="adaptive"
-            icon={Settings}
-            label="Ajustes"
-            aria-haspopup="dialog"
-            onClick={() => setIsSettingsOpen(true)}
-          />
+    <div className="mx-auto min-h-screen max-w-md pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
+      <header className="text-black dark:text-white">
+        <p className="text-xl font-semibold tracking-tight sm:text-2xl">Buenos días</p>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Mis rutas</h1>
+          <div className="flex items-center gap-2">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <IconButton
+              tone="adaptive"
+              icon={Settings}
+              label="Ajustes"
+              aria-haspopup="dialog"
+              onClick={() => setIsSettingsOpen(true)}
+            />
+          </div>
         </div>
-        <p className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Buenos días</p>
-        <h1 className="text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Mis rutas</h1>
       </header>
 
       <main className="mt-6 flex flex-col gap-5">
