@@ -23,7 +23,7 @@ function LineChip({ line, color, priority, onToggle }) {
       }`}
     >
       <span
-        className={`${color} flex h-9 min-w-9 items-center justify-center rounded-full px-2.5 text-base font-medium tracking-wide text-white`}
+        className={`${color} flex h-9 min-w-9 items-center justify-center rounded-full px-2.5 text-base font-medium tracking-wide text-white shadow-relief`}
       >
         <span className="sr-only">Línea </span>
         {line}
@@ -31,7 +31,7 @@ function LineChip({ line, color, priority, onToggle }) {
       {/* Hueco fijo de 36px: anillo vacío sin elegir, círculo con número al elegir. */}
       <span className="relative h-9 w-9 shrink-0 rounded-full ring-1 ring-inset ring-white/20">
         <span
-          className={`absolute inset-0 flex items-center justify-center rounded-full bg-white text-sm font-semibold tabular-nums text-black transition-all duration-300 ease-spring motion-reduce:transition-none ${
+          className={`absolute inset-0 flex items-center justify-center rounded-full bg-white text-sm font-semibold tabular-nums text-black shadow-relief transition-all duration-300 ease-spring motion-reduce:transition-none ${
             pressed ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
           }`}
         >

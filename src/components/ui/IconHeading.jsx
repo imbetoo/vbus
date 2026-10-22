@@ -10,6 +10,7 @@ import IconTile from './IconTile';
 export default function IconHeading({
   icon,
   iconStrokeWidth,
+  iconTone,
   title,
   subtitle,
   titleAs: Title = 'span',
@@ -21,7 +22,7 @@ export default function IconHeading({
 
   return (
     <span className="flex min-w-0 items-center gap-3">
-      <IconTile icon={icon} strokeWidth={iconStrokeWidth} />
+      <IconTile icon={icon} strokeWidth={iconStrokeWidth} tone={iconTone} />
       <span className="min-w-0">
         <Title
           id={titleId}

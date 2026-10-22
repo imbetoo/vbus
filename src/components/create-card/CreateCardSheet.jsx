@@ -7,7 +7,9 @@ import IconHeading from '../ui/IconHeading';
 import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
 import Sheet from '../ui/Sheet';
+import { DEFAULT_CARD_COLOR } from '../bus/cardColors';
 import CardNameField from './CardNameField';
+import ColorPicker from './ColorPicker';
 import LineChips from './LineChips';
 import StepSection from './StepSection';
 import StopSearchField from './StopSearchField';
@@ -94,6 +96,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
   // cuántos autobuses enseña sin desplegar.
   const [name, setName] = useState('');
   const [busesToShow, setBusesToShow] = useState(3);
+  const [color, setColor] = useState(DEFAULT_CARD_COLOR);
   // Al elegir la primera línea se despliega "Personaliza la tarjeta" una vez.
   const [customizeOpened, setCustomizeOpened] = useState(false);
   if (selectedLines.length > 0 && !customizeOpened) {
@@ -198,6 +201,10 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
             value={busesToShow}
             onChange={setBusesToShow}
           />
+
+          <div className="mt-4">
+            <ColorPicker value={color} onChange={setColor} />
+          </div>
         </StepSection>
       </div>
 
@@ -205,7 +212,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
         <PillButton
           disabled={!canCreate}
           onClick={() =>
-            onCreate(toRouteCard({ stop, buses: lookup.buses, lines: selectedLines, title: name, busesToShow }))
+            onCreate(toRouteCard({ stop, buses: lookup.buses, lines: selectedLines, title: name, busesToShow, color }))
           }
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />

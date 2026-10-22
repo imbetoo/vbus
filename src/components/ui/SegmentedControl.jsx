@@ -1,24 +1,18 @@
-import { useId, useRef } from 'react';
+import { useId } from 'react';
+import { useRadioGroup } from '../../hooks/useRadioGroup';
 
 /**
  * Control segmentado estilo iOS: una píldora de cristal con un "pulgar"
  * blanco que se desliza (solo `transform`, curva `ease-spring`) hasta la
- * opción elegida. Accesible como grupo de radios: Tab entra en la opción
- * elegida y las flechas cambian de opción.
+ * opción elegida. Accesible como grupo de radios (Tab + flechas).
  */
 export default function SegmentedControl({ label, options, value, onChange }) {
   const labelId = useId();
-  const refs = useRef([]);
   const index = Math.max(
     0,
     options.findIndex((option) => option.value === value),
   );
-
-  const select = (next) => {
-    const wrapped = (next + options.length) % options.length;
-    onChange(options[wrapped].value);
-    refs.current[wrapped]?.focus();
-  };
+  const itemProps = useRadioGroup(options.length, index, (i) => onChange(options[i].value));
 
   return (
     <div>
@@ -39,36 +33,19 @@ export default function SegmentedControl({ label, options, value, onChange }) {
             transform: `translateX(${index * 100}%)`,
           }}
         />
-        {options.map((option, i) => {
-          const checked = i === index;
-          return (
-            <button
-              key={option.value}
-              ref={(el) => {
-                refs.current[i] = el;
-              }}
-              type="button"
-              role="radio"
-              aria-checked={checked}
-              tabIndex={checked ? 0 : -1}
-              onClick={() => onChange(option.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-                  event.preventDefault();
-                  select(i + 1);
-                } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-                  event.preventDefault();
-                  select(i - 1);
-                }
-              }}
-              className={`relative z-10 h-9 truncate rounded-full px-3 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                checked ? 'text-black' : 'text-white/70 active:text-white'
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
+        {options.map((option, i) => (
+          <button
+            key={option.value}
+            type="button"
+            {...itemProps(i)}
+            onClick={() => onChange(option.value)}
+            className={`relative z-10 h-9 truncate rounded-full px-3 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              i === index ? 'text-black' : 'text-white/70 active:text-white'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </div>
   );

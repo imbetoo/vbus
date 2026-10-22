@@ -44,11 +44,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rosáceo sobre lienzo `#F8F6FC`. `radial-gradient` en CSS puro y `@keyframes`
   lentos que solo animan `transform`, con velo blanco al 15 % (navy al 45 % en
   oscuro) y grano fino estático. Sin lag (60 fps).
-- **Tarjetas (cristal):** `bg-[#272727]/50` con degradado interior sutil,
-  `backdrop-blur-md` solo en elementos fijos (las tarjetas de rutas, que hacen
-  scroll, van sin desenfoque y con un grano fino al 7 %), borde de 2px (`border-white/15` en claro,
-  `border-[#272727]/60` en oscuro), sombra `shadow-glass` (brillo de 1px en el
-  canto superior + sombra exterior suave), `rounded-[32px]` y `p-5`.
+- **Tarjetas del Dashboard:** grafito casi opaco `bg-[#272727]/80` con
+  degradado interior sutil y **sin `backdrop-filter`** (el desenfoque en
+  movimiento dejaba rastro negro en Chromium/WebKit), borde de 2px
+  (`border-white/15` en claro, `border-[#272727]/60` en oscuro), sombra
+  `shadow-glass` (brillo de 1px en el canto superior + sombra exterior suave),
+  `rounded-[32px]` y `p-5`. El desenfoque queda solo para elementos fijos fuera
+  de la lista (botones de la cabecera y fondo de hojas y modales).
+- **Relieve 3D:** `shadow-relief` (luz interior arriba, sombra interior abajo)
+  en distintivos de línea, pastillas de icono y círculos del selector de color.
+- **Scroll:** ningún contenedor muestra barra de desplazamiento (regla global
+  en `index.css`); el scroll sigue funcionando.
 - **Estilo Bento / Soft Dark (referencia: extensión del usuario):** hojas y
   modales grafito casi opacos con asa, título + X circular; contenedores
   internos `rounded-3xl bg-white/[0.06] border border-white/10`; inputs
@@ -77,14 +83,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Layout del Dashboard:** pantalla completa (`h-[100dvh]`, flex en
   columna): cabecera arriba, tarjetas con scroll propio en medio (sin barra,
   con máscara en degradado que las desvanece al llegar abajo) y "Crear nueva
-  tarjeta" fijo abajo, respetando las safe areas. Cada tarjeta va en su propia
-  capa de GPU (`transform-gpu`, `will-change-transform`,
-  `backface-visibility: hidden`) y las que hacen scroll no llevan
-  `backdrop-filter`: así el scroll no repinta nada (evita el rastro oscuro).
+  tarjeta" fijo abajo, respetando las safe areas. El contenedor de la lista va
+  en una única capa de GPU (`transform-gpu`, `will-change-transform`) y nada
+  dentro usa `backdrop-filter`: el scroll no repinta nada.
 - **Tarjetas del usuario:** la app empieza vacía (mensaje "Aún no tienes
   rutas"); cada tarjeta tiene una X discreta arriba a la derecha para
   eliminarla. Al borrar, la tarjeta se desvanece y encoge (escala 0,9) mientras
-  su hueco se cierra en 500 ms `ease-out`; solo entonces sale del estado. Las
+  su hueco se cierra en 800 ms `ease-out`; solo entonces sale del estado. Las
   tarjetas nuevas entran con la animación inversa y el mensaje de lista vacía
   funde al aparecer y desaparecer.
 - **Nada aparece de golpe:** mensajes de estado y textos que cambian entran con
@@ -92,8 +97,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   línea para que su alto no cambie y no muevan el contenido.
 - **Contenido de las tarjetas:** cada tarjeta tiene su propio nombre (si se
   deja vacío, el de la parada, y el subtítulo pasa a "Parada N") y su propio
-  número de autobuses visibles (2 o 3), elegidos al crearla en el paso
-  "Personaliza la tarjeta"; "Ver más autobuses" despliega el resto con el
+  número de autobuses visibles (2 o 3) y su color de icono (8 colores
+  predefinidos, `cardColors.js`), elegidos al crearla en el paso "Personaliza
+  la tarjeta"; "Ver más autobuses" despliega el resto con el
   mismo plegado animado que los acordeones (componente `Collapse`) y su
   chevron (›) gira hacia arriba al expandir. El orden lo marca el ajuste
   "Ordenar autobuses por": llegada (menos minutos primero) o preferencia (el

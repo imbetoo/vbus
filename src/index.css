@@ -11,6 +11,16 @@
     color-scheme: dark;
   }
 
+  /* Sin barras de desplazamiento visibles en ningún contenedor (como en iOS);
+     el scroll con dedo, rueda o teclado sigue funcionando. */
+  * {
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
   body {
     @apply bg-pearl font-sans text-navy-900 antialiased dark:bg-navy-900 dark:text-white;
   }

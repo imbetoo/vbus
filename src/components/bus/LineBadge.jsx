@@ -2,7 +2,7 @@
 export default function LineBadge({ as: Component = 'span', line, color, className = '', ...props }) {
   return (
     <Component
-      className={`${color} flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl px-2 text-base font-medium tracking-wide text-white ${className}`}
+      className={`${color} flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl px-2 text-base font-medium shadow-relief tracking-wide text-white ${className}`}
       {...props}
     >
       <span className="sr-only">Línea </span>

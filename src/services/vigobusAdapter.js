@@ -75,8 +75,9 @@ export function uniqueLines(buses) {
  *   (`sortBuses`).
  * - `title`: nombre personalizado; si queda vacío, el nombre de la parada.
  * - `busesToShow`: autobuses visibles en esta tarjeta sin desplegar (2 o 3).
+ * - `color`: id del color de su icono (`cardColors.js`).
  */
-export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3 }) {
+export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, color = 'graphite' }) {
   return {
     id: crypto.randomUUID(),
     stopId: stop.id,
@@ -85,6 +86,7 @@ export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3 })
     icon: 'Bus',
     lines,
     busesToShow,
+    color,
     buses: buses.filter((bus) => lines.includes(bus.line)),
   };
 }

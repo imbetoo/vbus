@@ -16,14 +16,14 @@ const SCROLL_FADE =
   '[mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)]';
 
 // Duración de la salida de una tarjeta antes de quitarla del estado (igual que
-// su `duration-500` en la lista).
-const REMOVE_MS = 500;
+// su `duration-[800ms]` en la lista): lenta y relajada.
+const REMOVE_MS = 800;
 
 /** Mensaje de la lista vacía (la app empieza sin tarjetas). */
 function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-black/70 dark:text-white/80">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/50 ring-1 ring-black/5 backdrop-blur-md dark:bg-white/10 dark:ring-white/10">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/70 ring-1 ring-black/5 dark:bg-white/15 dark:ring-white/10">
         <BusFront className="h-7 w-7" strokeWidth={2} aria-hidden="true" />
       </span>
       <p className="text-xl font-semibold tracking-tight text-black dark:text-white">Aún no tienes rutas</p>
@@ -80,9 +80,12 @@ export default function Dashboard({ settings, onSettingChange }) {
       </header>
 
       {/* Área de scroll: el margen negativo deja sitio a las sombras de las
-          tarjetas para que el recorte del scroll no las corte por los lados. */}
+          tarjetas para que el recorte del scroll no las corte por los lados.
+          Va en una única capa de GPU (`transform-gpu`, `will-change`) y nada de
+          lo que contiene usa `backdrop-filter`: el scroll solo desplaza esa
+          capa ya dibujada. */}
       <main
-        className={`-mx-5 mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${SCROLL_FADE}`}
+        className={`-mx-5 mt-2 min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 will-change-transform ${SCROLL_FADE}`}
       >
         <div className="relative min-h-full">
           {/* El mensaje de lista vacía está siempre montado y entra/sale con un
@@ -109,7 +112,7 @@ export default function Dashboard({ settings, onSettingChange }) {
                 <li
                   key={route.id}
                   inert={leaving}
-                  className={`grid animate-card-in grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity,transform] duration-500 ease-out motion-reduce:animate-none ${
+                  className={`grid animate-card-in grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity,transform] duration-[800ms] ease-out motion-reduce:animate-none ${
                     leaving ? 'pointer-events-none scale-90 grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
                   }`}
                 >

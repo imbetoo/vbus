@@ -87,6 +87,9 @@ export default {
       // suave que despega la tarjeta del fondo.
       boxShadow: {
         glass: 'inset 0 1px 0 0 rgb(255 255 255 / 0.12), 0 16px 40px -12px rgb(0 0 0 / 0.35)',
+        // Relieve 3D sutil (luz arriba, sombra abajo) sin oscurecer el color base:
+        // distintivos de línea, círculos de color y pastillas de icono.
+        relief: 'inset 0 2px 4px rgb(255 255 255 / 0.3), inset 0 -2px 4px rgb(0 0 0 / 0.2)',
       },
       // Curva tipo "spring" de Apple para transiciones de interfaz.
       transitionTimingFunction: {
