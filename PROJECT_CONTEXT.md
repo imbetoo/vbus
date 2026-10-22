@@ -73,6 +73,16 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   0fr → 1fr en 450 ms con la curva de hojas de iOS
   `cubic-bezier(0.32, 0.72, 0, 1)` (`ease-smooth`); el contenido aparece con
   un ligero retardo y se desvanece rápido al plegar.
+- **Layout del Dashboard:** pantalla completa (`h-[100dvh]`, flex en
+  columna): cabecera arriba, tarjetas con scroll propio en medio (sin barra,
+  con máscara en degradado que las desvanece al llegar abajo) y "Crear nueva
+  tarjeta" fijo abajo, respetando las safe areas. Cada tarjeta de cristal va
+  en su propia capa de GPU (`transform-gpu`, `will-change-transform`,
+  `backface-visibility: hidden`) para que el scroll no repinte el
+  `backdrop-filter` (evita el rastro oscuro).
+- **Tarjetas del usuario:** la app empieza vacía (mensaje "Aún no tienes
+  rutas"); cada tarjeta tiene una X discreta arriba a la derecha para
+  eliminarla.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

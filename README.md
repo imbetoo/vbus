@@ -29,7 +29,6 @@ src/
 │   ├── bus/          # dominio de autobuses (RouteCard, BusLineItem, LineBadge, ArrivalTime)
 │   ├── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
 │   └── settings/     # botón de tema y menú de ajustes
-├── data/        # datos de ejemplo (mockRoutes)
 ├── hooks/       # useRoutes, useStopLookup, useTheme, useAnimatedDialog
 ├── lib/         # utilidades (motion)
 ├── screens/     # pantallas completas (Dashboard)
@@ -61,8 +60,8 @@ rosáceo) en `src/components/ui/MeshBackground.jsx`.
 
 ## Datos
 
-La pantalla aún usa datos estáticos (`src/data/mockRoutes.js`, vía
-`useRoutes`). La capa de datos reales ya existe en `src/services/`:
+La app empieza sin tarjetas: el usuario las crea (y elimina con su X) y
+`useRoutes` las guarda en memoria. Los datos vienen de `src/services/`:
 
 - `vigobus.js`: cliente de [VigoBusAPI](https://github.com/David-Lor/VigoBusAPI)
   (`getStop(id)`, `getBuses(id, { all })`) con errores tipados

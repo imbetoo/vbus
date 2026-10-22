@@ -2,7 +2,7 @@ import { isUrgent } from '../components/bus/urgency';
 
 /**
  * Adaptadores: transforman las respuestas crudas de VigoBusAPI al formato que
- * usa la UI (el mismo que `src/data/mockRoutes.js` y `BusLineItem`).
+ * usa la UI (`RouteCard` y `BusLineItem`).
  */
 
 // La API no da colores de línea: se asigna uno estable por línea. Clases
@@ -68,7 +68,7 @@ export function uniqueLines(buses) {
 }
 
 /**
- * Tarjeta de rutina para el Dashboard (misma forma que `mockRoutes.js`) a
+ * Tarjeta de rutina para el Dashboard (la que recibe `RouteCard`) a
  * partir de una parada, sus llegadas adaptadas y las líneas elegidas. Cada
  * línea muestra su próximo autobús; el resto de pasos van a `moreBuses`
  * ("Ver más autobuses").
