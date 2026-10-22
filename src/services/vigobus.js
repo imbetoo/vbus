@@ -14,7 +14,14 @@
  *       → { buses: [{ line, route, time, bus_id }], more_buses_available }
  */
 
+import { MOCK_STOPS, mockBusesResponse } from './vigobusMock';
+
 export const VIGOBUS_API_URL = (import.meta.env.VITE_VIGOBUS_API_URL || '/vigobus').replace(/\/+$/, '');
+
+// Mientras no haya backend, las funciones devuelven respuestas simuladas con
+// la misma forma que la API (`vigobusMock.js`). `VITE_VIGOBUS_MOCK=false`
+// vuelve a las peticiones reales.
+export const VIGOBUS_USE_MOCK = import.meta.env.VITE_VIGOBUS_MOCK !== 'false';
 
 // La API espera hasta 30 s a la fuente de Vitrasa; no tiene sentido esperar más.
 const TIMEOUT_MS = 30_000;
@@ -93,8 +100,15 @@ function assertStopId(stopId) {
 }
 
 /** Información de una parada (nombre y ubicación). Respuesta cruda de la API. */
-export async function getStop(stopId, { signal } = {}) {
+export function getStop(stopId, { signal } = {}) {
   assertStopId(stopId);
+  if (VIGOBUS_USE_MOCK) {
+    const stop = MOCK_STOPS[Number(stopId)];
+    // Igual que la API: 404 si la parada no existe.
+    return stop
+      ? Promise.resolve(structuredClone(stop))
+      : Promise.reject(new VigoBusError(`No existe la parada ${stopId}`, { kind: 'not_found', status: 404 }));
+  }
   return request(`/stop/${Number(stopId)}`, { signal });
 }
 
@@ -103,7 +117,8 @@ export async function getStop(stopId, { signal } = {}) {
  * cruda de la API. Por defecto la API devuelve una lista corta (5); con
  * `all: true` devuelve todos.
  */
-export async function getBuses(stopId, { all = false, signal } = {}) {
+export function getBuses(stopId, { all = false, signal } = {}) {
   assertStopId(stopId);
+  if (VIGOBUS_USE_MOCK) return Promise.resolve(structuredClone(mockBusesResponse(Number(stopId), all)));
   return request(`/buses/${Number(stopId)}?get_all_buses=${all}`, { signal });
 }

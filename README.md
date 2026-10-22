@@ -70,8 +70,12 @@ La pantalla aún usa datos estáticos (`src/data/mockRoutes.js`, vía
 - `vigobusAdapter.js`: convierte las respuestas al formato de la UI
   (`{ id, line, color, destination, time, urgent }`).
 
-En desarrollo, `App.jsx` hace una petición de prueba a la parada 3014 y la
-muestra en la consola del navegador.
+- `vigobusMock.js`: respuestas simuladas con la forma exacta de la API. **Se
+  usan por defecto** mientras no haya backend; `VITE_VIGOBUS_MOCK=false`
+  vuelve a las peticiones reales.
+
+En desarrollo, `App.jsx` pide la parada 3014 y muestra el resultado adaptado
+en la consola del navegador.
 
 ### Levantar VigoBusAPI en local
 
