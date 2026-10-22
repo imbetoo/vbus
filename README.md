@@ -29,7 +29,7 @@ src/
 │   ├── bus/          # dominio de autobuses (RouteCard, BusLineItem, LineBadge, ArrivalTime)
 │   ├── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
 │   └── settings/     # botón de tema y menú de ajustes
-├── hooks/       # useRoutes, useStopLookup, useTheme, useAnimatedDialog
+├── hooks/       # useRoutes, useSettings, useStopLookup, useTheme, useAnimatedDialog
 ├── lib/         # utilidades (motion)
 ├── screens/     # pantallas completas (Dashboard)
 ├── services/    # VigoBusAPI: cliente y adaptador de datos

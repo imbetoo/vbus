@@ -35,7 +35,7 @@ function EmptyState() {
  * Pantalla inicial a pantalla completa (`100dvh`): cabecera arriba, tarjetas
  * con scroll propio en medio y "Crear nueva tarjeta" fijo abajo.
  */
-export default function Dashboard() {
+export default function Dashboard({ settings, onSettingChange }) {
   const { routes, addRoute, removeRoute } = useRoutes();
   const { theme, toggleTheme } = useTheme();
   const [isCreating, setIsCreating] = useState(false);
@@ -103,7 +103,12 @@ export default function Dashboard() {
                 >
                   <div className={`min-h-0 ${leaving ? 'overflow-hidden' : ''}`}>
                     <div className="pb-5">
-                      <RouteCard {...route} onRemove={() => handleRemove(route.id)} />
+                      <RouteCard
+                        {...route}
+                        busesToShow={settings.busesToShow}
+                        sortBy={settings.sortBy}
+                        onRemove={() => handleRemove(route.id)}
+                      />
                     </div>
                   </div>
                 </li>
@@ -126,7 +131,12 @@ export default function Dashboard() {
           setIsCreating(false);
         }}
       />
-      <SettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsModal
+        open={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onChange={onSettingChange}
+      />
     </div>
   );
 }

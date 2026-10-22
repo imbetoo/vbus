@@ -84,12 +84,18 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas"); cada tarjeta tiene una X discreta arriba a la derecha para
   eliminarla. Al borrar, la tarjeta se desvanece y encoge (escala 0,9) mientras
   su hueco se cierra en 300 ms; solo entonces sale del estado.
-- **Contenido de las tarjetas:** muestran 3 autobuses; "Ver más autobuses"
-  despliega el resto con el mismo plegado animado que los acordeones
-  (componente `Collapse`). Las líneas se ordenan por la prioridad elegida en
-  la hoja (el orden en que se tocaron), y después el resto por hora.
-- **Selección de líneas:** pastillas de cristal; al elegir una aparece un
-  check junto al nombre. El paso de líneas usa el icono `Route`.
+- **Contenido de las tarjetas:** muestran los autobuses que marque el ajuste
+  "Autobuses visibles" (2 o 3); "Ver más autobuses" despliega el resto con el
+  mismo plegado animado que los acordeones (componente `Collapse`) y su
+  chevron (›) gira hacia arriba al expandir. El orden lo marca el ajuste
+  "Ordenar autobuses por": llegada (menos minutos primero) o preferencia (el
+  próximo de cada línea en el orden en que se eligieron, luego el resto).
+- **Selección de líneas:** pastillas de cristal con margen simétrico; al
+  elegir una aparece a su lado un círculo blanco con su número de prioridad
+  (1, 2, 3…). El paso de líneas usa el icono `Route`.
+- **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
+  (pulgar blanco que se desliza; accesibles como grupo de radios). Se guardan
+  en LocalStorage (`useSettings`, en `App.jsx`).
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

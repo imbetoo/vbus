@@ -5,26 +5,35 @@ import DisclosureButton from '../ui/DisclosureButton';
 import GlassCard from '../ui/GlassCard';
 import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
+import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from './BusLineItem';
 
 // Las rutinas guardan el icono por nombre para poder serializarse.
 const ROUTE_ICONS = { GraduationCap, Home: House, Bus: BusFront };
 
-// Autobuses visibles sin desplegar la tarjeta.
-const VISIBLE_BUSES = 3;
-
 const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
 
 /**
- * Tarjeta de una rutina. Enseña los primeros autobuses de `buses` y
- * "Ver más autobuses" despliega el resto, haciendo crecer la tarjeta.
+ * Tarjeta de una rutina. Ordena sus autobuses según `sortBy` (ajustes), enseña
+ * los `busesToShow` primeros y "Ver más autobuses" despliega el resto,
+ * haciendo crecer la tarjeta.
  */
-export default function RouteCard({ title, stopName, icon, buses, onRemove }) {
+export default function RouteCard({
+  title,
+  stopName,
+  icon,
+  buses,
+  lines,
+  busesToShow = 3,
+  sortBy = 'time',
+  onRemove,
+}) {
   const [showMore, setShowMore] = useState(false);
   const moreId = useId();
   const Icon = ROUTE_ICONS[icon] ?? House;
-  const visible = buses.slice(0, VISIBLE_BUSES);
-  const more = buses.slice(VISIBLE_BUSES);
+  const sorted = sortBuses(buses, lines, sortBy);
+  const visible = sorted.slice(0, busesToShow);
+  const more = sorted.slice(busesToShow);
 
   return (
     // `origin-top`: el rebote al pulsar no desplaza la tarjeta mientras crece.

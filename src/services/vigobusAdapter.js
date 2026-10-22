@@ -69,16 +69,12 @@ export function uniqueLines(buses) {
 
 /**
  * Tarjeta de rutina para el Dashboard (la que recibe `RouteCard`) a partir de
- * una parada, sus llegadas adaptadas y las líneas elegidas.
- *
- * `lines` va en el orden en que el usuario las eligió (su prioridad): primero
- * el próximo autobús de cada línea en ese orden y, después, el resto de pasos
- * por hora de llegada. La tarjeta enseña los primeros y pliega los demás.
+ * una parada, sus llegadas adaptadas y las líneas elegidas. `lines` va en el
+ * orden en que el usuario las eligió (su prioridad); `buses` guarda las
+ * llegadas de esas líneas y la tarjeta las ordena según los ajustes
+ * (`sortBuses`).
  */
 export function toRouteCard({ stop, buses, lines }) {
-  const chosen = buses.filter((bus) => lines.includes(bus.line));
-  const next = lines.map((line) => chosen.find((bus) => bus.line === line)).filter(Boolean);
-  const rest = chosen.filter((bus) => !next.includes(bus)).sort((a, b) => a.time - b.time);
   return {
     id: crypto.randomUUID(),
     stopId: stop.id,
@@ -86,6 +82,20 @@ export function toRouteCard({ stop, buses, lines }) {
     stopName: stop.name,
     icon: 'Bus',
     lines,
-    buses: [...next, ...rest],
+    buses: buses.filter((bus) => lines.includes(bus.line)),
   };
+}
+
+/**
+ * Ordena las llegadas de una tarjeta según el ajuste "Ordenar por":
+ * - `time`: de menos a más minutos.
+ * - `preference`: primero el próximo autobús de cada línea en el orden de
+ *   prioridad de `lines` y, después, el resto por hora (así las líneas
+ *   favoritas ocupan los primeros huecos visibles).
+ */
+export function sortBuses(buses, lines = [], sortBy = 'time') {
+  const byTime = [...buses].sort((a, b) => a.time - b.time);
+  if (sortBy !== 'preference') return byTime;
+  const next = lines.map((line) => byTime.find((bus) => bus.line === line)).filter(Boolean);
+  return [...next, ...byTime.filter((bus) => !next.includes(bus))];
 }

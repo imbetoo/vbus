@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import MeshBackground from './components/ui/MeshBackground';
+import { useSettings } from './hooks/useSettings';
 import Dashboard from './screens/Dashboard';
 import { getBuses, getStop, VIGOBUS_API_URL, VIGOBUS_USE_MOCK } from './services/vigobus';
 import { toBusArrivals, toStop } from './services/vigobusAdapter';
@@ -9,6 +10,9 @@ import { toBusArrivals, toStop } from './services/vigobusAdapter';
 const TEST_STOP_ID = 3014;
 
 export default function App() {
+  // Ajustes globales (se guardan en LocalStorage): afectan a todas las tarjetas.
+  const { settings, updateSetting } = useSettings();
+
   useEffect(() => {
     if (!import.meta.env.DEV) return undefined;
     const controller = new AbortController();
@@ -34,7 +38,7 @@ export default function App() {
   return (
     <>
       <MeshBackground />
-      <Dashboard />
+      <Dashboard settings={settings} onSettingChange={updateSetting} />
     </>
   );
 }
