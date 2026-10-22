@@ -11,7 +11,7 @@ import { useTheme } from '../hooks/useTheme';
 
 /** Pantalla inicial: las rutinas del usuario como tarjetas. */
 export default function Dashboard() {
-  const routes = useRoutes();
+  const { routes, addRoute } = useRoutes();
   const { theme, toggleTheme } = useTheme();
   const [isCreating, setIsCreating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -42,7 +42,15 @@ export default function Dashboard() {
         <CreateCardButton onClick={() => setIsCreating(true)} />
       </main>
 
-      <CreateCardSheet open={isCreating} onClose={() => setIsCreating(false)} />
+      <CreateCardSheet
+        open={isCreating}
+        onClose={() => setIsCreating(false)}
+        onCreate={(route) => {
+          // Se añade ya, y la hoja se cierra con su animación descubriéndola.
+          addRoute(route);
+          setIsCreating(false);
+        }}
+      />
       <SettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );

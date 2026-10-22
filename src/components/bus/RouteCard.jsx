@@ -1,4 +1,4 @@
-import { GraduationCap, House } from 'lucide-react';
+import { BusFront, GraduationCap, House } from 'lucide-react';
 import { useId, useState } from 'react';
 import DisclosureButton from '../ui/DisclosureButton';
 import GlassCard from '../ui/GlassCard';
@@ -6,7 +6,7 @@ import IconHeading from '../ui/IconHeading';
 import BusLineItem from './BusLineItem';
 
 // Las rutinas guardan el icono por nombre para poder serializarse.
-const ROUTE_ICONS = { GraduationCap, Home: House };
+const ROUTE_ICONS = { GraduationCap, Home: House, Bus: BusFront };
 
 /**
  * Tarjeta de una rutina. `buses` son las líneas favoritas, siempre visibles;
@@ -25,13 +25,13 @@ export default function RouteCard({ title, stopName, icon, buses, moreBuses = []
 
       <ul className="px-1">
         {buses.map((bus) => (
-          <BusLineItem key={`${bus.line}-${bus.destination}`} {...bus} />
+          <BusLineItem key={bus.id ?? `${bus.line}-${bus.destination}`} {...bus} />
         ))}
       </ul>
 
       <ul id={moreId} hidden={!showMore} className="px-1">
         {moreBuses.map((bus) => (
-          <BusLineItem key={`${bus.line}-${bus.destination}`} {...bus} />
+          <BusLineItem key={bus.id ?? `${bus.line}-${bus.destination}`} {...bus} />
         ))}
       </ul>
 

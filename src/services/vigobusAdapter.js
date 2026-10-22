@@ -59,3 +59,40 @@ export function toStop(stop) {
     location: stop.lat != null && stop.lon != null ? { lat: stop.lat, lon: stop.lon } : null,
   };
 }
+
+/** Líneas distintas de una lista de llegadas, en orden de llegada: `[{ line, color }]`. */
+export function uniqueLines(buses) {
+  const seen = new Map();
+  for (const { line, color } of buses) if (!seen.has(line)) seen.set(line, { line, color });
+  return [...seen.values()];
+}
+
+/**
+ * Tarjeta de rutina para el Dashboard (misma forma que `mockRoutes.js`) a
+ * partir de una parada, sus llegadas adaptadas y las líneas elegidas. Cada
+ * línea muestra su próximo autobús; el resto de pasos van a `moreBuses`
+ * ("Ver más autobuses").
+ */
+export function toRouteCard({ stop, buses, lines }) {
+  const next = [];
+  const more = [];
+  const shown = new Set();
+  for (const bus of buses) {
+    if (!lines.includes(bus.line)) continue;
+    if (shown.has(bus.line)) more.push(bus);
+    else {
+      shown.add(bus.line);
+      next.push(bus);
+    }
+  }
+  return {
+    id: crypto.randomUUID(),
+    stopId: stop.id,
+    title: `Parada ${stop.id}`,
+    stopName: stop.name,
+    icon: 'Bus',
+    lines,
+    buses: next,
+    moreBuses: more,
+  };
+}

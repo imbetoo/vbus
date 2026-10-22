@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { MOCK_ROUTES } from '../data/mockRoutes';
 
 /**
  * Rutinas del usuario con sus próximas llegadas.
  *
- * Fase 1: devuelve los datos estáticos de `src/data/mockRoutes.js`.
+ * Parten de los datos estáticos de `src/data/mockRoutes.js`; las tarjetas que
+ * crea el usuario (`addRoute`) se añaden al final con los tiempos obtenidos de
+ * VigoBusAPI a través del adaptador.
  *
- * Futuro: las rutinas favoritas se leerán de LocalStorage y los tiempos reales
- * se pedirán a VigoBusAPI (JSON), que hace de intermediario con los endpoints
- * del ayuntamiento, así el cliente nunca los toca directamente (evita CORS).
- * La forma del array devuelto no debería cambiar.
+ * Futuro: las rutinas se guardarán en LocalStorage y sus tiempos se
+ * refrescarán solos (auto-refresh de 30 s de la Fase 2).
  */
 export function useRoutes() {
-  const [routes] = useState(MOCK_ROUTES);
-  return routes;
+  const [routes, setRoutes] = useState(MOCK_ROUTES);
+  const addRoute = useCallback((route) => setRoutes((current) => [...current, route]), []);
+  return { routes, addRoute };
 }

@@ -30,7 +30,7 @@ src/
 │   ├── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
 │   └── settings/     # botón de tema y menú de ajustes
 ├── data/        # datos de ejemplo (mockRoutes)
-├── hooks/       # useRoutes (futuro: VigoBusAPI), useTheme, useAnimatedDialog
+├── hooks/       # useRoutes, useStopLookup, useTheme, useAnimatedDialog
 ├── lib/         # utilidades (motion)
 ├── screens/     # pantallas completas (Dashboard)
 ├── services/    # VigoBusAPI: cliente y adaptador de datos
@@ -69,12 +69,17 @@ La pantalla aún usa datos estáticos (`src/data/mockRoutes.js`, vía
   (`VigoBusError.kind`: `network`, `timeout`, `not_found`, `upstream`, `http`).
 - `vigobusAdapter.js`: convierte las respuestas al formato de la UI
   (`{ id, line, color, destination, time, urgent }`).
-
 - `vigobusMock.js`: respuestas simuladas con la forma exacta de la API. **Se
   usan por defecto** mientras no haya backend; `VITE_VIGOBUS_MOCK=false`
   vuelve a las peticiones reales.
 
-En desarrollo, `App.jsx` pide la parada 3014 y muestra el resultado adaptado
+La hoja "Nueva tarjeta" ya usa este servicio: al escribir un número de parada
+(`useStopLookup`, con espera de 350 ms y cancelación) muestra la parada o un
+error, despliega sus líneas como chips y "Crear tarjeta" añade al Dashboard
+una tarjeta con los tiempos adaptados (`toRouteCard`). Las tarjetas creadas
+viven en memoria (aún no en LocalStorage) y sus tiempos no se refrescan.
+
+Además, en desarrollo, `App.jsx` pide la parada 3014 y muestra el resultado adaptado
 en la consola del navegador.
 
 ### Levantar VigoBusAPI en local
