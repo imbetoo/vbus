@@ -68,6 +68,10 @@ export default {
         'mesh-3': orbit(['-14vw, -11vh', 35, 1.15], ['11vw, 8vh', -28, 0.88], ['-6vw, 17vh', 49, 1.08]),
         'mesh-4': orbit(['20vw, -14vh', 14, 1.2], ['34vw, -6vh', -20, 1], ['14vw, -25vh', 28, 1.28]),
         'mesh-5': orbit(['-17vw, -17vh', -28, 1.15], ['-31vw, -6vh', 21, 0.92], ['-11vw, -28vh', -7, 1.2]),
+        // Entrada suave de textos que cambian (mensajes de estado, ayudas).
+        'fade-in': { from: { opacity: '0', transform: 'translateY(4px)' } },
+        // Entrada de una tarjeta nueva: su hueco crece mientras aparece.
+        'card-in': { from: { gridTemplateRows: '0fr', opacity: '0', transform: 'scale(0.9)' } },
       },
       // Duraciones desiguales y desfasadas para que nunca se muevan al compás.
       animation: {
@@ -76,6 +80,8 @@ export default {
         'mesh-3': 'mesh-3 50s ease-in-out -17s infinite alternate',
         'mesh-4': 'mesh-4 57s ease-in-out -23s infinite alternate',
         'mesh-5': 'mesh-5 64s ease-in-out -31s infinite alternate',
+        'fade-in': 'fade-in 250ms ease-out',
+        'card-in': 'card-in 500ms ease-out',
       },
       // Cristal: brillo interior de 1px en el canto superior + sombra exterior
       // suave que despega la tarjeta del fondo.

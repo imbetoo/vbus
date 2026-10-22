@@ -1,7 +1,11 @@
 import IconTile from './IconTile';
 
 /**
- * Cabecera de tarjeta: pastilla de icono, título bold y subtítulo medium. Por defecto recorta el texto; con `wrap` lo deja partirse.
+ * Cabecera de tarjeta: pastilla de icono, título bold y subtítulo medium.
+ *
+ * `wrap`: por defecto todo se recorta a una línea; `true` deja partirse título
+ * y subtítulo; `'title'` solo el título, y el subtítulo se queda en una línea
+ * (su altura no cambia aunque cambie el texto, así no mueve lo de debajo).
  */
 export default function IconHeading({
   icon,
@@ -12,7 +16,8 @@ export default function IconHeading({
   titleId,
   wrap = false,
 }) {
-  const fit = wrap ? 'text-pretty' : 'truncate';
+  const titleFit = wrap ? 'text-pretty' : 'truncate';
+  const subtitleFit = wrap === true ? 'text-pretty' : 'truncate';
 
   return (
     <span className="flex min-w-0 items-center gap-3">
@@ -20,11 +25,11 @@ export default function IconHeading({
       <span className="min-w-0">
         <Title
           id={titleId}
-          className={`block ${fit} text-xl/tight font-bold tracking-[-0.015em] min-[400px]:text-2xl/tight`}
+          className={`block ${titleFit} text-xl/tight font-bold tracking-[-0.015em] min-[400px]:text-2xl/tight`}
         >
           {title}
         </Title>
-        <span className={`block ${fit} text-base font-medium text-white/85`}>{subtitle}</span>
+        <span className={`block ${subtitleFit} text-base font-medium text-white/85`}>{subtitle}</span>
       </span>
     </span>
   );

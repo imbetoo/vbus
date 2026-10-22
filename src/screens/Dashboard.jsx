@@ -15,8 +15,9 @@ import { useTheme } from '../hooks/useTheme';
 const SCROLL_FADE =
   '[mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)]';
 
-// Duración de la salida de una tarjeta antes de quitarla del estado.
-const REMOVE_MS = 300;
+// Duración de la salida de una tarjeta antes de quitarla del estado (igual que
+// su `duration-500` en la lista).
+const REMOVE_MS = 500;
 
 /** Mensaje de la lista vacía (la app empieza sin tarjetas). */
 function EmptyState() {
@@ -83,13 +84,24 @@ export default function Dashboard({ settings, onSettingChange }) {
       <main
         className={`-mx-5 mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${SCROLL_FADE}`}
       >
-        {routes.length === 0 ? (
-          <EmptyState />
-        ) : (
-          // `pb-24`: la última tarjeta puede subir por encima del degradado.
+        <div className="relative min-h-full">
+          {/* El mensaje de lista vacía está siempre montado y entra/sale con un
+              fundido (con retardo al aparecer, para no pisar la salida de la
+              última tarjeta). */}
+          <div
+            inert={routes.length > 0}
+            className={`absolute inset-0 transition-opacity ease-out motion-reduce:transition-none ${
+              routes.length > 0 ? 'opacity-0 duration-300' : 'opacity-100 delay-150 duration-500'
+            }`}
+          >
+            <EmptyState />
+          </div>
+
+          {/* `pb-24`: la última tarjeta puede subir por encima del degradado. */}
           <ul className="flex flex-col pb-24 pt-4">
             {routes.map((route) => {
               const leaving = leavingIds.has(route.id);
+              // Entrada (`animate-card-in`): su hueco crece mientras aparece.
               // Salida: se desvanece y encoge mientras su hueco (alto + separación,
               // `pb-5`) se cierra con la técnica de grid, y las de abajo suben.
               // `minmax(0,1fr)` mantiene la tarjeta al ancho de la lista.
@@ -97,7 +109,7 @@ export default function Dashboard({ settings, onSettingChange }) {
                 <li
                   key={route.id}
                   inert={leaving}
-                  className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity,transform] duration-300 ease-smooth ${
+                  className={`grid animate-card-in grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity,transform] duration-500 ease-out motion-reduce:animate-none ${
                     leaving ? 'pointer-events-none scale-90 grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
                   }`}
                 >
@@ -105,7 +117,6 @@ export default function Dashboard({ settings, onSettingChange }) {
                     <div className="pb-5">
                       <RouteCard
                         {...route}
-                        busesToShow={settings.busesToShow}
                         sortBy={settings.sortBy}
                         onRemove={() => handleRemove(route.id)}
                       />
@@ -115,7 +126,7 @@ export default function Dashboard({ settings, onSettingChange }) {
               );
             })}
           </ul>
-        )}
+        </div>
       </main>
 
       <div className="shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-2">

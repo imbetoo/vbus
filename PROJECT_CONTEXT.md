@@ -45,7 +45,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   lentos que solo animan `transform`, con velo blanco al 15 % (navy al 45 % en
   oscuro) y grano fino estático. Sin lag (60 fps).
 - **Tarjetas (cristal):** `bg-[#272727]/50` con degradado interior sutil,
-  `backdrop-blur-md`, borde de 2px (`border-white/15` en claro,
+  `backdrop-blur-md` solo en elementos fijos (las tarjetas de rutas, que hacen
+  scroll, van sin desenfoque y con un grano fino al 7 %), borde de 2px (`border-white/15` en claro,
   `border-[#272727]/60` en oscuro), sombra `shadow-glass` (brillo de 1px en el
   canto superior + sombra exterior suave), `rounded-[32px]` y `p-5`.
 - **Estilo Bento / Soft Dark (referencia: extensión del usuario):** hojas y
@@ -76,26 +77,35 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Layout del Dashboard:** pantalla completa (`h-[100dvh]`, flex en
   columna): cabecera arriba, tarjetas con scroll propio en medio (sin barra,
   con máscara en degradado que las desvanece al llegar abajo) y "Crear nueva
-  tarjeta" fijo abajo, respetando las safe areas. Cada tarjeta de cristal va
-  en su propia capa de GPU (`transform-gpu`, `will-change-transform`,
-  `backface-visibility: hidden`) para que el scroll no repinte el
-  `backdrop-filter` (evita el rastro oscuro).
+  tarjeta" fijo abajo, respetando las safe areas. Cada tarjeta va en su propia
+  capa de GPU (`transform-gpu`, `will-change-transform`,
+  `backface-visibility: hidden`) y las que hacen scroll no llevan
+  `backdrop-filter`: así el scroll no repinta nada (evita el rastro oscuro).
 - **Tarjetas del usuario:** la app empieza vacía (mensaje "Aún no tienes
   rutas"); cada tarjeta tiene una X discreta arriba a la derecha para
   eliminarla. Al borrar, la tarjeta se desvanece y encoge (escala 0,9) mientras
-  su hueco se cierra en 300 ms; solo entonces sale del estado.
-- **Contenido de las tarjetas:** muestran los autobuses que marque el ajuste
-  "Autobuses visibles" (2 o 3); "Ver más autobuses" despliega el resto con el
+  su hueco se cierra en 500 ms `ease-out`; solo entonces sale del estado. Las
+  tarjetas nuevas entran con la animación inversa y el mensaje de lista vacía
+  funde al aparecer y desaparecer.
+- **Nada aparece de golpe:** mensajes de estado y textos que cambian entran con
+  `animate-fade-in`; los subtítulos de los pasos de la hoja van en una sola
+  línea para que su alto no cambie y no muevan el contenido.
+- **Contenido de las tarjetas:** cada tarjeta tiene su propio nombre (si se
+  deja vacío, el de la parada, y el subtítulo pasa a "Parada N") y su propio
+  número de autobuses visibles (2 o 3), elegidos al crearla en el paso
+  "Personaliza la tarjeta"; "Ver más autobuses" despliega el resto con el
   mismo plegado animado que los acordeones (componente `Collapse`) y su
   chevron (›) gira hacia arriba al expandir. El orden lo marca el ajuste
   "Ordenar autobuses por": llegada (menos minutos primero) o preferencia (el
   próximo de cada línea en el orden en que se eligieron, luego el resto).
-- **Selección de líneas:** pastillas de cristal con margen simétrico; al
-  elegir una aparece a su lado un círculo blanco con su número de prioridad
-  (1, 2, 3…). El paso de líneas usa el icono `Route`.
+- **Selección de líneas:** pastillas de cristal de ancho fijo: el círculo de
+  prioridad siempre ocupa su sitio (anillo vacío sin elegir, blanco con su
+  número 1, 2, 3… al elegir), así nada salta de fila. El paso de líneas usa el
+  icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
-  (pulgar blanco que se desliza; accesibles como grupo de radios). Se guardan
-  en LocalStorage (`useSettings`, en `App.jsx`).
+  (pulgar blanco que se desliza; accesibles como grupo de radios). Hoy solo
+  "Ordenar autobuses por"; se guarda en LocalStorage (`useSettings`, en
+  `App.jsx`).
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

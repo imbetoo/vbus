@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'vbus:settings';
 
-/** Ajustes por defecto: cuántos autobuses ve cada tarjeta sin desplegar y cómo se ordenan. */
-export const DEFAULT_SETTINGS = { busesToShow: 3, sortBy: 'time' };
+/**
+ * Ajustes por defecto: cómo se ordenan los autobuses de las tarjetas. (Cuántos
+ * se ven lo elige cada tarjeta al crearla.)
+ */
+export const DEFAULT_SETTINGS = { sortBy: 'time' };
 
 const VALID = {
-  busesToShow: [2, 3],
   sortBy: ['time', 'preference'],
 };
 

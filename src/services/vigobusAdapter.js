@@ -69,19 +69,22 @@ export function uniqueLines(buses) {
 
 /**
  * Tarjeta de rutina para el Dashboard (la que recibe `RouteCard`) a partir de
- * una parada, sus llegadas adaptadas y las líneas elegidas. `lines` va en el
- * orden en que el usuario las eligió (su prioridad); `buses` guarda las
- * llegadas de esas líneas y la tarjeta las ordena según los ajustes
- * (`sortBuses`).
+ * una parada, sus llegadas adaptadas y lo que eligió el usuario:
+ * - `lines`: en el orden en que las eligió (su prioridad); `buses` guarda las
+ *   llegadas de esas líneas y la tarjeta las ordena según los ajustes
+ *   (`sortBuses`).
+ * - `title`: nombre personalizado; si queda vacío, el nombre de la parada.
+ * - `busesToShow`: autobuses visibles en esta tarjeta sin desplegar (2 o 3).
  */
-export function toRouteCard({ stop, buses, lines }) {
+export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3 }) {
   return {
     id: crypto.randomUUID(),
     stopId: stop.id,
-    title: `Parada ${stop.id}`,
+    title: title.trim() || stop.name,
     stopName: stop.name,
     icon: 'Bus',
     lines,
+    busesToShow,
     buses: buses.filter((bus) => lines.includes(bus.line)),
   };
 }

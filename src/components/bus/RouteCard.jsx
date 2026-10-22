@@ -15,11 +15,15 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
 
 /**
  * Tarjeta de una rutina. Ordena sus autobuses según `sortBy` (ajustes), enseña
- * los `busesToShow` primeros y "Ver más autobuses" despliega el resto,
- * haciendo crecer la tarjeta.
+ * los `busesToShow` primeros (elegidos al crearla) y "Ver más autobuses"
+ * despliega el resto, haciendo crecer la tarjeta.
+ *
+ * Va sin `backdrop-filter` (`blur={false}`): se desplaza con el scroll y el
+ * desenfoque en movimiento deja rastro.
  */
 export default function RouteCard({
   title,
+  stopId,
   stopName,
   icon,
   buses,
@@ -31,15 +35,18 @@ export default function RouteCard({
   const [showMore, setShowMore] = useState(false);
   const moreId = useId();
   const Icon = ROUTE_ICONS[icon] ?? House;
+  // Con nombre propio, el subtítulo dice desde dónde; si el título ya es el
+  // nombre de la parada, dice su número.
+  const subtitle = title === stopName && stopId ? `Parada ${stopId}` : `Desde ${stopName}`;
   const sorted = sortBuses(buses, lines, sortBy);
   const visible = sorted.slice(0, busesToShow);
   const more = sorted.slice(busesToShow);
 
   return (
     // `origin-top`: el rebote al pulsar no desplaza la tarjeta mientras crece.
-    <GlassCard as="section" aria-label={title} className="origin-top">
+    <GlassCard as="section" aria-label={title} blur={false} className="origin-top">
       <div className="flex items-start gap-2">
-        <IconHeading icon={Icon} title={title} subtitle={`Desde ${stopName}`} titleAs="h2" />
+        <IconHeading icon={Icon} title={title} subtitle={subtitle} titleAs="h2" />
         {onRemove && (
           <IconButton
             icon={X}

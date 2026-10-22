@@ -5,11 +5,6 @@ import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
 
-const BUSES_OPTIONS = [
-  { value: 2, label: '2' },
-  { value: 3, label: '3' },
-];
-
 const SORT_OPTIONS = [
   { value: 'time', label: 'Llegada' },
   { value: 'preference', label: 'Preferencia' },
@@ -20,7 +15,7 @@ function SettingRow({ title, description, children }) {
   return (
     <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
       <h3 className="text-base font-semibold tracking-[-0.01em]">{title}</h3>
-      <p className="mb-3 mt-0.5 text-sm font-medium text-white/60">{description}</p>
+      <div className="mb-3 mt-0.5 text-sm font-medium text-white/60">{description}</div>
       {children}
     </section>
   );
@@ -41,23 +36,14 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
         </header>
 
         <SettingRow
-          title="Autobuses visibles"
-          description="Cuántos se ven en cada tarjeta antes de «Ver más autobuses»."
-        >
-          <SegmentedControl
-            label="Autobuses visibles por defecto"
-            options={BUSES_OPTIONS}
-            value={settings.busesToShow}
-            onChange={(value) => onChange('busesToShow', value)}
-          />
-        </SettingRow>
-
-        <SettingRow
           title="Ordenar autobuses por"
           description={
-            settings.sortBy === 'time'
-              ? 'El que llega antes, primero.'
-              : 'Tus líneas en el orden en que las elegiste.'
+            // `key`: al cambiar de opción, la explicación nueva entra con un fundido.
+            <span key={settings.sortBy} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.sortBy === 'time'
+                ? 'El que llega antes, primero.'
+                : 'Tus líneas en el orden en que las elegiste.'}
+            </span>
           }
         >
           <SegmentedControl
