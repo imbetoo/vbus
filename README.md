@@ -33,6 +33,7 @@ src/
 ├── hooks/       # useRoutes (futuro: VigoBusAPI), useTheme, useAnimatedDialog
 ├── lib/         # utilidades (motion)
 ├── screens/     # pantallas completas (Dashboard)
+├── services/    # VigoBusAPI: cliente y adaptador de datos
 ├── App.jsx
 ├── index.css    # directivas de Tailwind y estilos base
 └── main.jsx
@@ -60,6 +61,27 @@ rosáceo) en `src/components/ui/MeshBackground.jsx`.
 
 ## Datos
 
-Fase 1: datos estáticos (`src/data/mockRoutes.js`) servidos por `useRoutes`.
-Más adelante los favoritos se guardarán en LocalStorage y los tiempos reales
-vendrán de VigoBusAPI (JSON), que evita los bloqueos de CORS.
+La pantalla aún usa datos estáticos (`src/data/mockRoutes.js`, vía
+`useRoutes`). La capa de datos reales ya existe en `src/services/`:
+
+- `vigobus.js`: cliente de [VigoBusAPI](https://github.com/David-Lor/VigoBusAPI)
+  (`getStop(id)`, `getBuses(id, { all })`) con errores tipados
+  (`VigoBusError.kind`: `network`, `timeout`, `not_found`, `upstream`, `http`).
+- `vigobusAdapter.js`: convierte las respuestas al formato de la UI
+  (`{ id, line, color, destination, time, urgent }`).
+
+En desarrollo, `App.jsx` hace una petición de prueba a la parada 3014 y la
+muestra en la consola del navegador.
+
+### Levantar VigoBusAPI en local
+
+VigoBusAPI no tiene instancia pública: hay que ejecutarla aparte (Python +
+MongoDB; ver su repositorio). Escucha en `http://localhost:5000`. Como no
+envía cabeceras CORS, la app llama a `/vigobus/...` y Vite lo reenvía a la API
+(`vite.config.js`). Para otro destino:
+
+```sh
+VIGOBUS_PROXY_TARGET=http://mi-servidor:5000 npm run dev
+```
+
+Ver `.env.example` para `VITE_VIGOBUS_API_URL`.
