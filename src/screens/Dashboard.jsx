@@ -1,5 +1,6 @@
 import { BusFront, Settings } from 'lucide-react';
 import { useState } from 'react';
+import { prefersReducedMotion } from '../lib/motion';
 import RouteCard from '../components/bus/RouteCard';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
@@ -13,6 +14,9 @@ import { useTheme } from '../hooks/useTheme';
 // (y un poco arriba, bajo la cabecera) en vez de cortarse en seco.
 const SCROLL_FADE =
   '[mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)]';
+
+// Duración de la salida de una tarjeta antes de quitarla del estado.
+const REMOVE_MS = 300;
 
 /** Mensaje de la lista vacía (la app empieza sin tarjetas). */
 function EmptyState() {
@@ -36,6 +40,24 @@ export default function Dashboard() {
   const { theme, toggleTheme } = useTheme();
   const [isCreating, setIsCreating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // Tarjetas que están animando su salida: se quitan del estado al terminar.
+  const [leavingIds, setLeavingIds] = useState(() => new Set());
+
+  const handleRemove = (id) => {
+    if (prefersReducedMotion()) {
+      removeRoute(id);
+      return;
+    }
+    setLeavingIds((current) => new Set(current).add(id));
+    setTimeout(() => {
+      removeRoute(id);
+      setLeavingIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
+    }, REMOVE_MS);
+  };
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
@@ -64,13 +86,29 @@ export default function Dashboard() {
         {routes.length === 0 ? (
           <EmptyState />
         ) : (
-          // `pb-28`: la última tarjeta puede subir por encima del degradado.
-          <ul className="flex flex-col gap-5 pb-28 pt-4">
-            {routes.map((route) => (
-              <li key={route.id}>
-                <RouteCard {...route} onRemove={() => removeRoute(route.id)} />
-              </li>
-            ))}
+          // `pb-24`: la última tarjeta puede subir por encima del degradado.
+          <ul className="flex flex-col pb-24 pt-4">
+            {routes.map((route) => {
+              const leaving = leavingIds.has(route.id);
+              // Salida: se desvanece y encoge mientras su hueco (alto + separación,
+              // `pb-5`) se cierra con la técnica de grid, y las de abajo suben.
+              // `minmax(0,1fr)` mantiene la tarjeta al ancho de la lista.
+              return (
+                <li
+                  key={route.id}
+                  inert={leaving}
+                  className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity,transform] duration-300 ease-smooth ${
+                    leaving ? 'pointer-events-none scale-90 grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
+                  }`}
+                >
+                  <div className={`min-h-0 ${leaving ? 'overflow-hidden' : ''}`}>
+                    <div className="pb-5">
+                      <RouteCard {...route} onRemove={() => handleRemove(route.id)} />
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </main>

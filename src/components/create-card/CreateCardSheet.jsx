@@ -1,4 +1,4 @@
-import { BusFront, CircleAlert, CircleCheck, Plus, X } from 'lucide-react';
+import { BusFront, CircleAlert, CircleCheck, Plus, Route, X } from 'lucide-react';
 import { useId, useState } from 'react';
 import { useStopLookup } from '../../hooks/useStopLookup';
 import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
@@ -121,7 +121,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
         </StepSection>
 
         <StepSection
-          icon={BusFront}
+          icon={Route}
           title="Escoge la(s) línea(s)"
           subtitle={
             selectedLines.length
@@ -134,7 +134,9 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
           {stop ? (
             <>
               <LineChips lines={lines} selected={selectedLines} onToggle={toggleLine} />
-              <p className="mt-3 text-sm font-medium text-white/60">Toca tus líneas favoritas.</p>
+              <p className="mt-3 text-sm font-medium text-white/60">
+                Toca tus líneas en orden de preferencia: la primera saldrá arriba.
+              </p>
             </>
           ) : (
             <p className="text-base font-medium text-white/70">Selecciona primero una parada.</p>

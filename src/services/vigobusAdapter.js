@@ -68,23 +68,17 @@ export function uniqueLines(buses) {
 }
 
 /**
- * Tarjeta de rutina para el Dashboard (la que recibe `RouteCard`) a
- * partir de una parada, sus llegadas adaptadas y las líneas elegidas. Cada
- * línea muestra su próximo autobús; el resto de pasos van a `moreBuses`
- * ("Ver más autobuses").
+ * Tarjeta de rutina para el Dashboard (la que recibe `RouteCard`) a partir de
+ * una parada, sus llegadas adaptadas y las líneas elegidas.
+ *
+ * `lines` va en el orden en que el usuario las eligió (su prioridad): primero
+ * el próximo autobús de cada línea en ese orden y, después, el resto de pasos
+ * por hora de llegada. La tarjeta enseña los primeros y pliega los demás.
  */
 export function toRouteCard({ stop, buses, lines }) {
-  const next = [];
-  const more = [];
-  const shown = new Set();
-  for (const bus of buses) {
-    if (!lines.includes(bus.line)) continue;
-    if (shown.has(bus.line)) more.push(bus);
-    else {
-      shown.add(bus.line);
-      next.push(bus);
-    }
-  }
+  const chosen = buses.filter((bus) => lines.includes(bus.line));
+  const next = lines.map((line) => chosen.find((bus) => bus.line === line)).filter(Boolean);
+  const rest = chosen.filter((bus) => !next.includes(bus)).sort((a, b) => a.time - b.time);
   return {
     id: crypto.randomUUID(),
     stopId: stop.id,
@@ -92,7 +86,6 @@ export function toRouteCard({ stop, buses, lines }) {
     stopName: stop.name,
     icon: 'Bus',
     lines,
-    buses: next,
-    moreBuses: more,
+    buses: [...next, ...rest],
   };
 }

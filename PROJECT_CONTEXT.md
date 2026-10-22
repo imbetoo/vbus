@@ -82,7 +82,14 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `backdrop-filter` (evita el rastro oscuro).
 - **Tarjetas del usuario:** la app empieza vacía (mensaje "Aún no tienes
   rutas"); cada tarjeta tiene una X discreta arriba a la derecha para
-  eliminarla.
+  eliminarla. Al borrar, la tarjeta se desvanece y encoge (escala 0,9) mientras
+  su hueco se cierra en 300 ms; solo entonces sale del estado.
+- **Contenido de las tarjetas:** muestran 3 autobuses; "Ver más autobuses"
+  despliega el resto con el mismo plegado animado que los acordeones
+  (componente `Collapse`). Las líneas se ordenan por la prioridad elegida en
+  la hoja (el orden en que se tocaron), y después el resto por hora.
+- **Selección de líneas:** pastillas de cristal; al elegir una aparece un
+  check junto al nombre. El paso de líneas usa el icono `Route`.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

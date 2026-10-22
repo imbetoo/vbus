@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import Collapse from '../ui/Collapse';
 import IconHeading from '../ui/IconHeading';
 import { PRESSABLE } from '../ui/pressable';
 
@@ -22,28 +23,10 @@ export default function StepSection({ icon, title, subtitle, open, onToggle, chi
         <IconHeading icon={icon} title={title} subtitle={subtitle} wrap />
       </button>
 
-      {/* Acordeón: `grid-template-rows` 0fr → 1fr anima la altura real del
-          contenido sin medirla en JS, con la curva suave de las hojas de iOS.
-          El contenido aparece cuando ya hay sitio (opacidad con retardo) y se
-          desvanece rápido antes de plegarse. Plegado queda `inert` (sin foco). */}
-      <div
-        id={panelId}
-        inert={!open}
-        className={`grid transition-[grid-template-rows] duration-[450ms] ease-smooth motion-reduce:transition-none ${
-          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-        }`}
-      >
-        <div className="min-h-0 overflow-hidden">
-          {/* `pt-1` deja sitio al anillo de foco del buscador. */}
-          <div
-            className={`px-4 pb-4 pt-1 transition-opacity ease-out motion-reduce:transition-none ${
-              open ? 'opacity-100 delay-100 duration-300' : 'opacity-0 duration-150'
-            }`}
-          >
-            {children}
-          </div>
-        </div>
-      </div>
+      {/* `pt-1` deja sitio al anillo de foco del buscador. */}
+      <Collapse id={panelId} open={open} className="px-4 pb-4 pt-1">
+        {children}
+      </Collapse>
     </section>
   );
 }
