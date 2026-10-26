@@ -23,8 +23,9 @@ export const VIGOBUS_API_URL = (import.meta.env.VITE_VIGOBUS_API_URL || '/vigobu
 // vuelve a las peticiones reales.
 export const VIGOBUS_USE_MOCK = import.meta.env.VITE_VIGOBUS_MOCK !== 'false';
 
-// La API espera hasta 30 s a la fuente de Vitrasa; no tiene sentido esperar más.
-const TIMEOUT_MS = 30_000;
+// El backend gratuito de Render se duerme tras 15 min sin uso y tarda ~50 s
+// en despertar: se espera hasta 60 s antes de dar la petición por perdida.
+const TIMEOUT_MS = 60_000;
 
 /**
  * Error de VigoBusAPI con un `kind` para que la UI decida qué mostrar:
@@ -97,6 +98,16 @@ function assertStopId(stopId) {
   if (!Number.isInteger(Number(stopId)) || Number(stopId) <= 0) {
     throw new VigoBusError(`ID de parada no válido: ${stopId}`, { kind: 'http' });
   }
+}
+
+/**
+ * Despierta el backend (Render se duerme sin uso) al abrir la app, para que
+ * esté listo cuando lleguen las peticiones de verdad. No espera respuesta ni
+ * falla; con datos simulados no hace nada.
+ */
+export function wakeApi() {
+  if (VIGOBUS_USE_MOCK) return;
+  fetch(`${VIGOBUS_API_URL}/status`).catch(() => {});
 }
 
 /** Información de una parada (nombre y ubicación). Respuesta cruda de la API. */

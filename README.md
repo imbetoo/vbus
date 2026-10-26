@@ -167,7 +167,8 @@ npm run dev:api
    → conecta GitHub y elige el repo `vbus`.
 2. Rellena:
    - **Name:** `vigobus-api` (la URL será `https://vigobus-api.onrender.com`).
-   - **Branch:** la rama que quieras desplegar.
+   - **Branch:** `claude/relaxed-ramanujan-i5p99a` (la rama de trabajo; `main`
+     aún no tiene el backend).
    - **Root Directory:** `backend`
    - **Runtime / Language:** `Python 3`
    - **Build Command:** `pip install -r requirements.txt`
@@ -175,7 +176,10 @@ npm run dev:api
    - **Instance Type:** `Free`
 3. **Advanced** (o **Environment** después):
    - Variable `PYTHON_VERSION` = `3.13`.
-   - (Opcional) `CORS_ORIGINS` si la app vive en otro dominio.
+   - (Opcional) `CORS_ORIGINS` / `CORS_ORIGIN_REGEX` si la app vive en otro
+     dominio. Por defecto ya se permiten localhost y cualquier despliegue
+     del proyecto `vbus` en Vercel (`https://vbus-….vercel.app`, previews
+     incluidas).
    - **Health Check Path:** `/status`.
 4. **Create Web Service** y espera a "Live". Comprueba
    `https://vigobus-api.onrender.com/status` (→ `OK`) y
@@ -184,16 +188,22 @@ npm run dev:api
 Alternativa: **New** → **Blueprint** con este repo usa `render.yaml`, que
 crea el mismo servicio.
 
-El plan gratuito se duerme tras 15 min sin peticiones: la primera vuelve a
-tardar ~1 min (la app puede mostrar un error de tiempo agotado; al tirar para
-actualizar ya responde).
+El plan gratuito se duerme tras 15 min sin peticiones y tarda ~50 s en
+despertar. La app lo avisa nada más abrirse (`wakeApi()` → `/status`) y
+espera hasta 60 s por respuesta; si aun así se agota, el buscador dice "El
+servidor está arrancando" y basta con reintentar.
 
 ### Conectar la app de Vercel
 
-En Vercel → proyecto → **Settings** → **Environment Variables**:
-
-- `VITE_VIGOBUS_MOCK` = `false`
-- `VITE_VIGOBUS_API_URL` = `https://vigobus-api.onrender.com`
-
-Las variables `VITE_*` se leen al compilar: haz **Redeploy** después de
-guardarlas.
+1. Vercel → proyecto → **Settings** → **Environment Variables**, marcando
+   **Production** y **Preview**:
+   - `VITE_VIGOBUS_MOCK` = `false`
+   - `VITE_VIGOBUS_API_URL` = `https://vigobus-api.onrender.com` (la URL de
+     tu servicio de Render, sin `/` final)
+2. Elige qué rama publica Vercel:
+   - **En `vbus-flame.vercel.app`:** **Settings** → **Git** → **Production
+     Branch** = `claude/relaxed-ramanujan-i5p99a`.
+   - **Sin tocar producción:** cada push a la rama crea una *Preview*; su URL
+     aparece en **Deployments** (`vbus-git-claude-…vercel.app`).
+3. **Deployments** → el último de la rama → **⋯** → **Redeploy** (las
+   variables `VITE_*` se leen al compilar).

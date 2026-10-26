@@ -24,8 +24,10 @@ fricción, sin mapas interactivos ni navegación compleja.
   `/stop/{id}`, `/buses/{id}`), leyendo `datos.vigo.org` con caché en memoria y, como infobus, 1 minuto
   de margen restado a cada estimación; los refuerzos sin línea ("-") se
   descartan. En local: `npm run dev:api`.
-  Puerto de `PORT`, CORS para localhost y Vercel (`CORS_ORIGINS`). Desplegado
-  en Render (pasos en el README, `render.yaml`).
+  Puerto de `PORT`, CORS para localhost y Vercel, previews incluidas
+  (`CORS_ORIGINS`, `CORS_ORIGIN_REGEX`). Desplegado en Render, plan free (pasos
+  en el README, `render.yaml`): como se duerme sin uso, la app lo despierta al
+  abrirse (`wakeApi()` → `/status`) y espera hasta 60 s por respuesta.
 - **Futuro:** React Native / Expo para Android e iOS.
 - **Almacenamiento:** Local (LocalStorage/AsyncStorage) para guardar paradas,
   tarjetas y preferencias. Sin base de datos externa en el cliente.

@@ -28,6 +28,8 @@ export default function CreateCardSheet({ open, onClose, onCreate }) {
 function lookupErrorMessage(error, query) {
   if (error?.kind === 'not_found') return `No existe la parada ${query.trim()}. Revisa el número de la marquesina.`;
   if (error?.kind === 'upstream') return 'Vitrasa no responde ahora mismo. Inténtalo en un momento.';
+  if (error?.kind === 'timeout') return 'El servidor está arrancando. Vuelve a intentarlo en unos segundos.';
+  if (error?.kind === 'network') return 'No se puede conectar con el servidor de VigoBus.';
   return 'No se pudo conectar con el servicio de autobuses. Inténtalo de nuevo.';
 }
 

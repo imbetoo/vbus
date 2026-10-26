@@ -125,6 +125,14 @@ def test_cors_preflight(client):
     assert response.headers["access-control-allow-origin"] == VERCEL
 
 
+def test_cors_allows_vercel_previews(client):
+    origin = "https://vbus-git-claude-relaxed-ramanujan-i5p99a-imbetoo.vercel.app"
+    response = client.get("/status", headers={"Origin": origin})
+    assert response.headers["access-control-allow-origin"] == origin
+
+
 def test_cors_rejects_other_origins(client):
-    response = client.get("/status", headers={"Origin": "https://example.com"})
-    assert "access-control-allow-origin" not in response.headers
+    for origin in ("https://example.com", "https://otro.vercel.app", "https://vbus.evil.com",
+                   "https://vbus-x.vercel.app.evil.com"):
+        response = client.get("/status", headers={"Origin": origin})
+        assert "access-control-allow-origin" not in response.headers, origin

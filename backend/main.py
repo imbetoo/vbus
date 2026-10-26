@@ -54,6 +54,11 @@ CORS_ORIGINS = [
     for origin in os.environ.get("CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
     if origin.strip()
 ]
+# Además, cualquier despliegue del proyecto `vbus` en Vercel: producción
+# (`vbus-flame`) y las previews de cada rama (`vbus-git-<rama>-…`).
+# `CORS_ORIGIN_REGEX` la sustituye (vacía = desactivada).
+DEFAULT_CORS_ORIGIN_REGEX = r"https://vbus(-[a-z0-9-]+)?\.vercel\.app"
+CORS_ORIGIN_REGEX = os.environ.get("CORS_ORIGIN_REGEX", DEFAULT_CORS_ORIGIN_REGEX) or None
 
 
 class TTLCache:
@@ -172,6 +177,7 @@ def create_app(transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=CORS_ORIGINS,
+        allow_origin_regex=CORS_ORIGIN_REGEX,
         allow_methods=["GET"],
         allow_headers=["Accept"],
         max_age=600,
