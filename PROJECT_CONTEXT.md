@@ -22,7 +22,8 @@ fricción, sin mapas interactivos ni navegación compleja.
 - **Backend:** API propia en `backend/` (FastAPI + uvicorn, Python 3.13, sin
   base de datos) con los mismos endpoints y JSON que VigoBusAPI (`/status`,
   `/stop/{id}`, `/buses/{id}`), leyendo `datos.vigo.org` con caché en memoria y, como infobus, 1 minuto
-  de margen restado a cada estimación. En local: `npm run dev:api`.
+  de margen restado a cada estimación; los refuerzos sin línea ("-") se
+  descartan. En local: `npm run dev:api`.
   Puerto de `PORT`, CORS para localhost y Vercel (`CORS_ORIGINS`). Desplegado
   en Render (pasos en el README, `render.yaml`).
 - **Futuro:** React Native / Expo para Android e iOS.

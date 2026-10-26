@@ -141,7 +141,9 @@ def parse_buses(estimaciones) -> list[dict]:
             continue
         line = str(item.get("linea", "")).strip()
         route = str(item.get("ruta", "")).strip()
-        if not line:
+        # Sin línea real ("-"): refuerzos y servicios especiales, que infobus
+        # tampoco enseña como línea.
+        if not any(char.isalnum() for char in line):
             continue
         buses.append(
             {

@@ -91,9 +91,6 @@ una tarjeta con los tiempos adaptados (`toRouteCard`). Los tiempos de todas las
 tarjetas se refrescan al abrir la app, cada 30 s (`useRoutes`) y al tirar hacia
 abajo de la lista (`usePullToRefresh`).
 
-Además, en desarrollo, `App.jsx` pide la parada 3014 y muestra el resultado adaptado
-en la consola del navegador.
-
 ## Backend (`backend/`)
 
 API propia mínima en Python (FastAPI + uvicorn, sin base de datos) con los
@@ -108,7 +105,8 @@ mismos endpoints y el mismo JSON que VigoBusAPI, así el frontend no cambia:
 Lee los tiempos de la API de datos abiertos de Vigo
 (`datos.vigo.org/vci_api_app/api2.jsp`, la misma que usa VigoBusAPI), con
 caché en memoria (15 s los tiempos, 1 h las paradas). Como infobus, resta 1
-minuto a cada estimación (margen para no perder el autobús). Si la fuente falla
+minuto a cada estimación (margen para no perder el autobús) y descarta los
+refuerzos sin línea (`"-"`). Si la fuente falla
 responde 500 con `detail: "Error Vitrasa: …"`. El puerto sale de `PORT`
 (8000 por defecto) y los orígenes CORS de `CORS_ORIGINS` (por defecto
 `http://localhost:5173`, `http://localhost:4173` y

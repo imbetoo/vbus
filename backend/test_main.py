@@ -21,6 +21,8 @@ SOURCE = {
             {"linea": "15A", "ruta": "Samil", "minutos": 9},
             {"linea": "C3i", "ruta": "Encarnación por Gran Vía", "minutos": 14},
             {"linea": "4C", "ruta": "Coia", "minutos": 18},
+            # Refuerzo sin línea: se descarta.
+            {"linea": "-", "ruta": "REFORZO FIN JENARO FUENTE", "minutos": 1},
         ],
     },
     # Parada sin nombre en la fuente.
