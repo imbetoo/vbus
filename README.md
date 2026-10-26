@@ -116,7 +116,7 @@ responde 500 con `detail: "Error Vitrasa: …"`. El puerto sale de `PORT`
 ### En local
 
 Desde la carpeta `backend`. Cada línea es un comando: escríbelas una a una.
-`python -m pytest` pasa los tests (deben pasar 11) y el último comando deja
+`python -m pytest` pasa los tests (deben pasar 12) y el último comando deja
 el servidor en marcha: no cierres esa ventana y abre
 `http://localhost:5000/status` (→ `OK`).
 
@@ -177,7 +177,7 @@ En otra terminal, la app contra este backend (el proxy de Vite reenvía
    - **Health Check Path:** `/status`.
 4. **Create Web Service** y espera a "Live". Comprueba
    `https://vigobus-api.onrender.com/status` (→ `OK`) y
-   `https://vigobus-api.onrender.com/buses/3014`.
+   `https://vigobus-api.onrender.com/buses/8480`.
 
 Alternativa: **New** → **Blueprint** con este repo usa `render.yaml`, que
 crea el mismo servicio.

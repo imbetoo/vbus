@@ -1,5 +1,7 @@
 """Tests del backend con la fuente de Vitrasa simulada (`pytest`)."""
 
+import json
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
@@ -9,8 +11,9 @@ from main import create_app
 VERCEL = "https://vbus-flame.vercel.app"
 
 SOURCE = {
+    # Formato real de datos.vigo.org (con el nombre separado por dos espacios).
     3014: {
-        "parada": [{"nombre": "Policarpo Sanz, 40", "latitud": "42.2386", "longitud": "-8.7203"}],
+        "parada": [{"latitud": 42.2386, "longitud": -8.7203, "stop_vitrasa": 3014, "nombre": "Policarpo Sanz  40"}],
         "estimaciones": [
             {"linea": "11", "ruta": "Hospital Álvaro Cunqueiro", "minutos": 6},
             {"linea": "C1", "ruta": "Centro por Praza de América", "minutos": 0},
@@ -31,6 +34,12 @@ def source_handler(request: httpx.Request) -> httpx.Response:
     stop_id = int(request.url.params["id"])
     if stop_id == 666:
         return httpx.Response(503, text="Servicio no disponible")
+    if stop_id == 8480:
+        # Con tildes, la fuente responde en Latin-1 aunque diga JSON.
+        body = {"parada": [{"stop_vitrasa": 8480, "nombre": "Rúa do Conde de Torrecedeira  81"}],
+                "estimaciones": [{"minutos": 3, "ruta": "PRAZA AMÉRICA", "linea": "C1", "metros": 640}]}
+        return httpx.Response(200, content=json.dumps(body, ensure_ascii=False).encode("latin-1"),
+                              headers={"content-type": "application/json"})
     return httpx.Response(200, json=SOURCE[stop_id])
 
 
@@ -53,6 +62,11 @@ def test_stop(client):
         "lat": 42.2386,
         "lon": -8.7203,
     }
+
+
+def test_latin1_source(client):
+    assert client.get("/stop/8480").json()["name"] == "Rúa do Conde de Torrecedeira, 81"
+    assert client.get("/buses/8480").json()["buses"][0]["route"] == "PRAZA AMÉRICA"
 
 
 def test_stop_without_name(client):

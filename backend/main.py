@@ -17,7 +17,10 @@ Render; 8000 por defecto).
 """
 
 import hashlib
+import json
+import logging
 import os
+import re
 import time
 from contextlib import asynccontextmanager
 
@@ -26,6 +29,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
+
+logger = logging.getLogger("vigobus")
 
 SOURCE_URL = "https://datos.vigo.org/vci_api_app/api2.jsp"
 SOURCE_TIMEOUT_S = 10
@@ -74,6 +79,23 @@ class SourceError(Exception):
     """La fuente de Vitrasa falló o respondió algo que no se entiende."""
 
 
+def decode_json(content: bytes):
+    """La fuente no siempre manda UTF-8: con tildes ("Rúa", "AMÉRICA") llega
+    en Latin-1/Windows-1252, y leerlo como UTF-8 fallaba."""
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        text = content.decode("cp1252", errors="replace")
+    return json.loads(text)
+
+
+def clean_stop_name(name: str) -> str:
+    """La fuente separa el número con dos espacios ("Avda. de Galicia  103");
+    infobus lo muestra con coma ("Avda. de Galicia, 103")."""
+    name = re.sub(r"\s{2,}(?=\d)", ", ", name.strip())
+    return re.sub(r"\s+", " ", name)
+
+
 def first(mapping: dict, *keys):
     for key in keys:
         if mapping.get(key) not in (None, ""):
@@ -102,7 +124,7 @@ def parse_stop(stop_id: int, parada) -> dict:
     name = first(info, "nombre", "name", "descripcion", "stop_name")
     return {
         "stop_id": stop_id,
-        "name": str(name).strip() if name else f"Parada {stop_id}",
+        "name": clean_stop_name(str(name)) if name else f"Parada {stop_id}",
         "lat": to_float(first(info, "lat", "latitud", "latitude")),
         "lon": to_float(first(info, "lon", "lng", "longitud", "longitude")),
     }
@@ -161,11 +183,12 @@ def create_app(transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
             try:
                 response = await app.state.client.get(SOURCE_URL, params=params)
                 response.raise_for_status()
-                data = response.json()
+                data = decode_json(response.content)
                 break
             except (httpx.HTTPError, ValueError) as error:
                 last_error = error
         else:
+            logger.warning("Fallo al pedir la parada %s a Vitrasa: %r", stop_id, last_error)
             raise SourceError(f"{type(last_error).__name__}: {last_error}")
         if not isinstance(data, dict):
             raise SourceError("respuesta con un formato inesperado")
