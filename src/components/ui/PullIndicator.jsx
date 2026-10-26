@@ -11,7 +11,7 @@ export default function PullIndicator({ refreshing }) {
     <>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center"
+        className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center will-change-[transform,opacity]"
         style={{
           transform: 'translate3d(0, calc(var(--pull, 0px) - 44px), 0) scale(calc(0.6 + 0.4 * var(--pull-progress, 0)))',
           opacity: 'var(--pull-progress, 0)',

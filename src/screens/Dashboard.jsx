@@ -107,7 +107,7 @@ export default function Dashboard({ settings, onSettingChange }) {
         className={`min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 will-change-transform ${SCROLL_FADE}`}
       >
         <div
-          className="relative min-h-full"
+          className="relative min-h-full will-change-transform"
           style={{ transform: 'translate3d(0, var(--pull, 0px), 0)', transition: 'var(--pull-transition, none)' }}
         >
           {/* El mensaje de lista vacía está siempre montado y entra/sale con un

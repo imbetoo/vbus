@@ -39,7 +39,7 @@ export default function ColorPicker({ value, onChange }) {
               }`}
             >
               <Check
-                className={`h-4 w-4 transition-all duration-300 ease-spring motion-reduce:transition-none ${
+                className={`h-4 w-4 transition-[transform,opacity] duration-300 ease-spring motion-reduce:transition-none ${
                   selected ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
                 }`}
                 strokeWidth={3}

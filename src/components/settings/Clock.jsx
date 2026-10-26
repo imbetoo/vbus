@@ -25,14 +25,14 @@ export default function Clock() {
         <span
           key={`out-${shown.previous}`}
           aria-hidden="true"
-          className="absolute inset-0 animate-clock-out motion-reduce:hidden"
+          className="absolute inset-0 animate-clock-out will-change-transform motion-reduce:hidden"
         >
           {shown.previous}
         </span>
       )}
       <span
         key={shown.current}
-        className={`block ${shown.previous ? 'animate-clock-in motion-reduce:animate-none' : ''}`}
+        className={`block ${shown.previous ? 'animate-clock-in will-change-transform motion-reduce:animate-none' : ''}`}
       >
         {shown.current}
       </span>

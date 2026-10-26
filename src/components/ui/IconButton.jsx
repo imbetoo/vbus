@@ -1,11 +1,13 @@
 import { PRESSABLE } from './pressable';
 
 // `glass`: sobre hojas y modales grafito. `adaptive`: sobre el fondo de la
-// app, legible en claro y en oscuro.
+// app, legible en claro y en oscuro. Sin `backdrop-blur`: detrás se mueve el
+// mesh, así que el desenfoque se recalculaba en cada fotograma (lag en Android).
+// Un blanco más opaco da el mismo aspecto.
 const TONES = {
   glass: 'bg-white/15 text-white active:bg-white/25 focus-visible:ring-white',
   adaptive:
-    'bg-white/60 text-black ring-1 ring-black/10 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-black dark:bg-white/10 dark:text-white dark:ring-white/10 dark:focus-visible:ring-white',
+    'bg-white/70 text-black ring-1 ring-black/10 focus-visible:ring-2 focus-visible:ring-black dark:bg-white/15 dark:text-white dark:ring-white/10 dark:focus-visible:ring-white',
 };
 
 // `md`: 40px. `sm`: 32px, para acciones secundarias dentro de tarjetas. En

@@ -1,7 +1,7 @@
 import { Moon, Sun } from 'lucide-react';
 import IconButton from '../ui/IconButton';
 
-const ICON = 'absolute inset-0 h-full w-full transition-all duration-500 ease-spring motion-reduce:transition-none';
+const ICON = 'absolute inset-0 h-full w-full transition-[transform,opacity] duration-500 ease-spring motion-reduce:transition-none';
 
 /** Botón Sol/Luna: muestra el tema al que se cambia y gira al alternar. */
 export default function ThemeToggle({ theme, onToggle }) {

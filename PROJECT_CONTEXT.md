@@ -53,8 +53,16 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   movimiento dejaba rastro negro en Chromium/WebKit), borde de 2px
   (`border-white/15` en claro, `border-[#272727]/60` en oscuro), sombra
   `shadow-glass` (brillo de 1px en el canto superior + sombra exterior suave),
-  `rounded-[32px]` y `p-5`. El desenfoque queda solo para elementos fijos fuera
-  de la lista (botones de la cabecera y fondo de hojas y modales).
+  `rounded-[32px]` y `p-5`.
+- **Rendimiento (Android):** la app no usa `backdrop-filter` en ningún sitio:
+  todo lo que hay delante del mesh animado lo recalculaba en cada fotograma.
+  Botones de la cabecera en blanco más opaco (`bg-white/70`, `bg-white/15` en
+  oscuro); hojas y modales `bg-graphite/[0.97]` sobre un velo `bg-black/50`
+  sin desenfoque. Los contenedores con scroll llevan `transform-gpu`; las
+  animaciones (reloj, modales, hojas, tirar para actualizar) solo tocan
+  `transform`/`opacity` con su `will-change`, y ninguna transición usa
+  `transition-all` (`PRESSABLE` transiciona `transform`, `opacity` y
+  `background-color`).
 - **Relieve 3D:** `shadow-relief` (luz interior arriba, sombra interior abajo)
   en distintivos de línea, pastillas de icono y círculos del selector de color.
 - **Scroll:** ningún contenedor muestra barra de desplazamiento (regla global
@@ -70,7 +78,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo los botones
   Sol/Luna y Ajustes.
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
-  sutiles (`bg-white/60` en claro, `bg-white/10` en oscuro).
+  sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
 - **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
   hoja rebotan con `active:scale-[0.97]` en 400 ms y curva
   `cubic-bezier(0.25, 1, 0.5, 1)` (`ease-spring`), definido una sola vez en
@@ -81,9 +89,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   exactamente a la vez (nada de transiciones de color por elemento).
 - **Hojas y modales:** entran **y salen** animados (`useAnimatedDialog`): la
   hoja inferior sube/baja deslizándose y el menú de ajustes funde y escala
-  (95 % → 100 %); el resto de la pantalla se oscurece y desenfoca. Mientras
-  hay un diálogo abierto el mesh se pausa (no se ve y así el desenfoque no se
-  recalcula en cada fotograma).
+  (95 % → 100 %); el resto de la pantalla se oscurece (sin desenfoque).
+  Mientras hay un diálogo abierto el mesh se pausa (no se ve y así no gasta
+  GPU).
 - **Acordeones:** los pasos de la hoja se despliegan con `grid-template-rows`
   0fr → 1fr en 450 ms con la curva de hojas de iOS
   `cubic-bezier(0.32, 0.72, 0, 1)` (`ease-smooth`); el contenido aparece con
