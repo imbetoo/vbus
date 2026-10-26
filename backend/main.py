@@ -215,6 +215,11 @@ def create_app(transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
         except SourceError as error:
             raise HTTPException(status_code=500, detail=f"Error Vitrasa: {error}") from error
 
+    @app.get("/", response_class=PlainTextResponse)
+    async def root():
+        # Para quien abra la URL del servicio en el navegador.
+        return "VigoBus API funcionando. Prueba /status o /buses/8480."
+
     @app.get("/status", response_class=PlainTextResponse)
     async def status():
         return "OK"
