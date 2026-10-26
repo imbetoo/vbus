@@ -134,6 +134,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Hecho: refresco automático cada 30 s (`useRoutes`), también al abrir la app y
   al volver a la pestaña; pausado con la pestaña oculta. Con datos simulados,
   los minutos descuentan con el reloj real.
+- Hecho: "tirar para actualizar" (`usePullToRefresh` + `PullIndicator`). Solo
+  empieza con la lista arriba del todo y el dedo bajando; banda elástica de
+  iOS; el indicador de cristal baja, aparece y gira según lo que se tira.
+  Pasados 64 px, la lista se queda a 56 px girando mientras `refresh()` de
+  `useRoutes` pide los tiempos (mínimo 700 ms) y vuelve con un muelle de
+  500 ms; por debajo, vuelve sin refrescar. La posición va en variables CSS
+  (`--pull`, `--pull-progress`), sin renders de React, con `translate3d`.
 
 - Fuente: VigoBusAPI (devuelve JSON limpio scrapeando el endpoint del
   ayuntamiento).

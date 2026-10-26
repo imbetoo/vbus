@@ -1,5 +1,5 @@
 import { BusFront, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 import RouteCard from '../components/bus/RouteCard';
 import CreateCardButton from '../components/create-card/CreateCardButton';
@@ -8,6 +8,8 @@ import Clock from '../components/settings/Clock';
 import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
+import PullIndicator from '../components/ui/PullIndicator';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
 import { useTheme } from '../hooks/useTheme';
 
@@ -38,7 +40,11 @@ function EmptyState() {
  * con scroll propio en medio y "Crear nueva tarjeta" fijo abajo.
  */
 export default function Dashboard({ settings, onSettingChange }) {
-  const { routes, addRoute, removeRoute } = useRoutes();
+  const { routes, addRoute, removeRoute, refresh } = useRoutes();
+  // Tirar hacia abajo desde arriba del todo vuelve a pedir los tiempos.
+  const scrollRef = useRef(null);
+  const trackRef = useRef(null);
+  const refreshing = usePullToRefresh({ scrollRef, trackRef, onRefresh: refresh });
   const { theme, toggleTheme } = useTheme();
   const [isCreating, setIsCreating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -92,10 +98,18 @@ export default function Dashboard({ settings, onSettingChange }) {
           Va en una única capa de GPU (`transform-gpu`, `will-change`) y nada de
           lo que contiene usa `backdrop-filter`: el scroll solo desplaza esa
           capa ya dibujada. */}
+      {/* Pista del "tirar para actualizar": recorta el indicador (que espera
+          oculto por encima) y lleva las variables CSS del gesto. */}
+      <div ref={trackRef} className="relative -mx-5 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+        <PullIndicator refreshing={refreshing} />
       <main
-        className={`-mx-5 mt-2 min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 will-change-transform ${SCROLL_FADE}`}
+        ref={scrollRef}
+        className={`min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 will-change-transform ${SCROLL_FADE}`}
       >
-        <div className="relative min-h-full">
+        <div
+          className="relative min-h-full"
+          style={{ transform: 'translate3d(0, var(--pull, 0px), 0)', transition: 'var(--pull-transition, none)' }}
+        >
           {/* El mensaje de lista vacía está siempre montado y entra/sale con un
               fundido (con retardo al aparecer, para no pisar la salida de la
               última tarjeta). */}
@@ -139,6 +153,7 @@ export default function Dashboard({ settings, onSettingChange }) {
           </ul>
         </div>
       </main>
+      </div>
 
       <div className="shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-2">
         <CreateCardButton onClick={() => setIsCreating(true)} />

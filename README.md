@@ -29,7 +29,7 @@ src/
 │   ├── bus/          # dominio de autobuses (RouteCard, BusLineItem, LineBadge, ArrivalTime)
 │   ├── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
 │   └── settings/     # botón de tema y menú de ajustes
-├── hooks/       # useRoutes, useSettings, useStopLookup, useTheme, useClock, useAnimatedDialog
+├── hooks/       # useRoutes, useSettings, useStopLookup, useTheme, useClock, useAnimatedDialog, usePullToRefresh
 ├── lib/         # utilidades (motion)
 ├── screens/     # pantallas completas (Dashboard)
 ├── services/    # VigoBusAPI: cliente y adaptador de datos
@@ -77,7 +77,8 @@ La hoja "Nueva tarjeta" ya usa este servicio: al escribir un número de parada
 (`useStopLookup`, con espera de 350 ms y cancelación) muestra la parada o un
 error, despliega sus líneas como chips y "Crear tarjeta" añade al Dashboard
 una tarjeta con los tiempos adaptados (`toRouteCard`). Los tiempos de todas las
-tarjetas se refrescan al abrir la app y cada 30 s (`useRoutes`).
+tarjetas se refrescan al abrir la app, cada 30 s (`useRoutes`) y al tirar hacia
+abajo de la lista (`usePullToRefresh`).
 
 Además, en desarrollo, `App.jsx` pide la parada 3014 y muestra el resultado adaptado
 en la consola del navegador.

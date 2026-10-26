@@ -37,7 +37,8 @@ function loadRoutes() {
  * Refresco automático (Fase 2): al abrir la app, cada 30 s y al volver a la
  * pestaña se piden de nuevo los autobuses de cada parada. Si una parada falla,
  * esa tarjeta conserva sus últimos tiempos (sin romper las demás). Con la
- * pestaña oculta no se pide nada.
+ * pestaña oculta no se pide nada. `refresh()` también se expone para el
+ * "tirar para actualizar" del Dashboard (devuelve una promesa).
  */
 export function useRoutes() {
   const [routes, setRoutes] = useState(loadRoutes);
@@ -56,42 +57,43 @@ export function useRoutes() {
     routesRef.current = routes;
   }, [routes]);
 
+  // Se cancela al desmontar: ninguna respuesta tardía toca el estado.
+  const abortRef = useRef(new AbortController());
+
+  const refresh = useCallback(async () => {
+    const { signal } = abortRef.current;
+    const stopIds = [...new Set(routesRef.current.map((route) => route.stopId).filter(Boolean))];
+    if (!stopIds.length) return;
+    const results = await Promise.allSettled(stopIds.map((stopId) => getBuses(stopId, { all: true, signal })));
+    if (signal.aborted) return;
+    const fresh = new Map(
+      stopIds.flatMap((stopId, i) => (results[i].status === 'fulfilled' ? [[stopId, results[i].value]] : [])),
+    );
+    if (!fresh.size) return;
+    // Actualización funcional: respeta tarjetas creadas o borradas mientras tanto.
+    setRoutes((current) =>
+      current.map((route) => (fresh.has(route.stopId) ? withFreshBuses(route, fresh.get(route.stopId)) : route)),
+    );
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
-
-    const refresh = async () => {
-      if (document.hidden) return;
-      const stopIds = [...new Set(routesRef.current.map((route) => route.stopId).filter(Boolean))];
-      if (!stopIds.length) return;
-      const results = await Promise.allSettled(
-        stopIds.map((stopId) => getBuses(stopId, { all: true, signal: controller.signal })),
-      );
-      if (controller.signal.aborted) return;
-      const fresh = new Map(
-        stopIds.flatMap((stopId, i) => (results[i].status === 'fulfilled' ? [[stopId, results[i].value]] : [])),
-      );
-      if (!fresh.size) return;
-      // Actualización funcional: respeta tarjetas creadas o borradas mientras tanto.
-      setRoutes((current) =>
-        current.map((route) => (fresh.has(route.stopId) ? withFreshBuses(route, fresh.get(route.stopId)) : route)),
-      );
-    };
-
-    const onVisible = () => {
+    abortRef.current = controller;
+    const refreshIfVisible = () => {
       if (!document.hidden) refresh();
     };
 
-    refresh();
-    const interval = setInterval(refresh, REFRESH_MS);
-    document.addEventListener('visibilitychange', onVisible);
+    refreshIfVisible();
+    const interval = setInterval(refreshIfVisible, REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshIfVisible);
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisible);
+      document.removeEventListener('visibilitychange', refreshIfVisible);
       controller.abort();
     };
-  }, []);
+  }, [refresh]);
 
   const addRoute = useCallback((route) => setRoutes((current) => [...current, route]), []);
   const removeRoute = useCallback((id) => setRoutes((current) => current.filter((route) => route.id !== id)), []);
-  return { routes, addRoute, removeRoute };
+  return { routes, addRoute, removeRoute, refresh };
 }
