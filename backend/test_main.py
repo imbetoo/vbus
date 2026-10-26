@@ -82,7 +82,8 @@ def test_unknown_stop_is_404(client):
 
 def test_buses_sorted_and_limited(client):
     body = client.get("/buses/3014").json()
-    assert [bus["time"] for bus in body["buses"]] == [0, 2, 6, 9, 14]
+    # Con el minuto de margen de infobus (6 → 5; 0 se queda en 0).
+    assert [bus["time"] for bus in body["buses"]] == [0, 1, 5, 8, 13]
     assert body["more_buses_available"] is True
     first_bus = body["buses"][0]
     assert first_bus["line"] == "C1"

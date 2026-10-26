@@ -40,6 +40,9 @@ SOURCE_RETRIES = 1
 BUSES_NORMAL_LIMIT = 5
 # Los tiempos cambian cada poco; el nombre de una parada, casi nunca.
 BUSES_TTL_S = 15
+# Como infobus de Vitrasa: se resta 1 minuto a la estimación de la fuente para
+# no perder el autobús por apurar.
+SAFETY_MARGIN_MIN = 1
 STOPS_TTL_S = 60 * 60
 CACHE_MAX_ENTRIES = 1000
 
@@ -144,7 +147,7 @@ def parse_buses(estimaciones) -> list[dict]:
             {
                 "line": line,
                 "route": route,
-                "time": to_minutes(item.get("minutos")),
+                "time": max(0, to_minutes(item.get("minutos")) - SAFETY_MARGIN_MIN),
                 # Como VigoBusAPI: MD5 de línea + ruta.
                 "bus_id": hashlib.md5(f"{line}{route}".encode()).hexdigest(),
             }
