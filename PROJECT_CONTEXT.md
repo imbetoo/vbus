@@ -13,7 +13,11 @@ fricción, sin mapas interactivos ni navegación compleja.
 
 ### Stack técnico
 
-- **Actual:** Vite + React + Tailwind CSS (SWC plugin). Configurado como PWA base.
+- **Actual:** Vite + React + Tailwind CSS (SWC plugin). PWA instalable
+  ("VigoBus") con `vite-plugin-pwa`: manifest standalone, service worker de
+  Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
+  tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
+  `black-translucent`, `apple-touch-icon`). Iconos en `public/`.
 - **Futuro:** React Native / Expo para Android e iOS.
 - **Almacenamiento:** Local (LocalStorage/AsyncStorage) para guardar paradas,
   tarjetas y preferencias. Sin base de datos externa en el cliente.
@@ -117,7 +121,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
   (pulgar blanco que se desliza; accesibles como grupo de radios). Hoy solo
   "Ordenar autobuses por"; se guarda en LocalStorage (`useSettings`, en
-  `App.jsx`).
+  `App.jsx`). Si el navegador permite instalar la app (`beforeinstallprompt`,
+  `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
+  iOS, la indicación "Compartir → Añadir a pantalla de inicio".
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

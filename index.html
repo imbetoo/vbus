@@ -13,10 +13,15 @@
     <meta name="description" content="Tus rutinas de Vitrasa con los tiempos de llegada de un vistazo." />
     <meta name="theme-color" content="#F8F6FC" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1D2D44" media="(prefers-color-scheme: dark)" />
+    <!-- PWA (el manifest lo inyecta vite-plugin-pwa en el build). En iOS, a
+         pantalla completa y con la barra de estado translúcida sobre la app
+         (las safe areas ya dejan sitio al notch). -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="vBus" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>vBus</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="VigoBus" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>VigoBus</title>
     <!-- Aplica el tema antes del primer pintado para evitar un destello. -->
     <script>
       try {

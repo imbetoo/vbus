@@ -20,6 +20,16 @@ npm run preview  # sirve el build
 npm run lint     # oxlint
 ```
 
+## PWA
+
+La app se instala como "VigoBus" (`vite-plugin-pwa`, configurado en
+`vite.config.js`). El service worker solo existe en el build: para probar la
+instalación, `npm run build && npm run preview` y abrir `http://localhost:4173`.
+En el móvil hace falta HTTPS (por IP de la red local el navegador no registra el
+service worker); en Ajustes aparece "Instalar app" cuando se puede. Los iconos
+(`public/pwa-*.png`, `maskable-icon-512x512.png`, `apple-touch-icon.png`) son
+provisionales y se pueden sustituir con el mismo nombre y tamaño.
+
 ## Estructura
 
 ```
@@ -29,7 +39,7 @@ src/
 │   ├── bus/          # dominio de autobuses (RouteCard, BusLineItem, LineBadge, ArrivalTime)
 │   ├── create-card/  # flujo "Crear nueva tarjeta" (botón, hoja y pasos)
 │   └── settings/     # botón de tema y menú de ajustes
-├── hooks/       # useRoutes, useSettings, useStopLookup, useTheme, useClock, useAnimatedDialog, usePullToRefresh
+├── hooks/       # useRoutes, useSettings, useStopLookup, useTheme, useClock, useAnimatedDialog, usePullToRefresh, useInstallPrompt
 ├── lib/         # utilidades (motion)
 ├── screens/     # pantallas completas (Dashboard)
 ├── services/    # VigoBusAPI: cliente y adaptador de datos
