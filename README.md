@@ -115,20 +115,49 @@ responde 500 con `detail: "Error Vitrasa: …"`. El puerto sale de `PORT`
 
 ### En local
 
-```sh
-cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+Desde la carpeta `backend`. Cada línea es un comando: escríbelas una a una.
+`python -m pytest` pasa los tests (deben pasar 11) y el último comando deja
+el servidor en marcha: no cierres esa ventana y abre
+`http://localhost:5000/status` (→ `OK`).
+
+**Windows · Símbolo del sistema (cmd)**
+
+```bat
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements-dev.txt
-pytest                      # tests con la fuente simulada
-PORT=5000 python main.py    # Windows (PowerShell): $env:PORT=5000; python main.py
+python -m pytest
+set PORT=5000
+python main.py
+```
+
+**Windows · PowerShell**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+python -m pytest
+$env:PORT=5000
+python main.py
+```
+
+**macOS / Linux**
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest
+PORT=5000 python main.py
 ```
 
 En otra terminal, la app contra este backend (el proxy de Vite reenvía
 `/vigobus/*` a `localhost:5000`):
 
-```sh
-VITE_VIGOBUS_MOCK=false npm run dev    # PowerShell: $env:VITE_VIGOBUS_MOCK="false"; npm run dev
-```
+- cmd: `set VITE_VIGOBUS_MOCK=false` y luego `npm run dev`
+- PowerShell: `$env:VITE_VIGOBUS_MOCK="false"` y luego `npm run dev`
+- macOS / Linux: `VITE_VIGOBUS_MOCK=false npm run dev`
 
 ### Despliegue en Render
 
