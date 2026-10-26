@@ -60,9 +60,12 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   internos `rounded-3xl bg-white/[0.06] border border-white/10`; inputs
   `rounded-2xl bg-white/10` con borde y anillo azul iOS (`accent` `#0A84FF`) al
   enfocar; acción principal en píldora blanca a todo el ancho (`PillButton`).
+- **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
+  columna, el reloj `hh:mm` (semibold, cifras tabulares, color del tema; la hora
+  nueva entra con un fundido de 800 ms al cambiar el minuto) y debajo los
+  botones Sol/Luna y Ajustes.
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
-  sutiles (`bg-white/60` en claro, `bg-white/10` en oscuro), alineados con el
-  título "Mis rutas".
+  sutiles (`bg-white/60` en claro, `bg-white/10` en oscuro).
 - **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
   hoja rebotan con `active:scale-[0.97]` en 400 ms y curva
   `cubic-bezier(0.25, 1, 0.5, 1)` (`ease-spring`), definido una sola vez en
@@ -86,11 +89,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   tarjeta" fijo abajo, respetando las safe areas. El contenedor de la lista va
   en una única capa de GPU (`transform-gpu`, `will-change-transform`) y nada
   dentro usa `backdrop-filter`: el scroll no repinta nada.
-- **Tarjetas del usuario:** la app empieza vacía (mensaje "Aún no tienes
-  rutas"); cada tarjeta tiene una X discreta arriba a la derecha para
+- **Tarjetas del usuario:** se guardan en LocalStorage (`vbus:routes`, en
+  `useRoutes`) con toda su personalización; la primera vez, o si el dato está
+  vacío o corrupto, la app empieza vacía (mensaje "Aún no tienes rutas"); cada tarjeta tiene una X discreta arriba a la derecha para
   eliminarla. Al borrar, la tarjeta se desvanece y encoge (escala 0,9) mientras
   su hueco se cierra en 800 ms `ease-out`; solo entonces sale del estado. Las
-  tarjetas nuevas entran con la animación inversa y el mensaje de lista vacía
+  tarjetas recién creadas entran con la animación inversa (las ya guardadas
+  aparecen directamente al abrir la app) y el mensaje de lista vacía
   funde al aparecer y desaparecer.
 - **Nada aparece de golpe:** mensajes de estado y textos que cambian entran con
   `animate-fade-in`; los subtítulos de los pasos de la hoja van en una sola

@@ -70,6 +70,8 @@ export default {
         'mesh-5': orbit(['-17vw, -17vh', -28, 1.15], ['-31vw, -6vh', 21, 0.92], ['-11vw, -28vh', -7, 1.2]),
         // Entrada suave de textos que cambian (mensajes de estado, ayudas).
         'fade-in': { from: { opacity: '0', transform: 'translateY(4px)' } },
+        // Cambio de minuto del reloj: fundido muy suave.
+        'clock-in': { from: { opacity: '0' } },
         // Entrada de una tarjeta nueva: su hueco crece mientras aparece.
         'card-in': { from: { gridTemplateRows: '0fr', opacity: '0', transform: 'scale(0.9)' } },
       },
@@ -81,6 +83,7 @@ export default {
         'mesh-4': 'mesh-4 57s ease-in-out -23s infinite alternate',
         'mesh-5': 'mesh-5 64s ease-in-out -31s infinite alternate',
         'fade-in': 'fade-in 250ms ease-out',
+        'clock-in': 'clock-in 800ms ease-out',
         'card-in': 'card-in 500ms ease-out',
       },
       // Cristal: brillo interior de 1px en el canto superior + sombra exterior
