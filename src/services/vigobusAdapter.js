@@ -92,6 +92,16 @@ export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, c
 }
 
 /**
+ * Tarjeta con sus llegadas actualizadas a partir de una respuesta nueva de
+ * `/buses/{id}`: conserva toda la personalización y se queda solo con las
+ * líneas elegidas.
+ */
+export function withFreshBuses(route, response) {
+  const { buses } = toBusArrivals(response);
+  return { ...route, buses: buses.filter((bus) => route.lines.includes(bus.line)), updatedAt: Date.now() };
+}
+
+/**
  * Ordena las llegadas de una tarjeta según el ajuste "Ordenar por":
  * - `time`: de menos a más minutos.
  * - `preference`: primero el próximo autobús de cada línea en el orden de

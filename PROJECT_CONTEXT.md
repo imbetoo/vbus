@@ -61,9 +61,10 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `rounded-2xl bg-white/10` con borde y anillo azul iOS (`accent` `#0A84FF`) al
   enfocar; acción principal en píldora blanca a todo el ancho (`PillButton`).
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
-  columna, el reloj `hh:mm` (semibold, cifras tabulares, color del tema; la hora
-  nueva entra con un fundido de 800 ms al cambiar el minuto) y debajo los
-  botones Sol/Luna y Ajustes.
+  columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
+  cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
+  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo los botones
+  Sol/Luna y Ajustes.
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/60` en claro, `bg-white/10` en oscuro).
 - **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
@@ -128,7 +129,11 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   El botón "Ver más autobuses" expande las líneas secundarias.
 - Interfaz de "Crear nueva tarjeta" (botón + gigante con estilo consistente).
 
-### Fase 2 · Motor de datos — *Pendiente*
+### Fase 2 · Motor de datos — *En curso*
+
+- Hecho: refresco automático cada 30 s (`useRoutes`), también al abrir la app y
+  al volver a la pestaña; pausado con la pestaña oculta. Con datos simulados,
+  los minutos descuentan con el reloj real.
 
 - Fuente: VigoBusAPI (devuelve JSON limpio scrapeando el endpoint del
   ayuntamiento).

@@ -4,7 +4,8 @@
  * el backend. Datos ilustrativos (no copiados de la parada real 3014).
  *
  * `bus_id` es, como en la API, el MD5 de `line` + `route`; `time` son minutos
- * (0 = llegando) y la lista viene ordenada por llegada.
+ * (0 = llegando) que van descontando con el reloj, y la lista viene ordenada
+ * por llegada.
  */
 
 export const MOCK_STOPS = {
@@ -35,9 +36,21 @@ export const MOCK_BUSES = {
 // Como la API (`buses_normal_limit`): sin `get_all_buses` devuelve los 5 primeros.
 const NORMAL_LIMIT = 5;
 
+// Para que el refresco se note, los minutos descuentan con el reloj real: cada
+// autobús "pasa" cada CYCLE minutos (el `time` de MOCK_BUSES es su valor en el
+// minuto 0 del ciclo).
+const CYCLE = 35;
+
+function liveTime(base, now) {
+  const elapsed = Math.floor(now / 60_000);
+  return (((base - elapsed) % CYCLE) + CYCLE) % CYCLE;
+}
+
 /** Cuerpo de `GET /buses/{stop_id}?get_all_buses=...` para una parada simulada. */
-export function mockBusesResponse(stopId, all) {
-  const buses = MOCK_BUSES[stopId] ?? [];
+export function mockBusesResponse(stopId, all, now = Date.now()) {
+  const buses = (MOCK_BUSES[stopId] ?? [])
+    .map((bus) => ({ ...bus, time: liveTime(bus.time, now) }))
+    .sort((a, b) => a.time - b.time);
   return {
     buses: all ? buses : buses.slice(0, NORMAL_LIMIT),
     more_buses_available: !all && buses.length > NORMAL_LIMIT,

@@ -76,8 +76,8 @@ autobuses visibles y líneas en orden de prioridad. Los datos vienen de `src/ser
 La hoja "Nueva tarjeta" ya usa este servicio: al escribir un número de parada
 (`useStopLookup`, con espera de 350 ms y cancelación) muestra la parada o un
 error, despliega sus líneas como chips y "Crear tarjeta" añade al Dashboard
-una tarjeta con los tiempos adaptados (`toRouteCard`). Los tiempos guardados
-son los del momento de crearla: todavía no se refrescan.
+una tarjeta con los tiempos adaptados (`toRouteCard`). Los tiempos de todas las
+tarjetas se refrescan al abrir la app y cada 30 s (`useRoutes`).
 
 Además, en desarrollo, `App.jsx` pide la parada 3014 y muestra el resultado adaptado
 en la consola del navegador.
