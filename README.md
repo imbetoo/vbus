@@ -33,6 +33,7 @@ provisionales y se pueden sustituir con el mismo nombre y tamaño.
 ## Estructura
 
 ```
+backend/         # API en Python para Render (main.py, tests, requirements)
 src/
 ├── components/
 │   ├── ui/           # genéricos (GlassCard, IconHeading, Sheet, MeshBackground…)
@@ -93,15 +94,75 @@ abajo de la lista (`usePullToRefresh`).
 Además, en desarrollo, `App.jsx` pide la parada 3014 y muestra el resultado adaptado
 en la consola del navegador.
 
-### Levantar VigoBusAPI en local
+## Backend (`backend/`)
 
-VigoBusAPI no tiene instancia pública: hay que ejecutarla aparte (Python +
-MongoDB; ver su repositorio). Escucha en `http://localhost:5000`. Como no
-envía cabeceras CORS, la app llama a `/vigobus/...` y Vite lo reenvía a la API
-(`vite.config.js`). Para otro destino:
+API propia mínima en Python (FastAPI + uvicorn, sin base de datos) con los
+mismos endpoints y el mismo JSON que VigoBusAPI, así el frontend no cambia:
+
+| Endpoint | Respuesta |
+| --- | --- |
+| `GET /status` | `OK` (health check) |
+| `GET /stop/{id}` | `{ stop_id, name, lat, lon }` · 404 si no existe |
+| `GET /buses/{id}?get_all_buses=false` | `{ buses: [{ line, route, time, bus_id }], more_buses_available }` |
+
+Lee los tiempos de la API de datos abiertos de Vigo
+(`datos.vigo.org/vci_api_app/api2.jsp`, la misma que usa VigoBusAPI), con
+caché en memoria (15 s los tiempos, 1 h las paradas). Si la fuente falla
+responde 500 con `detail: "Error Vitrasa: …"`. El puerto sale de `PORT`
+(8000 por defecto) y los orígenes CORS de `CORS_ORIGINS` (por defecto
+`http://localhost:5173`, `http://localhost:4173` y
+`https://vbus-flame.vercel.app`).
+
+### En local
 
 ```sh
-VIGOBUS_PROXY_TARGET=http://mi-servidor:5000 npm run dev
+cd backend
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+pytest                      # tests con la fuente simulada
+PORT=5000 python main.py    # Windows (PowerShell): $env:PORT=5000; python main.py
 ```
 
-Ver `.env.example` para `VITE_VIGOBUS_API_URL`.
+En otra terminal, la app contra este backend (el proxy de Vite reenvía
+`/vigobus/*` a `localhost:5000`):
+
+```sh
+VITE_VIGOBUS_MOCK=false npm run dev    # PowerShell: $env:VITE_VIGOBUS_MOCK="false"; npm run dev
+```
+
+### Despliegue en Render
+
+1. [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**
+   → conecta GitHub y elige el repo `vbus`.
+2. Rellena:
+   - **Name:** `vigobus-api` (la URL será `https://vigobus-api.onrender.com`).
+   - **Branch:** la rama que quieras desplegar.
+   - **Root Directory:** `backend`
+   - **Runtime / Language:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `python main.py`
+   - **Instance Type:** `Free`
+3. **Advanced** (o **Environment** después):
+   - Variable `PYTHON_VERSION` = `3.13`.
+   - (Opcional) `CORS_ORIGINS` si la app vive en otro dominio.
+   - **Health Check Path:** `/status`.
+4. **Create Web Service** y espera a "Live". Comprueba
+   `https://vigobus-api.onrender.com/status` (→ `OK`) y
+   `https://vigobus-api.onrender.com/buses/3014`.
+
+Alternativa: **New** → **Blueprint** con este repo usa `render.yaml`, que
+crea el mismo servicio.
+
+El plan gratuito se duerme tras 15 min sin peticiones: la primera vuelve a
+tardar ~1 min (la app puede mostrar un error de tiempo agotado; al tirar para
+actualizar ya responde).
+
+### Conectar la app de Vercel
+
+En Vercel → proyecto → **Settings** → **Environment Variables**:
+
+- `VITE_VIGOBUS_MOCK` = `false`
+- `VITE_VIGOBUS_API_URL` = `https://vigobus-api.onrender.com`
+
+Las variables `VITE_*` se leen al compilar: haz **Redeploy** después de
+guardarlas.

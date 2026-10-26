@@ -37,7 +37,7 @@ export default function App() {
 
   return (
     <>
-      <MeshBackground />
+      <MeshBackground lite={settings.background === 'lite'} />
       <Dashboard settings={settings} onSettingChange={updateSetting} />
     </>
   );

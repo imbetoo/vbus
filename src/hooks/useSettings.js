@@ -3,13 +3,15 @@ import { useCallback, useEffect, useState } from 'react';
 const STORAGE_KEY = 'vbus:settings';
 
 /**
- * Ajustes por defecto: cómo se ordenan los autobuses de las tarjetas. (Cuántos
- * se ven lo elige cada tarjeta al crearla.)
+ * Ajustes por defecto: cómo se ordenan los autobuses de las tarjetas (cuántos
+ * se ven lo elige cada tarjeta al crearla) y si el fondo va completo o
+ * ligero (menos manchas animadas, para móviles con tirones).
  */
-export const DEFAULT_SETTINGS = { sortBy: 'time' };
+export const DEFAULT_SETTINGS = { sortBy: 'time', background: 'full' };
 
 const VALID = {
   sortBy: ['time', 'preference'],
+  background: ['full', 'lite'],
 };
 
 function loadSettings() {
