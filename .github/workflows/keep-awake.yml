@@ -1,0 +1,20 @@
+# Mantiene despierto el backend de Render (plan free: se duerme tras 15 min
+# sin peticiones) durante las horas de uso, para que la app responda al
+# instante. GitHub puede retrasar unos minutos las tareas programadas, por eso
+# se lanza cada 5 min aunque Render aguante 15.
+name: Mantener backend despierto
+
+on:
+  schedule:
+    # Horas en UTC: 5–21 cubre 7:00–23:00 de Vigo en verano y 6:00–23:00 en invierno.
+    - cron: "*/5 5-21 * * *"
+  # Botón "Run workflow" en la pestaña Actions, para probarlo a mano.
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: GET /status
+        run: curl --fail --silent --show-error --max-time 90 --retry 2 https://vigobus-api.onrender.com/status
