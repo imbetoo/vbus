@@ -2,42 +2,20 @@ import { useEffect } from 'react';
 import MeshBackground from './components/ui/MeshBackground';
 import { useSettings } from './hooks/useSettings';
 import Dashboard from './screens/Dashboard';
-import { getBuses, getStop, VIGOBUS_API_URL, VIGOBUS_USE_MOCK } from './services/vigobus';
-import { toBusArrivals, toStop } from './services/vigobusAdapter';
-
-// TEMPORAL (Fase 2): prueba de conexión con VigoBusAPI. Solo en desarrollo y
-// solo por consola; la UI sigue usando los datos de ejemplo.
-const TEST_STOP_ID = 3014;
+import { wakeApi } from './services/vigobus';
 
 export default function App() {
   // Ajustes globales (se guardan en LocalStorage): afectan a todas las tarjetas.
   const { settings, updateSetting } = useSettings();
 
+  // El backend puede estar dormido: se le avisa nada más abrir la app.
   useEffect(() => {
-    if (!import.meta.env.DEV) return undefined;
-    const controller = new AbortController();
-    const { signal } = controller;
-
-    Promise.all([getStop(TEST_STOP_ID, { signal }), getBuses(TEST_STOP_ID, { signal })])
-      .then(([stop, buses]) => {
-        // Efecto ya cancelado (StrictMode lo monta dos veces en desarrollo).
-        if (signal.aborted) return;
-        console.log(`[VigoBusAPI] Parada ${TEST_STOP_ID} (${VIGOBUS_USE_MOCK ? 'datos simulados' : VIGOBUS_API_URL})`, {
-          stop: toStop(stop),
-          ...toBusArrivals(buses),
-        });
-      })
-      .catch((error) => {
-        if (signal.aborted) return;
-        console.error(`[VigoBusAPI] Falló la prueba con la parada ${TEST_STOP_ID}: ${error.message}`, error);
-      });
-
-    return () => controller.abort();
+    wakeApi();
   }, []);
 
   return (
     <>
-      <MeshBackground />
+      <MeshBackground lite={settings.background === 'lite'} />
       <Dashboard settings={settings} onSettingChange={updateSetting} />
     </>
   );

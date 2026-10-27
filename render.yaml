@@ -1,0 +1,17 @@
+# Blueprint de Render (opcional): New → Blueprint → este repo.
+# Equivale a crear a mano el Web Service descrito en el README.
+services:
+  - type: web
+    name: vigobus-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    healthCheckPath: /status
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      # Orígenes permitidos (CORS), separados por comas.
+      - key: CORS_ORIGINS
+        value: http://localhost:5173,http://localhost:4173,https://vbus-flame.vercel.app

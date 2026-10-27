@@ -17,7 +17,17 @@ fricción, sin mapas interactivos ni navegación compleja.
   ("VigoBus") con `vite-plugin-pwa`: manifest standalone, service worker de
   Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
   tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
-  `black-translucent`, `apple-touch-icon`). Iconos en `public/`.
+  `black-translucent`, `apple-touch-icon`). Iconos en `public/`. Frontend en
+  Vercel (`https://vbus-flame.vercel.app`).
+- **Backend:** API propia en `backend/` (FastAPI + uvicorn, Python 3.13, sin
+  base de datos) con los mismos endpoints y JSON que VigoBusAPI (`/status`,
+  `/stop/{id}`, `/buses/{id}`), leyendo `datos.vigo.org` con caché en memoria y, como infobus, 1 minuto
+  de margen restado a cada estimación; los refuerzos sin línea ("-") se
+  descartan. En local: `npm run dev:api`.
+  Puerto de `PORT`, CORS para localhost y Vercel, previews incluidas
+  (`CORS_ORIGINS`, `CORS_ORIGIN_REGEX`). Desplegado en Render, plan free (pasos
+  en el README, `render.yaml`): como se duerme sin uso, la app lo despierta al
+  abrirse (`wakeApi()` → `/status`) y espera hasta 60 s por respuesta.
 - **Futuro:** React Native / Expo para Android e iOS.
 - **Almacenamiento:** Local (LocalStorage/AsyncStorage) para guardar paradas,
   tarjetas y preferencias. Sin base de datos externa en el cliente.
@@ -127,9 +137,10 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   número 1, 2, 3… al elegir), así nada salta de fila. El paso de líneas usa el
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
-  (pulgar blanco que se desliza; accesibles como grupo de radios). Hoy solo
-  "Ordenar autobuses por"; se guarda en LocalStorage (`useSettings`, en
-  `App.jsx`). Si el navegador permite instalar la app (`beforeinstallprompt`,
+  (pulgar blanco que se desliza; accesibles como grupo de radios). Dos ajustes:
+  "Ordenar autobuses por" y "Fondo"; se guardan en LocalStorage (`useSettings`, en
+  `App.jsx`). "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
+  perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio".
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
@@ -156,8 +167,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   500 ms; por debajo, vuelve sin refrescar. La posición va en variables CSS
   (`--pull`, `--pull-progress`), sin renders de React, con `translate3d`.
 
-- Fuente: VigoBusAPI (devuelve JSON limpio scrapeando el endpoint del
-  ayuntamiento).
+- Fuente: backend propio (`backend/`) sobre la API de datos abiertos del
+  Concello (`datos.vigo.org`), con el mismo JSON que VigoBusAPI.
 - Tiempo real: auto-refresh cada 30 segundos (invisible para el usuario) +
   pull-to-refresh nativo.
 - Fallback de errores: si la API/Vitrasa falla, mostrar "Error Vitrasa" y

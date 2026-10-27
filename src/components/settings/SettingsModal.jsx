@@ -12,6 +12,11 @@ const SORT_OPTIONS = [
   { value: 'preference', label: 'Preferencia' },
 ];
 
+const BACKGROUND_OPTIONS = [
+  { value: 'full', label: 'Completo' },
+  { value: 'lite', label: 'Ligero' },
+];
+
 /** Una fila de ajuste en un contenedor Bento: título, explicación y control. */
 function SettingRow({ title, description, children }) {
   return (
@@ -54,6 +59,24 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
             options={SORT_OPTIONS}
             value={settings.sortBy}
             onChange={(value) => onChange('sortBy', value)}
+          />
+        </SettingRow>
+
+        <SettingRow
+          title="Fondo"
+          description={
+            <span key={settings.background} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.background === 'full'
+                ? 'Cinco manchas de color en movimiento.'
+                : 'Solo tres manchas: más fluido si notas tirones.'}
+            </span>
+          }
+        >
+          <SegmentedControl
+            label="Fondo"
+            options={BACKGROUND_OPTIONS}
+            value={settings.background}
+            onChange={(value) => onChange('background', value)}
           />
         </SettingRow>
 
