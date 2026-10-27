@@ -195,15 +195,9 @@ servidor está arrancando" y basta con reintentar.
 
 ### Conectar la app de Vercel
 
-1. Vercel → proyecto → **Settings** → **Environment Variables**, marcando
-   **Production** y **Preview**:
-   - `VITE_VIGOBUS_MOCK` = `false`
-   - `VITE_VIGOBUS_API_URL` = `https://vigobus-api.onrender.com` (la URL de
-     tu servicio de Render, sin `/` final)
-2. Elige qué rama publica Vercel:
-   - **En `vbus-flame.vercel.app`:** **Settings** → **Git** → **Production
-     Branch** = `claude/relaxed-ramanujan-i5p99a`.
-   - **Sin tocar producción:** cada push a la rama crea una *Preview*; su URL
-     aparece en **Deployments** (`vbus-git-claude-…vercel.app`).
-3. **Deployments** → el último de la rama → **⋯** → **Redeploy** (las
-   variables `VITE_*` se leen al compilar).
+No hace falta configurar nada: `.env.production` (en el repo) fija
+`VITE_VIGOBUS_MOCK=false` y la URL de Render para cualquier `vite build`, así
+que producción y previews usan datos reales. Vercel publica `main` solo en
+cada push; comprueba en **Settings → Environments → Production → Branch
+Tracking** que la rama de producción es `main` (si no, los despliegues de
+`main` salen como *Preview* y no llegan a `vbus-flame.vercel.app`).
