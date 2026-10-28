@@ -85,8 +85,10 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Buscador predictivo de paradas (hoja "Nueva tarjeta"):** combobox
   accesible (`StopSearchField`): por dirección ("conde de torrecedeira", sin
   importar tildes ni orden de palabras) o por número ("84…"); las coincidencias
-  salen debajo (máx. 6, con su número) y se eligen con el dedo o con flechas +
-  Enter (Escape cierra la lista). Elegir una la busca por número como siempre.
+  salen debajo (máx. 6) y se eligen con el dedo o con flechas + Enter (Escape
+  cierra la lista). Cada sugerencia enseña el nombre entero (pasa a dos líneas
+  si hace falta; la última palabra va pegada al número del portal, que nunca se
+  corta: en una calle hay muchas paradas) y debajo "Parada N". Elegir una la busca por número como siempre.
   Fuente (`src/data/stops.js`): `src/data/stopsList.json` (paradas reales
   comprobadas) + las que el usuario ya encontró por número (`vbus:stops`) + las
   de sus tarjetas: aprende con el uso.

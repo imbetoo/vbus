@@ -1,5 +1,6 @@
 import { LoaderCircle, MapPin, Search } from 'lucide-react';
 import { useId, useState } from 'react';
+import { splitStopName } from '../../data/stops';
 
 /**
  * Buscador de paradas con el estilo de los campos de búsqueda de iOS y
@@ -115,14 +116,34 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
               }`}
             >
               <MapPin className="h-5 w-5 shrink-0 text-white/60" strokeWidth={2.25} aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate text-base font-medium">{stop.name}</span>
-              <span className="shrink-0 rounded-lg bg-white/10 px-2 py-0.5 text-sm font-semibold tabular-nums text-white/80">
-                {stop.id}
+              <span className="min-w-0 flex-1">
+                <StopName name={stop.name} />
+                <span className="mt-0.5 block text-sm font-medium tabular-nums text-white/60">Parada {stop.id}</span>
               </span>
             </li>
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+/**
+ * Nombre de la parada, entero: si no cabe en una línea pasa a la siguiente (en
+ * una misma calle hay muchas paradas y el número del portal es lo que las
+ * distingue). La última palabra de la calle va pegada al número ("Torrecedeira,
+ * 81"), así ", 81" nunca se queda solo en una línea.
+ */
+function StopName({ name }) {
+  const { street, number } = splitStopName(name);
+  const cut = number ? street.lastIndexOf(' ') + 1 : street.length;
+  return (
+    <span className="block break-words text-base/snug font-medium">
+      {street.slice(0, cut)}
+      <span className="whitespace-nowrap">
+        {street.slice(cut)}
+        {number}
+      </span>
+    </span>
   );
 }

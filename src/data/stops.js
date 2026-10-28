@@ -48,11 +48,22 @@ function knownStops() {
   return [...byId.values()];
 }
 
+/**
+ * Separa el número del portal del final del nombre ("Rúa do Conde de
+ * Torrecedeira, 81" → calle "Rúa do Conde de Torrecedeira" + ", 81"), para
+ * que el número nunca quede cortado ni separado de la calle: en una misma
+ * calle hay muchas paradas y el número es lo que las distingue.
+ */
+export function splitStopName(name) {
+  const match = /^(.*?\S)(,?\s+\d+[a-z]?(?:\s*[-–]\s*\d+[a-z]?)?)$/i.exec(String(name).trim());
+  return match ? { street: match[1], number: match[2] } : { street: String(name), number: '' };
+}
+
 // "Rúa do Conde" → "rua do conde": sin tildes, mayúsculas ni signos.
 const normalize = (text) =>
   String(text)
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9ñ]+/g, ' ')
     .trim();
