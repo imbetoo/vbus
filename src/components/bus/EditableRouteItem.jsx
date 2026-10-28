@@ -13,7 +13,7 @@ import RouteCard from './RouteCard';
  * - Modo edición (`editing`), como en el mockup:
  *   1. Botón rojo con aspa superpuesto arriba a la izquierda: elimina.
  *   2. Botón oscuro con lápiz arriba a la derecha (en el sitio de la X):
- *      abre el alias (`onEditAlias`).
+ *      abre "Editar tarjeta" (alias y líneas, `onEditCard`).
  *   3. Tirador ≡ fuera de la tarjeta, en el margen derecho y centrado en
  *      vertical: la tarjeta se estrecha para hacerle sitio. Solo se arrastra
  *      desde él (`useDragControls` + `dragListener={false}`), así el scroll de
@@ -33,8 +33,9 @@ export default function EditableRouteItem({
   leaving,
   animateIn,
   sortBy,
+  timeFormat,
   onRemove,
-  onEditAlias,
+  onEditCard,
   onStartEditing,
 }) {
   const controls = useDragControls();
@@ -77,6 +78,7 @@ export default function EditableRouteItem({
               <RouteCard
                 {...route}
                 sortBy={sortBy}
+                timeFormat={timeFormat}
                 onRemove={editing ? undefined : onRemove}
                 headerAction={
                   editing ? (
@@ -84,9 +86,9 @@ export default function EditableRouteItem({
                       icon={Pencil}
                       size="sm"
                       tone="dark"
-                      label={`Cambiar el alias de ${name}`}
+                      label={`Editar tarjeta ${name}`}
                       aria-haspopup="dialog"
-                      onClick={onEditAlias}
+                      onClick={onEditCard}
                       className="-mr-1 -mt-1 ml-auto"
                     />
                   ) : undefined

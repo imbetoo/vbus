@@ -92,6 +92,8 @@ export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, c
     busesToShow,
     color,
     buses: buses.filter((bus) => lines.includes(bus.line)),
+    // Cuándo se pidieron los tiempos: base de la hora de llegada absoluta.
+    updatedAt: Date.now(),
   };
 }
 

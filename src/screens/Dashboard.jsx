@@ -2,7 +2,7 @@ import { Reorder, motion } from 'framer-motion';
 import { BusFront, Check, Pencil, Settings } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
-import AliasModal from '../components/bus/AliasModal';
+import EditCardModal from '../components/bus/EditCardModal';
 import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
@@ -42,10 +42,12 @@ function EmptyState() {
  * con scroll propio en medio y "Crear nueva tarjeta" fijo abajo.
  */
 export default function Dashboard({ settings, onSettingChange }) {
-  const { routes, addRoute, removeRoute, reorderRoutes, renameRoute, refresh } = useRoutes();
-  // Tarjeta cuyo alias se está editando (modal del lápiz).
-  const [aliasRouteId, setAliasRouteId] = useState(null);
-  const aliasRoute = routes.find((route) => route.id === aliasRouteId) ?? null;
+  const { routes, addRoute, removeRoute, reorderRoutes, updateRoute, refresh } = useRoutes({
+    refreshMs: settings.refreshSeconds * 1000,
+  });
+  // Tarjeta que se está editando (modal del lápiz: alias y líneas).
+  const [editingRouteId, setEditingRouteId] = useState(null);
+  const editingRoute = routes.find((route) => route.id === editingRouteId) ?? null;
   // Modo edición (botón "Editar" o pulsación larga en una tarjeta): las
   // tarjetas tiemblan, se arrastran desde su tirador y se borran con el botón
   // rojo. Sin tarjetas no hay nada que editar.
@@ -163,8 +165,9 @@ export default function Dashboard({ settings, onSettingChange }) {
                 // Entrada solo para las tarjetas nuevas (`animate-card-in`).
                 animateIn={!savedIds.has(route.id)}
                 sortBy={settings.sortBy}
+                timeFormat={settings.timeFormat}
                 onRemove={() => handleRemove(route.id)}
-                onEditAlias={() => setAliasRouteId(route.id)}
+                onEditCard={() => setEditingRouteId(route.id)}
                 onStartEditing={() => setIsEditing(true)}
               />
             ))}
@@ -186,12 +189,14 @@ export default function Dashboard({ settings, onSettingChange }) {
           setIsCreating(false);
         }}
       />
-      <AliasModal
-        route={aliasRoute}
-        onClose={() => setAliasRouteId(null)}
-        onSave={(id, alias) => {
-          renameRoute(id, alias);
-          setAliasRouteId(null);
+      <EditCardModal
+        route={editingRoute}
+        onClose={() => setEditingRouteId(null)}
+        onSave={(id, changes) => {
+          updateRoute(id, changes);
+          setEditingRouteId(null);
+          // Las líneas que se vuelven a mostrar necesitan sus llegadas.
+          refresh();
         }}
       />
       <SettingsModal

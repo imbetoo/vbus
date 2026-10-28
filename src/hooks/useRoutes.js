@@ -3,8 +3,9 @@ import { getBuses } from '../services/vigobus';
 import { withFreshBuses } from '../services/vigobusAdapter';
 
 const STORAGE_KEY = 'vbus:routes';
-// Fase 2: los tiempos de todas las tarjetas se piden de nuevo cada 30 s.
-const REFRESH_MS = 30_000;
+// Por defecto, los tiempos de todas las tarjetas se piden de nuevo cada 30 s
+// (ajuste "Actualizar datos": 15, 30 o 60 s).
+const DEFAULT_REFRESH_MS = 30_000;
 
 // Una tarjeta guardada es válida si tiene lo mínimo para pintarse; así un dato
 // viejo o manipulado no rompe el render.
@@ -47,7 +48,7 @@ function loadRoutes() {
  * pestaña oculta no se pide nada. `refresh()` también se expone para el
  * "tirar para actualizar" del Dashboard (devuelve una promesa).
  */
-export function useRoutes() {
+export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
   const [routes, setRoutes] = useState(loadRoutes);
 
   useEffect(() => {
@@ -83,32 +84,49 @@ export function useRoutes() {
     );
   }, []);
 
+  // Al abrir la app y al volver a la pestaña.
   useEffect(() => {
     const controller = new AbortController();
     abortRef.current = controller;
     const refreshIfVisible = () => {
       if (!document.hidden) refresh();
     };
-
     refreshIfVisible();
-    const interval = setInterval(refreshIfVisible, REFRESH_MS);
     document.addEventListener('visibilitychange', refreshIfVisible);
     return () => {
-      clearInterval(interval);
       document.removeEventListener('visibilitychange', refreshIfVisible);
       controller.abort();
     };
   }, [refresh]);
 
+  // Cada `refreshMs`: al cambiar el ajuste, el intervalo se rehace con el
+  // nuevo ritmo (sin pedir nada extra en ese momento).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!document.hidden) refresh();
+    }, refreshMs);
+    return () => clearInterval(interval);
+  }, [refresh, refreshMs]);
+
   const addRoute = useCallback((route) => setRoutes((current) => [...current, route]), []);
-  // Alias de una tarjeta (vacío = sin alias: vuelve el nombre de la parada).
-  const renameRoute = useCallback(
-    (id, alias) =>
+  // "Editar tarjeta": alias (vacío = sin alias: vuelve el nombre de la parada)
+  // y `lines`, las líneas visibles en orden de prioridad. Las llegadas de las
+  // líneas ocultas se quitan ya; las de las que se vuelven a mostrar llegan con
+  // el siguiente refresco.
+  const updateRoute = useCallback(
+    (id, { alias, lines }) =>
       setRoutes((current) =>
         current.map((route) => {
           if (route.id !== id) return route;
-          const clean = alias.trim();
-          return { ...route, alias: clean, title: clean || route.stopName || route.title };
+          const clean = (alias ?? route.alias ?? '').trim();
+          const visible = lines?.length ? lines : route.lines;
+          return {
+            ...route,
+            alias: clean,
+            title: clean || route.stopName || route.title,
+            lines: visible,
+            buses: route.buses.filter((bus) => visible.includes(bus.line)),
+          };
         }),
       ),
     [],
@@ -116,5 +134,5 @@ export function useRoutes() {
   // Nuevo orden tras arrastrar en modo edición (se guarda con el efecto de arriba).
   const reorderRoutes = useCallback((ordered) => setRoutes(ordered), []);
   const removeRoute = useCallback((id) => setRoutes((current) => current.filter((route) => route.id !== id)), []);
-  return { routes, addRoute, removeRoute, reorderRoutes, renameRoute, refresh };
+  return { routes, addRoute, removeRoute, reorderRoutes, updateRoute, refresh };
 }

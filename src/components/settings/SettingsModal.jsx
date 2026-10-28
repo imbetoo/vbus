@@ -12,6 +12,17 @@ const SORT_OPTIONS = [
   { value: 'preference', label: 'Preferencia' },
 ];
 
+const TIME_FORMAT_OPTIONS = [
+  { value: 'relative', label: 'Relativo' },
+  { value: 'absolute', label: 'Absoluto' },
+];
+
+const REFRESH_OPTIONS = [
+  { value: 15, label: '15 s' },
+  { value: 30, label: '30 s' },
+  { value: 60, label: '60 s' },
+];
+
 const BACKGROUND_OPTIONS = [
   { value: 'full', label: 'Completo' },
   { value: 'lite', label: 'Ligero' },
@@ -35,7 +46,8 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
 
   return (
     <Modal open={open} onClose={onClose} labelledBy={titleId} className="w-[min(92vw,24rem)]">
-      <div className="flex flex-col gap-4 p-5">
+      {/* Con todos los ajustes puede no caber en un móvil apaisado: hace scroll. */}
+      <div className="flex max-h-[calc(100dvh-2rem)] transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain p-5">
         <header className="flex items-center justify-between gap-3">
           <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
             Ajustes
@@ -59,6 +71,44 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
             options={SORT_OPTIONS}
             value={settings.sortBy}
             onChange={(value) => onChange('sortBy', value)}
+          />
+        </SettingRow>
+
+        <SettingRow
+          title="Formato de tiempo"
+          description={
+            <span key={settings.timeFormat} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.timeFormat === 'relative'
+                ? 'Lo que falta para que llegue: «5 min».'
+                : 'La hora a la que llega: «12:45».'}
+            </span>
+          }
+        >
+          <SegmentedControl
+            label="Formato de tiempo"
+            options={TIME_FORMAT_OPTIONS}
+            value={settings.timeFormat}
+            onChange={(value) => onChange('timeFormat', value)}
+          />
+        </SettingRow>
+
+        <SettingRow
+          title="Actualizar datos"
+          description={
+            <span key={settings.refreshSeconds} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.refreshSeconds === 15
+                ? 'Cada 15 segundos: lo más al día, gasta algo más de datos.'
+                : settings.refreshSeconds === 30
+                  ? 'Cada 30 segundos (recomendado).'
+                  : 'Cada minuto: gasta menos datos y batería.'}
+            </span>
+          }
+        >
+          <SegmentedControl
+            label="Actualizar datos"
+            options={REFRESH_OPTIONS}
+            value={settings.refreshSeconds}
+            onChange={(value) => onChange('refreshSeconds', value)}
           />
         </SettingRow>
 
