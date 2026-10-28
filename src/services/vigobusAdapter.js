@@ -78,10 +78,14 @@ export function uniqueLines(buses) {
  * - `color`: id del color de su icono (`cardColors.js`).
  */
 export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, color = 'graphite' }) {
+  const alias = title.trim();
   return {
     id: crypto.randomUUID(),
     stopId: stop.id,
-    title: title.trim() || stop.name,
+    // `alias`: nombre propio de la tarjeta ("Trabajo 💻"), vacío si no tiene.
+    // `title`: lo que se enseña (el alias o, si no hay, el nombre de la parada).
+    alias,
+    title: alias || stop.name,
     stopName: stop.name,
     icon: 'Bus',
     lines,

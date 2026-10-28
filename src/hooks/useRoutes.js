@@ -18,12 +18,19 @@ function isValidRoute(route) {
   );
 }
 
+// Tarjetas guardadas antes de existir `alias`: su nombre propio era el título
+// cuando no coincidía con el de la parada.
+function withAlias(route) {
+  if (typeof route.alias === 'string') return route;
+  return { ...route, alias: route.stopName && route.title !== route.stopName ? route.title : '' };
+}
+
 // Lectura inicial (síncrona, antes del primer render): si no hay nada o el
 // JSON está corrupto, se empieza con `[]`.
 function loadRoutes() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(saved) ? saved.filter(isValidRoute) : [];
+    return Array.isArray(saved) ? saved.filter(isValidRoute).map(withAlias) : [];
   } catch {
     return [];
   }
@@ -94,8 +101,20 @@ export function useRoutes() {
   }, [refresh]);
 
   const addRoute = useCallback((route) => setRoutes((current) => [...current, route]), []);
+  // Alias de una tarjeta (vacío = sin alias: vuelve el nombre de la parada).
+  const renameRoute = useCallback(
+    (id, alias) =>
+      setRoutes((current) =>
+        current.map((route) => {
+          if (route.id !== id) return route;
+          const clean = alias.trim();
+          return { ...route, alias: clean, title: clean || route.stopName || route.title };
+        }),
+      ),
+    [],
+  );
   // Nuevo orden tras arrastrar en modo edición (se guarda con el efecto de arriba).
   const reorderRoutes = useCallback((ordered) => setRoutes(ordered), []);
   const removeRoute = useCallback((id) => setRoutes((current) => current.filter((route) => route.id !== id)), []);
-  return { routes, addRoute, removeRoute, reorderRoutes, refresh };
+  return { routes, addRoute, removeRoute, reorderRoutes, renameRoute, refresh };
 }

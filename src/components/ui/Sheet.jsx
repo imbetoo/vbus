@@ -19,7 +19,7 @@ export default function Sheet({ open, onClose, labelledBy, children }) {
       ref={ref}
       aria-labelledby={labelledBy}
       {...dialogProps}
-      className="fixed inset-x-0 bottom-0 top-auto m-0 mx-auto h-[72dvh] max-h-none w-full max-w-md translate-y-full rounded-t-[32px] border-2 border-b-0 border-white/10 bg-graphite/[0.97] p-0 text-white shadow-2xl shadow-black/30 transform-gpu transition-transform will-change-transform duration-[450ms] ease-spring backdrop:bg-black/0 backdrop:transition-[background-color] backdrop:duration-[450ms] backdrop:ease-spring data-[shown]:translate-y-0 data-[shown]:backdrop:bg-black/50 motion-reduce:transition-none motion-reduce:backdrop:transition-none"
+      className="fixed inset-x-0 bottom-0 top-auto m-0 mx-auto h-[72dvh] max-h-none w-full max-w-md translate-y-full rounded-t-[32px] border-2 border-b-0 border-white/10 bg-graphite p-0 text-white shadow-2xl shadow-black/30 transform-gpu transition-transform will-change-transform duration-[450ms] ease-spring backdrop:bg-black/0 backdrop:transition-[background-color] backdrop:duration-[450ms] backdrop:ease-spring data-[shown]:translate-y-0 data-[shown]:backdrop:bg-black/50 motion-reduce:transition-none motion-reduce:backdrop:transition-none"
     >
       {mounted && (
         <div className="flex h-full transform-gpu flex-col overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-3">

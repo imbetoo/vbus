@@ -5,17 +5,25 @@ import { useId } from 'react';
  * Bento (gris suave, borde fino y anillo azul al enfocar). El `placeholder`
  * muestra el nombre que se usará si se deja vacío.
  */
-export default function CardNameField({ value, onChange, placeholder, describedBy }) {
+export default function CardNameField({
+  value,
+  onChange,
+  placeholder,
+  describedBy,
+  label = 'Nombre de la tarjeta',
+  inputRef,
+}) {
   const id = useId();
 
   return (
     <div>
       <label htmlFor={id} className="mb-2 block text-sm font-semibold text-white/80">
-        Nombre de la tarjeta
+        {label}
       </label>
       <input
         id={id}
         type="text"
+        ref={inputRef}
         maxLength={32}
         enterKeyHint="done"
         autoComplete="off"

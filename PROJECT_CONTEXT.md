@@ -67,7 +67,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Rendimiento (Android):** la app no usa `backdrop-filter` en ningún sitio:
   todo lo que hay delante del mesh animado lo recalculaba en cada fotograma.
   Botones de la cabecera en blanco más opaco (`bg-white/70`, `bg-white/15` en
-  oscuro); hojas y modales `bg-graphite/[0.97]` sobre un velo `bg-black/50`
+  oscuro); hojas y modales `bg-graphite` opacos sobre un velo `bg-black/50`
   sin desenfoque. Los contenedores con scroll llevan `transform-gpu`; las
   animaciones (reloj, modales, hojas, tirar para actualizar) solo tocan
   `transform`/`opacity` con su `will-change`, y ninguna transición usa
@@ -82,11 +82,20 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   internos `rounded-3xl bg-white/[0.06] border border-white/10`; inputs
   `rounded-2xl bg-white/10` con borde y anillo azul iOS (`accent` `#0A84FF`) al
   enfocar; acción principal en píldora blanca a todo el ancho (`PillButton`).
+- **Buscador predictivo de paradas (hoja "Nueva tarjeta"):** combobox
+  accesible (`StopSearchField`): por dirección ("conde de torrecedeira", sin
+  importar tildes ni orden de palabras) o por número ("84…"); las coincidencias
+  salen debajo (máx. 6, con su número) y se eligen con el dedo o con flechas +
+  Enter (Escape cierra la lista). Elegir una la busca por número como siempre.
+  Fuente (`src/data/stops.js`): `src/data/stopsList.json` (paradas reales
+  comprobadas) + las que el usuario ya encontró por número (`vbus:stops`) + las
+  de sus tarjetas: aprende con el uso.
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
-  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo los botones
-  Sol/Luna y Ajustes.
+  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo tres botones
+  circulares: Editar (lápiz/✓), Sol/Luna y Ajustes. "Mis rutas" no se parte en
+  pantallas estrechas (baja de tamaño por debajo de 380 px).
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
 - **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
@@ -120,18 +129,29 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   tarjetas recién creadas entran con la animación inversa (las ya guardadas
   aparecen directamente al abrir la app) y el mensaje de lista vacía
   funde al aparecer y desaparecer.
-- **Modo edición (estilo iOS):** se entra con "Editar" (botón de texto azul
-  junto al reloj; pasa a "Listo") o con una pulsación larga de 500 ms en una
-  tarjeta (`useLongPress`, vibra y se traga el clic). Las tarjetas tiemblan
-  (`animate-jiggle`: ±1°, 260 ms, solo `transform`, desfasado por tarjeta),
-  llevan un círculo rojo con "menos" arriba a la izquierda (borra con la misma
-  animación de salida) y un tirador ≡ a la derecha en lugar de la X. La lista
-  es un `Reorder.Group` de framer-motion (eje Y; `EditableRouteItem` =
+- **Modo edición (estilo iOS, según el mockup del usuario):** se entra con el
+  tercer botón circular de la cabecera (lápiz, a la izquierda de Sol/Luna y
+  Ajustes; pasa a ✓ mientras se edita) o con una pulsación larga de 500 ms en
+  una tarjeta (`useLongPress`, vibra y se traga el clic). Las tarjetas tiemblan
+  (`animate-jiggle`: ±1°, 260 ms, solo `transform`, desfasado por tarjeta) y
+  muestran: (1) círculo rojo con aspa superpuesto arriba a la izquierda
+  (borra con la animación de salida), (2) círculo oscuro con lápiz arriba a la
+  derecha en lugar de la X (abre el modal de alias, `AliasModal`) y (3) el
+  tirador ≡ fuera de la tarjeta, en el margen derecho y centrado (la tarjeta
+  se estrecha 28 px para dejarle sitio; el tirador no tiembla). La lista es un
+  `Reorder.Group` de framer-motion (eje Y; `EditableRouteItem` =
   `Reorder.Item`) y solo se arrastra desde el tirador (`useDragControls`,
   `touch-action: none`), así el scroll sigue funcionando; la tarjeta
   arrastrada se levanta (escala 1,03) y deja de temblar. Cada cambio de orden
   se guarda al momento (`reorderRoutes` → `vbus:routes`). En edición se
   desactiva "tirar para actualizar"; sin tarjetas, el modo se apaga solo.
+- **Alias:** cada tarjeta guarda `alias` ("Trabajo 💻"; vacío = sin alias) y
+  `title` (lo que se enseña: el alias o el nombre de la parada). Con alias, el
+  alias es el título y el nombre oficial va al subtítulo ("Desde Rúa do Conde
+  de Torrecedeira, 81"); sin alias, el título es la parada y el subtítulo
+  "Parada N". Se pone al crearla ("Nombre de la tarjeta") o con el lápiz del
+  modo edición (`renameRoute`). Las tarjetas guardadas antes de existir
+  `alias` lo reciben al cargar (su título si no era el de la parada).
 - **Nada aparece de golpe:** mensajes de estado y textos que cambian entran con
   `animate-fade-in`; los subtítulos de los pasos de la hoja van en una sola
   línea para que su alto no cambie y no muevan el contenido.

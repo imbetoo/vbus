@@ -1,7 +1,8 @@
 import { Reorder, useDragControls } from 'framer-motion';
-import { Menu, Minus } from 'lucide-react';
+import { Menu, Pencil, X } from 'lucide-react';
 import { useState } from 'react';
 import { useLongPress } from '../../hooks/useLongPress';
+import IconButton from '../ui/IconButton';
 import RouteCard from './RouteCard';
 
 /**
@@ -9,12 +10,16 @@ import RouteCard from './RouteCard';
  * framer-motion, solo en vertical).
  *
  * - Modo normal: la tarjeta de siempre; una pulsación larga entra en edición.
- * - Modo edición (`editing`): tiembla como los iconos de iOS (`animate-jiggle`,
- *   solo `transform`, con un desfase por tarjeta para que no tiemblen al
- *   compás), lleva un botón rojo de eliminar arriba a la izquierda y un
- *   tirador (≡) a la derecha. Solo se arrastra desde el tirador
- *   (`useDragControls` + `dragListener={false}`), así el scroll de la lista
- *   sigue funcionando al tocar el resto de la tarjeta.
+ * - Modo edición (`editing`), como en el mockup:
+ *   1. Botón rojo con aspa superpuesto arriba a la izquierda: elimina.
+ *   2. Botón oscuro con lápiz arriba a la derecha (en el sitio de la X):
+ *      abre el alias (`onEditAlias`).
+ *   3. Tirador ≡ fuera de la tarjeta, en el margen derecho y centrado en
+ *      vertical: la tarjeta se estrecha para hacerle sitio. Solo se arrastra
+ *      desde él (`useDragControls` + `dragListener={false}`), así el scroll de
+ *      la lista sigue funcionando al tocar el resto de la tarjeta.
+ *   La tarjeta tiembla como los iconos de iOS (`animate-jiggle`, solo
+ *   `transform`, desfasado por tarjeta); el tirador se queda quieto.
  *
  * Entrada y salida: el `li` es una rejilla cuyo alto (`grid-template-rows`) se
  * abre o se cierra mientras la tarjeta aparece o se desvanece y encoge
@@ -29,11 +34,13 @@ export default function EditableRouteItem({
   animateIn,
   sortBy,
   onRemove,
+  onEditAlias,
   onStartEditing,
 }) {
   const controls = useDragControls();
   const [dragging, setDragging] = useState(false);
   const longPress = useLongPress(onStartEditing, { enabled: !editing });
+  const name = route.alias || route.stopName || route.title;
 
   return (
     <Reorder.Item
@@ -51,52 +58,74 @@ export default function EditableRouteItem({
       }`}
     >
       <div className={`min-h-0 ${leaving ? 'overflow-hidden' : ''}`}>
-        <div
-          className={`pb-5 transition-transform duration-[800ms] ease-out ${leaving ? 'scale-90' : ''}`}
-        >
+        <div className={`pb-5 transition-transform duration-[800ms] ease-out ${leaving ? 'scale-90' : ''}`}>
+          {/* En edición, la tarjeta deja 28px a la derecha para el tirador. */}
           <div
-            {...longPress}
-            // Sin selección de texto ni menú de iOS al mantener pulsado.
-            className={`relative select-none [-webkit-touch-callout:none] ${
-              editing && !dragging ? 'animate-jiggle will-change-transform motion-reduce:animate-none' : ''
+            className={`relative transition-[padding] duration-300 ease-smooth motion-reduce:transition-none ${
+              editing ? 'pr-7' : 'pr-0'
             }`}
-            // Cada tarjeta empieza el temblor en un punto distinto del ciclo.
-            style={editing ? { animationDelay: `${-(index % 4) * 70}ms` } : undefined}
           >
-            <RouteCard
-              {...route}
-              sortBy={sortBy}
-              onRemove={editing ? undefined : onRemove}
-              headerAction={
-                editing ? (
-                  <button
-                    type="button"
-                    aria-label={`Mover tarjeta ${route.title}`}
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      controls.start(event);
-                    }}
-                    // `touch-action: none`: el navegador no convierte el gesto en scroll.
-                    className="-mr-2 -mt-1 ml-auto flex h-11 w-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-full text-white/70 active:cursor-grabbing active:text-white"
-                  >
-                    <Menu className="h-6 w-6" strokeWidth={2.25} aria-hidden="true" />
-                  </button>
-                ) : undefined
-              }
-            />
+            <div
+              {...longPress}
+              // Sin selección de texto ni menú de iOS al mantener pulsado.
+              className={`relative select-none [-webkit-touch-callout:none] ${
+                editing && !dragging ? 'animate-jiggle will-change-transform motion-reduce:animate-none' : ''
+              }`}
+              // Cada tarjeta empieza el temblor en un punto distinto del ciclo.
+              style={editing ? { animationDelay: `${-(index % 4) * 70}ms` } : undefined}
+            >
+              <RouteCard
+                {...route}
+                sortBy={sortBy}
+                onRemove={editing ? undefined : onRemove}
+                headerAction={
+                  editing ? (
+                    <IconButton
+                      icon={Pencil}
+                      size="sm"
+                      tone="dark"
+                      label={`Cambiar el alias de ${name}`}
+                      aria-haspopup="dialog"
+                      onClick={onEditAlias}
+                      className="-mr-1 -mt-1 ml-auto"
+                    />
+                  ) : undefined
+                }
+              />
 
-            {/* Eliminar (modo edición): círculo rojo de iOS con un "menos". */}
+              {/* Eliminar (modo edición): círculo rojo de iOS con aspa. */}
+              <button
+                type="button"
+                aria-label={`Eliminar tarjeta ${name}`}
+                onClick={onRemove}
+                tabIndex={editing ? 0 : -1}
+                aria-hidden={!editing}
+                className={`absolute -left-2 -top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-urgent text-white shadow-md shadow-black/30 ring-2 ring-white/90 transition-[transform,opacity] duration-300 ease-spring after:absolute after:-inset-2 after:content-[''] active:scale-90 motion-reduce:transition-none ${
+                  editing ? 'scale-100 opacity-100' : 'pointer-events-none scale-50 opacity-0'
+                }`}
+              >
+                <X className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Tirador ≡ en el margen derecho, centrado con la tarjeta. Sobre el
+                fondo de la app: oscuro en claro, blanco en oscuro. */}
             <button
               type="button"
-              aria-label={`Eliminar tarjeta ${route.title}`}
-              onClick={onRemove}
+              aria-label={`Mover tarjeta ${name}`}
               tabIndex={editing ? 0 : -1}
               aria-hidden={!editing}
-              className={`absolute -left-2 -top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-urgent text-white shadow-md shadow-black/30 ring-2 ring-white/90 transition-[transform,opacity] duration-300 ease-spring after:absolute after:-inset-2 after:content-[''] active:scale-90 motion-reduce:transition-none ${
-                editing ? 'scale-100 opacity-100' : 'pointer-events-none scale-50 opacity-0'
+              onPointerDown={(event) => {
+                if (!editing) return;
+                event.preventDefault();
+                controls.start(event);
+              }}
+              // `touch-action: none`: el navegador no convierte el gesto en scroll.
+              className={`absolute inset-y-0 -right-1 flex w-8 cursor-grab touch-none items-center justify-center text-black/40 transition-opacity duration-300 active:cursor-grabbing active:text-black/70 dark:text-white/50 dark:active:text-white/80 ${
+                editing ? 'opacity-100' : 'pointer-events-none opacity-0'
               }`}
             >
-              <Minus className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
+              <Menu className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
             </button>
           </div>
         </div>

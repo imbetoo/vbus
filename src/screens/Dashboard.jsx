@@ -1,7 +1,8 @@
 import { Reorder, motion } from 'framer-motion';
-import { BusFront, Settings } from 'lucide-react';
+import { BusFront, Check, Pencil, Settings } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
+import AliasModal from '../components/bus/AliasModal';
 import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
@@ -9,7 +10,6 @@ import Clock from '../components/settings/Clock';
 import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
-import { PRESSABLE } from '../components/ui/pressable';
 import PullIndicator from '../components/ui/PullIndicator';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
@@ -42,7 +42,10 @@ function EmptyState() {
  * con scroll propio en medio y "Crear nueva tarjeta" fijo abajo.
  */
 export default function Dashboard({ settings, onSettingChange }) {
-  const { routes, addRoute, removeRoute, reorderRoutes, refresh } = useRoutes();
+  const { routes, addRoute, removeRoute, reorderRoutes, renameRoute, refresh } = useRoutes();
+  // Tarjeta cuyo alias se está editando (modal del lápiz).
+  const [aliasRouteId, setAliasRouteId] = useState(null);
+  const aliasRoute = routes.find((route) => route.id === aliasRouteId) ?? null;
   // Modo edición (botón "Editar" o pulsación larga en una tarjeta): las
   // tarjetas tiemblan, se arrastran desde su tirador y se borran con el botón
   // rojo. Sin tarjetas no hay nada que editar.
@@ -83,28 +86,24 @@ export default function Dashboard({ settings, onSettingChange }) {
       <header className="flex shrink-0 items-end justify-between gap-3 text-black dark:text-white">
         <div className="min-w-0">
           <p className="text-xl font-semibold tracking-tight sm:text-2xl">Buenos días</p>
-          <h1 className="whitespace-nowrap text-[1.875rem] font-bold tracking-[-0.03em] min-[360px]:text-4xl sm:text-5xl">Mis rutas</h1>
+          <h1 className="whitespace-nowrap text-[1.625rem] font-bold tracking-[-0.03em] min-[360px]:text-[1.875rem] min-[380px]:text-4xl sm:text-5xl">
+            Mis rutas
+          </h1>
         </div>
-        {/* Reloj encima de los botones, todo alineado a la derecha. "Editar"
-            va junto al reloj como botón de texto de iOS, para no robar ancho
-            al título en pantallas estrechas. */}
+        {/* Reloj encima de los botones, todo alineado a la derecha: editar
+            (lápiz, o check mientras se edita), tema y ajustes. */}
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <div className="flex items-center gap-3">
+          <Clock />
+          <div className="flex items-center gap-2">
             {routes.length > 0 && (
-              <button
-                type="button"
+              <IconButton
+                tone="adaptive"
+                icon={isEditing ? Check : Pencil}
+                label={isEditing ? 'Terminar de editar' : 'Editar tarjetas'}
                 aria-pressed={isEditing}
                 onClick={() => setIsEditing((value) => !value)}
-                className={`relative rounded-lg text-lg font-semibold tracking-tight text-accent after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent dark:text-[#409CFF] ${PRESSABLE}`}
-              >
-                <span key={String(isEditing)} className="block animate-fade-in motion-reduce:animate-none">
-                  {isEditing ? 'Listo' : 'Editar'}
-                </span>
-              </button>
+              />
             )}
-            <Clock />
-          </div>
-          <div className="flex items-center gap-2">
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <IconButton
               tone="adaptive"
@@ -165,6 +164,7 @@ export default function Dashboard({ settings, onSettingChange }) {
                 animateIn={!savedIds.has(route.id)}
                 sortBy={settings.sortBy}
                 onRemove={() => handleRemove(route.id)}
+                onEditAlias={() => setAliasRouteId(route.id)}
                 onStartEditing={() => setIsEditing(true)}
               />
             ))}
@@ -184,6 +184,14 @@ export default function Dashboard({ settings, onSettingChange }) {
           // Se añade ya, y la hoja se cierra con su animación descubriéndola.
           addRoute(route);
           setIsCreating(false);
+        }}
+      />
+      <AliasModal
+        route={aliasRoute}
+        onClose={() => setAliasRouteId(null)}
+        onSave={(id, alias) => {
+          renameRoute(id, alias);
+          setAliasRouteId(null);
         }}
       />
       <SettingsModal

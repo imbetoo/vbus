@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getBuses, getStop } from '../services/vigobus';
+import { rememberStop } from '../data/stops';
 import { toBusArrivals, toStop } from '../services/vigobusAdapter';
 
 // De momento solo se busca por número de parada (el que aparece en la marquesina).
@@ -29,7 +30,10 @@ export function useStopLookup(query) {
       Promise.all([getStop(stopId, { signal }), getBuses(stopId, { all: true, signal })])
         .then(([stop, buses]) => {
           if (signal.aborted) return;
-          setResult({ key: stopId, status: 'success', stop: toStop(stop), buses: toBusArrivals(buses).buses });
+          const found = toStop(stop);
+          // El buscador por dirección la sugerirá la próxima vez.
+          rememberStop(found);
+          setResult({ key: stopId, status: 'success', stop: found, buses: toBusArrivals(buses).buses });
         })
         .catch((error) => {
           if (signal.aborted) return;
