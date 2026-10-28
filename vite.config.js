@@ -18,7 +18,7 @@ const vigobusProxy = {
 // guardan nunca: siempre van a la red.
 const pwa = VitePWA({
   registerType: 'autoUpdate',
-  includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+  includeAssets: ['icon.svg', 'apple-touch-icon.png'],
   manifest: {
     name: 'VigoBus',
     short_name: 'VigoBus',
@@ -31,7 +31,9 @@ const pwa = VitePWA({
     // Navy del modo oscuro: barra de estado y pantalla de arranque.
     theme_color: '#1D2D44',
     background_color: '#1D2D44',
+    // Icono maestro vectorial (public/icon.svg) y sus PNG (`npm run icons`).
     icons: [
+      { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
       { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
       { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
       { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },

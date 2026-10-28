@@ -39,8 +39,18 @@ La app se instala como "VigoBus" (`vite-plugin-pwa`, configurado en
 instalación, `npm run build && npm run preview` y abrir `http://localhost:4173`.
 En el móvil hace falta HTTPS (por IP de la red local el navegador no registra el
 service worker); en Ajustes aparece "Instalar app" cuando se puede. Los iconos
-(`public/pwa-*.png`, `maskable-icon-512x512.png`, `apple-touch-icon.png`) son
-provisionales y se pueden sustituir con el mismo nombre y tamaño.
+salen todos del icono maestro vectorial `public/icon.svg` (fondo mesh perla
+con relieve interior y autobús blanco estilo SF Symbols, sin imágenes
+incrustadas). Si cambias el SVG, regenera los PNG:
+
+```sh
+npm run icons
+```
+
+Crea `pwa-192x192.png` y `pwa-512x512.png` (con las esquinas redondeadas) y
+`maskable-icon-512x512.png` y `apple-touch-icon.png` (180 px) a sangre, porque
+Android e iOS recortan el icono con su propia forma. Usa `sharp` (ya en las
+dependencias de desarrollo).
 
 ## Estructura
 
