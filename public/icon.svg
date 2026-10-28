@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>VigoBus</title>
+  <defs>
+    <!-- Forma del icono: "squircle" de iOS aproximado (radio ≈ 22,4 %).
+         scripts/generate-icons.js pone rx a 0 para los iconos a sangre
+         (maskable y apple-touch-icon), que recorta el propio sistema. -->
+    <clipPath id="shape">
+      <rect id="shape-rect" width="512" height="512" rx="115" />
+    </clipPath>
+
+    <!-- Lienzo perla y "esferas" del mesh: degradados radiales que se funden
+         en transparente, sin desenfoques (nítido a cualquier tamaño). -->
+    <linearGradient id="pearl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FBFAFF" />
+      <stop offset="1" stop-color="#EDE6FA" />
+    </linearGradient>
+    <radialGradient id="blue">
+      <stop offset="0" stop-color="#7FA8FA" />
+      <stop offset="0.45" stop-color="#A2C2FC" stop-opacity="0.85" />
+      <stop offset="1" stop-color="#A2C2FC" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="lavender">
+      <stop offset="0" stop-color="#C98BF5" />
+      <stop offset="0.45" stop-color="#E2B7FC" stop-opacity="0.85" />
+      <stop offset="1" stop-color="#E2B7FC" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="indigo">
+      <stop offset="0" stop-color="#6F78E0" />
+      <stop offset="0.5" stop-color="#8E96E8" stop-opacity="0.75" />
+      <stop offset="1" stop-color="#8E96E8" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="peach">
+      <stop offset="0" stop-color="#FFB59A" />
+      <stop offset="0.45" stop-color="#FFC9B5" stop-opacity="0.8" />
+      <stop offset="1" stop-color="#FFC9B5" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="rose">
+      <stop offset="0" stop-color="#F5A9DE" />
+      <stop offset="0.5" stop-color="#F2C4E8" stop-opacity="0.7" />
+      <stop offset="1" stop-color="#F2C4E8" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="shine" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Relieve: sombra interior abajo y luz interior arriba (inner shadow
+         con feOffset + feComposite + feFlood sobre la propia forma). -->
+    <filter id="relief" x="-10%" y="-10%" width="120%" height="120%">
+      <feOffset in="SourceAlpha" dy="-16" result="up" />
+      <feGaussianBlur in="up" stdDeviation="16" result="upBlur" />
+      <feComposite in="SourceAlpha" in2="upBlur" operator="out" result="bottomEdge" />
+      <feFlood flood-color="#3B2F7A" flood-opacity="0.42" />
+      <feComposite in2="bottomEdge" operator="in" result="innerShadow" />
+      <feOffset in="SourceAlpha" dy="7" result="down" />
+      <feGaussianBlur in="down" stdDeviation="5" result="downBlur" />
+      <feComposite in="SourceAlpha" in2="downBlur" operator="out" result="topEdge" />
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.7" />
+      <feComposite in2="topEdge" operator="in" result="innerLight" />
+      <feMerge>
+        <feMergeNode in="innerShadow" />
+        <feMergeNode in="innerLight" />
+      </feMerge>
+    </filter>
+
+    <!-- El autobús flota sobre el fondo. -->
+    <filter id="float" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2A1E6B" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <g clip-path="url(#shape)">
+    <rect width="512" height="512" fill="url(#pearl)" />
+    <circle cx="96" cy="88" r="260" fill="url(#blue)" />
+    <circle cx="452" cy="150" r="250" fill="url(#lavender)" />
+    <circle cx="110" cy="470" r="250" fill="url(#indigo)" />
+    <circle cx="470" cy="470" r="230" fill="url(#peach)" />
+    <circle cx="300" cy="330" r="190" fill="url(#rose)" />
+    <ellipse cx="236" cy="200" rx="230" ry="120" fill="url(#shine)" opacity="0.55" />
+    <rect width="512" height="512" fill="#000" filter="url(#relief)" />
+  </g>
+
+  <!-- Autobús de frente estilo SF Symbols ("bus.fill"): carrocería maciza con
+       el parabrisas, el rótulo y los faros calados (evenodd), retrovisores y
+       ruedas. Blanco puro, centrado en la zona segura de los iconos maskable. -->
+  <g fill="#FFFFFF" filter="url(#float)">
+    <path
+      fill-rule="evenodd"
+      d="M200 116h112c33 0 54 21 54 54v150c0 25-15 42-38 42H184c-23 0-38-17-38-42V170c0-33 21-54 54-54Z
+         M214 140h84a10 10 0 0 1 0 20h-84a10 10 0 0 1 0-20Z
+         M186 182h140c9 0 16 7 16 16v66c0 9-7 16-16 16H186c-9 0-16-7-16-16v-66c0-9 7-16 16-16Z
+         M196 300a17 17 0 1 0 0.01 0Z
+         M316 300a17 17 0 1 0 0.01 0Z"
+    />
+    <rect x="120" y="186" width="16" height="58" rx="8" />
+    <rect x="376" y="186" width="16" height="58" rx="8" />
+    <rect x="170" y="352" width="46" height="46" rx="16" />
+    <rect x="296" y="352" width="46" height="46" rx="16" />
+  </g>
+</svg>

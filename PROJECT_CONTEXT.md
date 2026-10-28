@@ -17,7 +17,14 @@ fricción, sin mapas interactivos ni navegación compleja.
   ("VigoBus") con `vite-plugin-pwa`: manifest standalone, service worker de
   Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
   tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
-  `black-translucent`, `apple-touch-icon`). Iconos en `public/`. Frontend en
+  `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
+  `public/icon.svg` (favicon y manifest): "squircle" con fondo mesh perla
+  (degradados radiales azul, lavanda, índigo, melocotón y rosa), relieve
+  interior (sombra abajo y luz arriba, `feOffset` + `feComposite` +
+  `feFlood`) y autobús de frente blanco estilo SF Symbols con sombra
+  flotante; sin imágenes incrustadas. Los PNG (192, 512, maskable y
+  apple-touch-icon a sangre) se generan con `npm run icons`
+  (`scripts/generate-icons.js`, `sharp`). Frontend en
   Vercel (`https://vbus-flame.vercel.app`).
 - **Backend:** API propia en `backend/` (FastAPI + uvicorn, Python 3.13, sin
   base de datos) con los mismos endpoints y JSON que VigoBusAPI (`/status`,
