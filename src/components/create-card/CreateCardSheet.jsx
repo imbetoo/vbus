@@ -1,6 +1,6 @@
 import { BusFront, CircleAlert, CircleCheck, Plus, Route, SlidersHorizontal, X } from 'lucide-react';
-import { useId, useState } from 'react';
-import { searchStops } from '../../data/stops';
+import { useEffect, useId, useState } from 'react';
+import { loadStopsList, searchStops } from '../../data/stops';
 import { useStopLookup } from '../../hooks/useStopLookup';
 import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import IconButton from '../ui/IconButton';
@@ -82,6 +82,18 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
   const [openSteps, setOpenSteps] = useState({ stop: false, lines: false, customize: false });
   const [query, setQuery] = useState('');
   const lookup = useStopLookup(query);
+  // Lista de paradas para el autocompletado: se carga al abrir la hoja y, al
+  // llegar, se vuelve a buscar lo que ya se haya escrito.
+  const [, setStopsLoaded] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    loadStopsList()
+      .then(() => alive && setStopsLoaded(true))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
   const stop = lookup.status === 'success' ? lookup.stop : null;
   const lines = stop ? uniqueLines(lookup.buses) : [];
   // Autocompletado por dirección o número; la parada ya encontrada no se repite.

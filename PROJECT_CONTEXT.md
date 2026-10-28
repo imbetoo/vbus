@@ -85,11 +85,19 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Buscador predictivo de paradas (hoja "Nueva tarjeta"):** combobox
   accesible (`StopSearchField`): por dirección ("conde de torrecedeira", sin
   importar tildes ni orden de palabras) o por número ("84…"); las coincidencias
-  salen debajo (máx. 6, con su número) y se eligen con el dedo o con flechas +
-  Enter (Escape cierra la lista). Elegir una la busca por número como siempre.
-  Fuente (`src/data/stops.js`): `src/data/stopsList.json` (paradas reales
-  comprobadas) + las que el usuario ya encontró por número (`vbus:stops`) + las
-  de sus tarjetas: aprende con el uso.
+  salen debajo en una lista con scroll (hasta 30: primero coincidencias en el
+  nombre principal, luego entre paréntesis; dentro de una calle, por número de
+  portal) y se eligen con el dedo o con flechas + Enter (Escape cierra la
+  lista). Cada sugerencia enseña el nombre entero (pasa a dos líneas si hace
+  falta; la última palabra va pegada al número del portal, que nunca se corta:
+  en una calle hay muchas paradas) y debajo "Parada N · líneas". Elegir una la
+  busca por número como siempre. Fuente (`src/data/stops.js`):
+  `src/data/stopsList.json` con las 1157 paradas de Vitrasa de los datos
+  abiertos del Concello (`datos.vigo.org/data/transporte/paradas.json`; su
+  `id` es el número de la marquesina), en un fichero aparte que se carga al
+  abrir la hoja (`loadStopsList`); se regenera con `node
+  scripts/update-stops.mjs`. Además, las paradas ya encontradas por número
+  (`vbus:stops`) y las de las tarjetas, por si alguna nueva aún no está.
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
