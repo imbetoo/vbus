@@ -14,9 +14,14 @@ import sharp from 'sharp';
 const PUBLIC_DIR = new URL('../public/', import.meta.url);
 const source = await readFile(new URL('icon.svg', PUBLIC_DIR), 'utf8');
 
-// Mismo SVG con la forma base cuadrada (rx 0): para los iconos a sangre.
-const fullBleed = source.replace(/(<rect id="shape-rect"[^>]*?)rx="[\d.]+"/, '$1rx="0"');
-if (fullBleed === source) throw new Error('No se encontró <rect id="shape-rect" rx="…"> en public/icon.svg');
+// Mismo SVG con la forma y el reborde de cristal cuadrados (rx 0): para los
+// iconos a sangre.
+let fullBleed = source;
+for (const id of ['shape-rect', 'rim']) {
+  const squared = fullBleed.replace(new RegExp(`(<rect id="${id}"[^>]*?)rx="[\\d.]+"`), '$1rx="0"');
+  if (squared === fullBleed) throw new Error(`No se encontró <rect id="${id}" rx="…"> en public/icon.svg`);
+  fullBleed = squared;
+}
 
 const ICONS = [
   { file: 'pwa-192x192.png', size: 192, svg: source },
@@ -30,9 +35,9 @@ for (const { file, size, svg } of ICONS) {
   // y reducir después: bordes y degradados limpios.
   await sharp(Buffer.from(svg), { density: 144 })
     .resize(size, size)
-    // Paleta de 256 colores con tramado: unas 4 veces menos peso sin bandas
-    // visibles en los degradados (el service worker los descarga todos).
-    .png({ compressionLevel: 9, palette: true, quality: 100, dither: 1 })
+    // A todo color: con paleta de 256 colores los degradados oscuros del
+    // cristal se manchan (pesaría ~4 veces menos, pero se nota).
+    .png({ compressionLevel: 9, adaptiveFiltering: true })
     .toFile(new URL(file, PUBLIC_DIR).pathname);
   console.log(`public/${file} (${size}×${size})`);
 }

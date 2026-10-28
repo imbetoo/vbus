@@ -18,11 +18,15 @@ fricción, sin mapas interactivos ni navegación compleja.
   Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
   tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
   `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
-  `public/icon.svg` (favicon y manifest): "squircle" con fondo mesh perla
-  (degradados radiales azul, lavanda, índigo, melocotón y rosa), relieve
-  interior (sombra abajo y luz arriba, `feOffset` + `feComposite` +
-  `feFlood`) y autobús de frente blanco estilo SF Symbols con sombra
-  flotante; sin imágenes incrustadas. Los PNG (192, 512, maskable y
+  `public/icon.svg` (favicon y manifest), estilo "liquid glass" de iOS 26 /
+  visionOS: "squircle" (rx 115) sobre fondo oscuro con un mesh gradient
+  líquido (esferas magenta, azul eléctrico, cian, violeta y perla con
+  `feGaussianBlur` 40), reflejo de luz convexo en la mitad superior, sombra
+  interior global (`feGaussianBlur` + `feOffset` + `feComposite` +
+  `feFlood`), reborde de cristal tallado (trazo de 5 px, blanco arriba →
+  negro abajo) y autobús de frente estilo SF Symbols con degradado blanco →
+  gris perla y doble `feDropShadow` que lo hace flotar; sin imágenes
+  incrustadas. Los PNG (192, 512, maskable y
   apple-touch-icon a sangre) se generan con `npm run icons`
   (`scripts/generate-icons.js`, `sharp`). Frontend en
   Vercel (`https://vbus-flame.vercel.app`).
