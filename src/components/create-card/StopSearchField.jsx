@@ -1,6 +1,6 @@
-import { LoaderCircle, MapPin, Search } from 'lucide-react';
+import { LoaderCircle, Search } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
-import { splitStopName } from '../../data/stops';
+import StopRow from './StopRow';
 
 /**
  * Buscador de paradas con el estilo de los campos de búsqueda de iOS y
@@ -71,7 +71,7 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
-        placeholder="Dirección o número (p. ej. 8480)"
+        placeholder="Calle o número de parada"
         value={value}
         onChange={(event) => {
           setDismissed(false);
@@ -120,16 +120,7 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
                 index === activeIndex ? 'bg-white/10' : ''
               }`}
             >
-              <MapPin className="h-5 w-5 shrink-0 text-white/60" strokeWidth={2.25} aria-hidden="true" />
-              <span className="min-w-0 flex-1">
-                <StopName name={stop.name} />
-                {/* Número de marquesina y líneas que pasan: distinguen paradas
-                    cercanas o enfrentadas en la misma calle. */}
-                <span className="mt-0.5 block truncate text-sm font-medium tabular-nums text-white/60">
-                  Parada {stop.id}
-                  {stop.lines?.length ? ` · ${stop.lines.join(', ')}` : ''}
-                </span>
-              </span>
+              <StopRow stop={stop} />
             </li>
           ))}
         </ul>
@@ -138,22 +129,3 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
   );
 }
 
-/**
- * Nombre de la parada, entero: si no cabe en una línea pasa a la siguiente (en
- * una misma calle hay muchas paradas y el número del portal es lo que las
- * distingue). La última palabra de la calle va pegada al número ("Torrecedeira,
- * 81"), así ", 81" nunca se queda solo en una línea.
- */
-function StopName({ name }) {
-  const { street, number } = splitStopName(name);
-  const cut = number ? street.lastIndexOf(' ') + 1 : street.length;
-  return (
-    <span className="block break-words text-base/snug font-medium">
-      {street.slice(0, cut)}
-      <span className="whitespace-nowrap">
-        {street.slice(cut)}
-        {number}
-      </span>
-    </span>
-  );
-}

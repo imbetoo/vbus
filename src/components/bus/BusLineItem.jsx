@@ -3,7 +3,7 @@ import ArrivalTime from './ArrivalTime';
 import LineBadge from './LineBadge';
 import { isUrgent } from './urgency';
 
-export default function BusLineItem({ line, color, time, destination }) {
+export default function BusLineItem({ line, color, time, destination, timeFormat, fetchedAt }) {
   const urgent = isUrgent(time);
 
   return (
@@ -14,7 +14,7 @@ export default function BusLineItem({ line, color, time, destination }) {
 
       <span className="flex shrink-0 items-center gap-2">
         <PingDot ping={urgent} className={urgent ? 'bg-urgent' : 'bg-white/80'} />
-        <ArrivalTime minutes={time} urgent={urgent} />
+        <ArrivalTime minutes={time} urgent={urgent} format={timeFormat} fetchedAt={fetchedAt} />
       </span>
     </li>
   );

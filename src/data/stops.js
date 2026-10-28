@@ -8,6 +8,8 @@
  *    LocalStorage `vbus:stops`) y las de sus tarjetas guardadas: cubren
  *    paradas nuevas que aún no estén en la lista.
  */
+import { haversineMeters } from '../lib/geo';
+
 const STORAGE_KEY = 'vbus:stops';
 
 // La lista completa (~125 KB) va en su propio fichero y se pide al abrir
@@ -21,6 +23,32 @@ export function loadStopsList() {
   });
   return stopsListPromise;
 }
+
+/** Líneas que pasan por una parada según los datos abiertos (`[]` si no está o aún no se ha cargado la lista). */
+export function stopLines(stopId) {
+  return stopsList.find((stop) => stop.id === Number(stopId))?.lines ?? [];
+}
+
+/**
+ * Paradas más cercanas a `position` (`{ lat, lon }`), con su distancia en
+ * metros: las `limit` más próximas dentro de `maxMeters`. Si no hay ninguna
+ * tan cerca, igualmente las `limit` más próximas (`withinRadius: false`), y
+ * `nearestMeters` dice a cuánto está la primera (para detectar que se está
+ * fuera de Vigo).
+ */
+export function nearestStops(position, { limit = 5, maxMeters = 800 } = {}) {
+  const sorted = stopsList
+    .filter((stop) => Number.isFinite(stop.lat) && Number.isFinite(stop.lon))
+    .map((stop) => ({ ...stop, distance: haversineMeters(position, stop) }))
+    .sort((a, b) => a.distance - b.distance);
+  const near = sorted.filter((stop) => stop.distance <= maxMeters).slice(0, limit);
+  return {
+    stops: near.length ? near : sorted.slice(0, limit),
+    withinRadius: near.length > 0,
+    nearestMeters: sorted[0]?.distance ?? Infinity,
+  };
+}
+
 // En una calle larga hay muchas paradas (Torrecedeira tiene 9): se enseñan
 // todas en una lista con scroll.
 const MAX_RESULTS = 30;

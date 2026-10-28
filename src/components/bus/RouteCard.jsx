@@ -19,7 +19,8 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * los `busesToShow` primeros (elegidos al crearla) y "Ver más autobuses"
  * despliega el resto, haciendo crecer la tarjeta.
  * El fondo del icono usa el color elegido al crearla (`color`, ver
- * `cardColors.js`). `headerAction` sustituye a la X de eliminar (en modo
+ * `cardColors.js`). `timeFormat` (ajustes): minutos que faltan o hora de
+ * llegada, calculada desde `updatedAt` (cuándo llegaron los tiempos). `headerAction` sustituye a la X de eliminar (en modo
  * edición, el tirador para arrastrar).
  */
 export default function RouteCard({
@@ -33,6 +34,8 @@ export default function RouteCard({
   lines,
   busesToShow = 3,
   sortBy = 'time',
+  timeFormat = 'relative',
+  updatedAt,
   onRemove,
   headerAction,
 }) {
@@ -46,7 +49,9 @@ export default function RouteCard({
   const name = alias ?? (title !== stopName ? title : '');
   const displayTitle = name || stopName || title;
   const subtitle = name || !stopId ? `Desde ${stopName}` : `Parada ${stopId}`;
-  const sorted = sortBuses(buses, lines, sortBy);
+  // Solo las líneas visibles de la tarjeta (`lines`, editables con el lápiz).
+  const shown = lines?.length ? buses.filter((bus) => lines.includes(bus.line)) : buses;
+  const sorted = sortBuses(shown, lines, sortBy);
   const visible = sorted.slice(0, busesToShow);
   const more = sorted.slice(busesToShow);
 
@@ -72,7 +77,7 @@ export default function RouteCard({
 
       <ul className="px-1">
         {visible.map((bus) => (
-          <BusLineItem key={busKey(bus)} {...bus} />
+          <BusLineItem key={busKey(bus)} {...bus} timeFormat={timeFormat} fetchedAt={updatedAt} />
         ))}
       </ul>
 
@@ -81,7 +86,7 @@ export default function RouteCard({
           <Collapse id={moreId} open={showMore}>
             <ul className="px-1">
               {more.map((bus) => (
-                <BusLineItem key={busKey(bus)} {...bus} />
+                <BusLineItem key={busKey(bus)} {...bus} timeFormat={timeFormat} fetchedAt={updatedAt} />
               ))}
             </ul>
           </Collapse>

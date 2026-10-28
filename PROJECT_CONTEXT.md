@@ -78,7 +78,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Scroll:** ningún contenedor muestra barra de desplazamiento (regla global
   en `index.css`); el scroll sigue funcionando.
 - **Estilo Bento / Soft Dark (referencia: extensión del usuario):** hojas y
-  modales grafito casi opacos con asa, título + X circular; contenedores
+  modales grafito opacos con asa, título + X circular; contenedores
   internos `rounded-3xl bg-white/[0.06] border border-white/10`; inputs
   `rounded-2xl bg-white/10` con borde y anillo azul iOS (`accent` `#0A84FF`) al
   enfocar; acción principal en píldora blanca a todo el ancho (`PillButton`).
@@ -98,6 +98,15 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   abrir la hoja (`loadStopsList`); se regenera con `node
   scripts/update-stops.mjs`. Además, las paradas ya encontradas por número
   (`vbus:stops`) y las de las tarjetas, por si alguna nueva aún no está.
+- **Paradas cerca de mí (misma hoja):** botón de cristal con `LocateFixed` bajo
+  el buscador (`NearbyStops`). Pide la ubicación (`navigator.geolocation`, alta
+  precisión, 15 s) y con Haversine (`src/lib/geo.js`, sin librerías) ordena
+  las 1157 paradas: enseña las 5 más cercanas a menos de 800 m (o las 5 más
+  próximas si no hay ninguna tan cerca) con su distancia en la fila ("Parada
+  8480 · 10 m · líneas"); elegir una la busca por número. Estados: "Buscando
+  tu ubicación…", permiso denegado, sin señal/tiempo agotado, navegador sin
+  GPS y fuera de Vigo (parada más cercana a más de 15 km). La ubicación no se
+  guarda.
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
@@ -144,7 +153,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   (`animate-jiggle`: ±1°, 260 ms, solo `transform`, desfasado por tarjeta) y
   muestran: (1) círculo rojo con aspa superpuesto arriba a la izquierda
   (borra con la animación de salida), (2) círculo oscuro con lápiz arriba a la
-  derecha en lugar de la X (abre el modal de alias, `AliasModal`) y (3) el
+  derecha en lugar de la X (abre "Editar tarjeta", `EditCardModal`) y (3) el
   tirador ≡ fuera de la tarjeta, en el margen derecho y centrado (la tarjeta
   se estrecha 28 px para dejarle sitio; el tirador no tiembla). La lista es un
   `Reorder.Group` de framer-motion (eje Y; `EditableRouteItem` =
@@ -158,8 +167,15 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   alias es el título y el nombre oficial va al subtítulo ("Desde Rúa do Conde
   de Torrecedeira, 81"); sin alias, el título es la parada y el subtítulo
   "Parada N". Se pone al crearla ("Nombre de la tarjeta") o con el lápiz del
-  modo edición (`renameRoute`). Las tarjetas guardadas antes de existir
+  modo edición (`updateRoute`). Las tarjetas guardadas antes de existir
   `alias` lo reciben al cargar (su título si no era el de la parada).
+- **Líneas visibles por tarjeta:** `lines` es el array de líneas visibles en
+  orden de prioridad (las demás están ocultas). En "Editar tarjeta" (lápiz del
+  modo edición: alias + "Líneas") salen todas las que pasan por la parada
+  (datos abiertos + las de la tarjeta) como las pastillas de `LineChips`:
+  encendidas se ven, en el orden en que se tocaron; al menos una. La tarjeta
+  filtra sus llegadas por `lines`; al guardar se quitan las de líneas ocultas
+  y se refresca para traer las que vuelven a mostrarse.
 - **Nada aparece de golpe:** mensajes de estado y textos que cambian entran con
   `animate-fade-in`; los subtítulos de los pasos de la hoja van en una sola
   línea para que su alto no cambie y no muevan el contenido.
@@ -177,9 +193,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   número 1, 2, 3… al elegir), así nada salta de fila. El paso de líneas usa el
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
-  (pulgar blanco que se desliza; accesibles como grupo de radios). Dos ajustes:
-  "Ordenar autobuses por" y "Fondo"; se guardan en LocalStorage (`useSettings`, en
-  `App.jsx`). "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
+  (pulgar blanco que se desliza; accesibles como grupo de radios), con scroll
+  si no cabe. Cuatro ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  "Ordenar autobuses por"; "Formato de tiempo": Relativo ("5 min") o Absoluto
+  ("12:45", minutos sumados a `updatedAt`, la hora en que llegaron los
+  tiempos, así no se desvía entre refrescos); "Actualizar datos": 15, 30
+  (por defecto) o 60 s (el intervalo de `useRoutes` se rehace al cambiarlo); y
+  "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio".
@@ -196,7 +216,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 ### Fase 2 · Motor de datos — *En curso*
 
-- Hecho: refresco automático cada 30 s (`useRoutes`), también al abrir la app y
+- Hecho: refresco automático cada 30 s (15/30/60 s en Ajustes, `useRoutes`), también al abrir la app y
   al volver a la pestaña; pausado con la pestaña oculta. Con datos simulados,
   los minutos descuentan con el reloj real.
 - Hecho: "tirar para actualizar" (`usePullToRefresh` + `PullIndicator`). Solo

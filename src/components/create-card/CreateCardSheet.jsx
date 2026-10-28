@@ -12,6 +12,7 @@ import { DEFAULT_CARD_COLOR } from '../bus/cardColors';
 import CardNameField from './CardNameField';
 import ColorPicker from './ColorPicker';
 import LineChips from './LineChips';
+import NearbyStops from './NearbyStops';
 import StepSection from './StepSection';
 import StopSearchField from './StopSearchField';
 
@@ -175,6 +176,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
               suggestionCount={suggestions.length}
             />
           </div>
+          <NearbyStops onSelect={(item) => setQuery(String(item.id))} />
         </StepSection>
 
         <StepSection
