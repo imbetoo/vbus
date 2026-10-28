@@ -1,32 +1,80 @@
-import { LoaderCircle, Search } from 'lucide-react';
-import { useId } from 'react';
+import { LoaderCircle, MapPin, Search } from 'lucide-react';
+import { useId, useState } from 'react';
 
 /**
- * Buscador de paradas con el estilo de los campos de búsqueda de iOS. Con
- * `loading` muestra un indicador giratorio a la derecha.
+ * Buscador de paradas con el estilo de los campos de búsqueda de iOS y
+ * autocompletado (combobox accesible): mientras se escribe una dirección
+ * ("Conde de Torrecedeira") o un número ("8480"), debajo aparecen las
+ * paradas que encajan (`suggestions`). Se eligen con el dedo, o con las
+ * flechas y Enter; Escape las cierra. Al elegir una, `onSelect(stop)`.
+ * Con `loading` muestra un indicador giratorio a la derecha.
  */
-export default function StopSearchField({ value, onChange, loading = false, describedBy }) {
+export default function StopSearchField({ value, onChange, onSelect, suggestions = [], loading = false, describedBy }) {
   const id = useId();
+  const listId = useId();
+  const [focused, setFocused] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [active, setActive] = useState(0);
+  const open = focused && !dismissed && suggestions.length > 0;
+  const activeIndex = Math.min(active, suggestions.length - 1);
+
+  const choose = (stop) => {
+    setDismissed(true);
+    onSelect(stop);
+  };
+
+  const onKeyDown = (event) => {
+    if (!open) {
+      if (event.key === 'ArrowDown' && suggestions.length) setDismissed(false);
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      setActive((activeIndex + step + suggestions.length) % suggestions.length);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      choose(suggestions[activeIndex]);
+    } else if (event.key === 'Escape') {
+      // Cierra la lista sin cerrar la hoja.
+      event.preventDefault();
+      event.stopPropagation();
+      setDismissed(true);
+    }
+  };
 
   return (
     <div className="relative">
       <label htmlFor={id} className="sr-only">
-        Número de parada
+        Dirección o número de parada
       </label>
       <Search
-        className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60"
+        className="pointer-events-none absolute left-3.5 top-6 h-5 w-5 -translate-y-1/2 text-white/60"
         strokeWidth={2.5}
         aria-hidden="true"
       />
       <input
         id={id}
         type="search"
-        inputMode="numeric"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-activedescendant={open ? `${listId}-${activeIndex}` : undefined}
         enterKeyHint="search"
         autoComplete="off"
-        placeholder="Número de parada (p. ej. 3014)"
+        autoCorrect="off"
+        spellCheck={false}
+        placeholder="Dirección o número (p. ej. 8480)"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          setDismissed(false);
+          setActive(0);
+          onChange(event.target.value);
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onKeyDown={onKeyDown}
         aria-describedby={describedBy}
         aria-busy={loading}
         className="h-12 w-full rounded-2xl border border-white/10 bg-white/10 pl-11 pr-11 text-lg font-medium text-white placeholder:font-normal placeholder:text-white/50 transition duration-300 ease-spring focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40 [&::-webkit-search-cancel-button]:hidden"
@@ -35,13 +83,46 @@ export default function StopSearchField({ value, onChange, loading = false, desc
           `transform` del icono y se comería un `-translate-y-1/2` (el icono
           bajaba en bucle). */}
       <span
-        className={`pointer-events-none absolute inset-y-0 right-3.5 flex items-center transition-opacity duration-300 ${
+        className={`pointer-events-none absolute right-3.5 top-0 flex h-12 items-center transition-opacity duration-300 ${
           loading ? 'opacity-100' : 'opacity-0'
         }`}
         aria-hidden="true"
       >
         <LoaderCircle className="h-5 w-5 animate-spin text-white/70 motion-reduce:animate-none" strokeWidth={2.5} />
       </span>
+
+      {/* Sugerencias: en el flujo (no flotan) para que la hoja haga scroll si
+          hacen falta. `onMouseDown` evita que el input pierda el foco antes del
+          clic. */}
+      {open && (
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label="Paradas sugeridas"
+          className="mt-2 animate-fade-in divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] motion-reduce:animate-none"
+        >
+          {suggestions.map((stop, index) => (
+            <li
+              key={stop.id}
+              id={`${listId}-${index}`}
+              role="option"
+              aria-selected={index === activeIndex}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => choose(stop)}
+              onMouseEnter={() => setActive(index)}
+              className={`flex cursor-pointer items-center gap-3 px-3.5 py-3 transition-colors duration-150 ${
+                index === activeIndex ? 'bg-white/10' : ''
+              }`}
+            >
+              <MapPin className="h-5 w-5 shrink-0 text-white/60" strokeWidth={2.25} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate text-base font-medium">{stop.name}</span>
+              <span className="shrink-0 rounded-lg bg-white/10 px-2 py-0.5 text-sm font-semibold tabular-nums text-white/80">
+                {stop.id}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

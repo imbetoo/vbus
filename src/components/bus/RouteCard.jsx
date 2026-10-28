@@ -24,6 +24,7 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  */
 export default function RouteCard({
   title,
+  alias,
   stopId,
   stopName,
   icon,
@@ -39,25 +40,28 @@ export default function RouteCard({
   const moreId = useId();
   const Icon = ROUTE_ICONS[icon] ?? House;
   const tone = cardColor(color);
-  // Con nombre propio, el subtítulo dice desde dónde; si el título ya es el
-  // nombre de la parada, dice su número.
-  const subtitle = title === stopName && stopId ? `Parada ${stopId}` : `Desde ${stopName}`;
+  // Con alias ("Trabajo 💻"), el alias va de título y el nombre oficial de la
+  // parada pasa al subtítulo; sin alias, el título es la parada y el
+  // subtítulo dice su número. (Tarjetas antiguas sin `alias`: su `title`.)
+  const name = alias ?? (title !== stopName ? title : '');
+  const displayTitle = name || stopName || title;
+  const subtitle = name || !stopId ? `Desde ${stopName}` : `Parada ${stopId}`;
   const sorted = sortBuses(buses, lines, sortBy);
   const visible = sorted.slice(0, busesToShow);
   const more = sorted.slice(busesToShow);
 
   return (
     // `origin-top`: el rebote al pulsar no desplaza la tarjeta mientras crece.
-    <GlassCard as="section" aria-label={title} className="origin-top">
+    <GlassCard as="section" aria-label={displayTitle} className="origin-top">
       <div className="flex items-start gap-2">
-        <IconHeading icon={Icon} iconTone={`${tone.bg} ${tone.icon}`} title={title} subtitle={subtitle} titleAs="h2" />
+        <IconHeading icon={Icon} iconTone={`${tone.bg} ${tone.icon}`} title={displayTitle} subtitle={subtitle} titleAs="h2" />
         {/* `headerAction` (modo edición: el tirador) sustituye a la X. */}
         {headerAction}
         {!headerAction && onRemove && (
           <IconButton
             icon={X}
             size="sm"
-            label={`Eliminar tarjeta ${title}`}
+            label={`Eliminar tarjeta ${displayTitle}`}
             onClick={onRemove}
             className="-mr-1 -mt-1 ml-auto"
           />

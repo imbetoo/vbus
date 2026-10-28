@@ -1,5 +1,6 @@
 import { BusFront, CircleAlert, CircleCheck, Plus, Route, SlidersHorizontal, X } from 'lucide-react';
 import { useId, useState } from 'react';
+import { searchStops } from '../../data/stops';
 import { useStopLookup } from '../../hooks/useStopLookup';
 import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import IconButton from '../ui/IconButton';
@@ -44,7 +45,7 @@ const BUSES_OPTIONS = [
   { value: 3, label: '3 autobuses' },
 ];
 
-function StopStatus({ id, lookup, query }) {
+function StopStatus({ id, lookup, query, suggestionCount }) {
   if (lookup.status === 'error') {
     return (
       <p id={id} className="mt-3 flex animate-fade-in items-start gap-2 rounded-2xl border border-urgent/30 bg-urgent/10 px-3.5 py-2.5 text-sm font-medium text-red-200 motion-reduce:animate-none">
@@ -66,9 +67,11 @@ function StopStatus({ id, lookup, query }) {
   }
   return (
     <p id={id} className="mt-3 animate-fade-in text-sm font-medium text-white/60 motion-reduce:animate-none">
-      {lookup.status === 'invalid'
-        ? 'De momento solo se puede buscar por número de parada.'
-        : 'Escribe el número que aparece en la marquesina de la parada.'}
+      {lookup.status !== 'invalid'
+        ? 'Escribe la dirección o el número que aparece en la marquesina.'
+        : suggestionCount > 0
+          ? 'Elige tu parada en la lista.'
+          : 'No la encuentro entre las paradas conocidas. Prueba con el número de la marquesina.'}
     </p>
   );
 }
@@ -81,6 +84,8 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
   const lookup = useStopLookup(query);
   const stop = lookup.status === 'success' ? lookup.stop : null;
   const lines = stop ? uniqueLines(lookup.buses) : [];
+  // Autocompletado por dirección o número; la parada ya encontrada no se repite.
+  const suggestions = searchStops(query).filter((item) => item.id !== stop?.id);
 
   // La selección pertenece a una parada concreta: si cambia, empieza vacía.
   const [selection, setSelection] = useState({ stopId: null, lines: [] });
@@ -143,12 +148,20 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
           <StopSearchField
             value={query}
             onChange={setQuery}
+            onSelect={(item) => setQuery(String(item.id))}
+            suggestions={suggestions}
             loading={lookup.status === 'loading'}
             describedBy={statusId}
           />
           <div aria-live="polite">
             {/* `key` por tipo de mensaje: al cambiar, el nuevo entra con un fundido. */}
-            <StopStatus key={statusKind(lookup)} id={statusId} lookup={lookup} query={query} />
+            <StopStatus
+              key={`${statusKind(lookup)}-${lookup.status === 'invalid' && suggestions.length > 0}`}
+              id={statusId}
+              lookup={lookup}
+              query={query}
+              suggestionCount={suggestions.length}
+            />
           </div>
         </StepSection>
 
