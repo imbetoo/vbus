@@ -1,5 +1,5 @@
 import { LoaderCircle, MapPin, Search } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { splitStopName } from '../../data/stops';
 
 /**
@@ -18,6 +18,11 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
   const [active, setActive] = useState(0);
   const open = focused && !dismissed && suggestions.length > 0;
   const activeIndex = Math.min(active, suggestions.length - 1);
+
+  // Con las flechas, la opción activa se mantiene a la vista en la lista con scroll.
+  useEffect(() => {
+    if (open) document.getElementById(`${listId}-${activeIndex}`)?.scrollIntoView({ block: 'nearest' });
+  }, [open, activeIndex, listId]);
 
   const choose = (stop) => {
     setDismissed(true);
@@ -100,7 +105,7 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
           id={listId}
           role="listbox"
           aria-label="Paradas sugeridas"
-          className="mt-2 animate-fade-in divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] motion-reduce:animate-none"
+          className="mt-2 animate-fade-in divide-y divide-white/10 max-h-80 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-white/[0.06] motion-reduce:animate-none"
         >
           {suggestions.map((stop, index) => (
             <li
@@ -118,7 +123,12 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
               <MapPin className="h-5 w-5 shrink-0 text-white/60" strokeWidth={2.25} aria-hidden="true" />
               <span className="min-w-0 flex-1">
                 <StopName name={stop.name} />
-                <span className="mt-0.5 block text-sm font-medium tabular-nums text-white/60">Parada {stop.id}</span>
+                {/* Número de marquesina y líneas que pasan: distinguen paradas
+                    cercanas o enfrentadas en la misma calle. */}
+                <span className="mt-0.5 block truncate text-sm font-medium tabular-nums text-white/60">
+                  Parada {stop.id}
+                  {stop.lines?.length ? ` · ${stop.lines.join(', ')}` : ''}
+                </span>
               </span>
             </li>
           ))}

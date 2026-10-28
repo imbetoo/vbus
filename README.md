@@ -20,6 +20,18 @@ npm run preview  # sirve el build
 npm run lint     # oxlint
 ```
 
+## Paradas
+
+`src/data/stopsList.json` tiene todas las paradas de Vitrasa (número de
+marquesina, nombre, coordenadas y líneas) para el buscador de "Nueva tarjeta".
+Sale de los datos abiertos del Concello
+(`https://datos.vigo.org/data/transporte/paradas.json`). Para actualizarla:
+
+```sh
+node scripts/update-stops.mjs                 # la descarga de datos.vigo.org
+node scripts/update-stops.mjs paradas.json    # o desde un fichero ya descargado
+```
+
 ## PWA
 
 La app se instala como "VigoBus" (`vite-plugin-pwa`, configurado en
