@@ -1,13 +1,15 @@
+import { Reorder, motion } from 'framer-motion';
 import { BusFront, Settings } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
-import RouteCard from '../components/bus/RouteCard';
+import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
 import Clock from '../components/settings/Clock';
 import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
+import { PRESSABLE } from '../components/ui/pressable';
 import PullIndicator from '../components/ui/PullIndicator';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
@@ -40,11 +42,17 @@ function EmptyState() {
  * con scroll propio en medio y "Crear nueva tarjeta" fijo abajo.
  */
 export default function Dashboard({ settings, onSettingChange }) {
-  const { routes, addRoute, removeRoute, refresh } = useRoutes();
-  // Tirar hacia abajo desde arriba del todo vuelve a pedir los tiempos.
+  const { routes, addRoute, removeRoute, reorderRoutes, refresh } = useRoutes();
+  // Modo edición (botón "Editar" o pulsación larga en una tarjeta): las
+  // tarjetas tiemblan, se arrastran desde su tirador y se borran con el botón
+  // rojo. Sin tarjetas no hay nada que editar.
+  const [isEditingRequested, setIsEditing] = useState(false);
+  const isEditing = isEditingRequested && routes.length > 0;
+  // Tirar hacia abajo desde arriba del todo vuelve a pedir los tiempos (no en
+  // modo edición, donde los gestos son para mover tarjetas).
   const scrollRef = useRef(null);
   const trackRef = useRef(null);
-  const refreshing = usePullToRefresh({ scrollRef, trackRef, onRefresh: refresh });
+  const refreshing = usePullToRefresh({ scrollRef, trackRef, onRefresh: refresh, enabled: !isEditing });
   const { theme, toggleTheme } = useTheme();
   const [isCreating, setIsCreating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -75,11 +83,27 @@ export default function Dashboard({ settings, onSettingChange }) {
       <header className="flex shrink-0 items-end justify-between gap-3 text-black dark:text-white">
         <div className="min-w-0">
           <p className="text-xl font-semibold tracking-tight sm:text-2xl">Buenos días</p>
-          <h1 className="text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Mis rutas</h1>
+          <h1 className="whitespace-nowrap text-[1.875rem] font-bold tracking-[-0.03em] min-[360px]:text-4xl sm:text-5xl">Mis rutas</h1>
         </div>
-        {/* Reloj encima de los botones, todo alineado a la derecha. */}
+        {/* Reloj encima de los botones, todo alineado a la derecha. "Editar"
+            va junto al reloj como botón de texto de iOS, para no robar ancho
+            al título en pantallas estrechas. */}
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <Clock />
+          <div className="flex items-center gap-3">
+            {routes.length > 0 && (
+              <button
+                type="button"
+                aria-pressed={isEditing}
+                onClick={() => setIsEditing((value) => !value)}
+                className={`relative rounded-lg text-lg font-semibold tracking-tight text-accent after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent dark:text-[#409CFF] ${PRESSABLE}`}
+              >
+                <span key={String(isEditing)} className="block animate-fade-in motion-reduce:animate-none">
+                  {isEditing ? 'Listo' : 'Editar'}
+                </span>
+              </button>
+            )}
+            <Clock />
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <IconButton
@@ -102,7 +126,10 @@ export default function Dashboard({ settings, onSettingChange }) {
           oculto por encima) y lleva las variables CSS del gesto. */}
       <div ref={trackRef} className="relative -mx-5 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
         <PullIndicator refreshing={refreshing} />
-      <main
+      {/* `layoutScroll`: framer-motion tiene en cuenta el scroll al medir las
+          tarjetas que se reordenan. */}
+      <motion.main
+        layoutScroll
         ref={scrollRef}
         className={`min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 will-change-transform ${SCROLL_FADE}`}
       >
@@ -122,37 +149,28 @@ export default function Dashboard({ settings, onSettingChange }) {
             <EmptyState />
           </div>
 
-          {/* `pb-24`: la última tarjeta puede subir por encima del degradado. */}
-          <ul className="flex flex-col pb-24 pt-4">
-            {routes.map((route) => {
-              const leaving = leavingIds.has(route.id);
-              // Entrada (`animate-card-in`, solo tarjetas nuevas): su hueco crece mientras aparece.
-              // Salida: se desvanece y encoge mientras su hueco (alto + separación,
-              // `pb-5`) se cierra con la técnica de grid, y las de abajo suben.
-              // `minmax(0,1fr)` mantiene la tarjeta al ancho de la lista.
-              return (
-                <li
-                  key={route.id}
-                  inert={leaving}
-                  className={`grid ${savedIds.has(route.id) ? '' : 'animate-card-in'} grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity,transform] duration-[800ms] ease-out motion-reduce:animate-none ${
-                    leaving ? 'pointer-events-none scale-90 grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
-                  }`}
-                >
-                  <div className={`min-h-0 ${leaving ? 'overflow-hidden' : ''}`}>
-                    <div className="pb-5">
-                      <RouteCard
-                        {...route}
-                        sortBy={settings.sortBy}
-                        onRemove={() => handleRemove(route.id)}
-                      />
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          {/* `pb-24`: la última tarjeta puede subir por encima del degradado.
+              `Reorder.Group`: en modo edición las tarjetas se arrastran en
+              vertical y cada cambio de orden se guarda al momento
+              (`reorderRoutes` → LocalStorage). */}
+          <Reorder.Group as="ul" axis="y" values={routes} onReorder={reorderRoutes} className="flex flex-col pb-24 pt-4">
+            {routes.map((route, index) => (
+              <EditableRouteItem
+                key={route.id}
+                route={route}
+                index={index}
+                editing={isEditing}
+                leaving={leavingIds.has(route.id)}
+                // Entrada solo para las tarjetas nuevas (`animate-card-in`).
+                animateIn={!savedIds.has(route.id)}
+                sortBy={settings.sortBy}
+                onRemove={() => handleRemove(route.id)}
+                onStartEditing={() => setIsEditing(true)}
+              />
+            ))}
+          </Reorder.Group>
         </div>
-      </main>
+      </motion.main>
       </div>
 
       <div className="shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-2">

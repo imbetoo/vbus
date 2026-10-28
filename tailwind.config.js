@@ -76,6 +76,8 @@ export default {
         'clock-in': { from: { transform: 'translateY(100%)', opacity: '0' } },
         // Entrada de una tarjeta nueva: su hueco crece mientras aparece.
         'card-in': { from: { gridTemplateRows: '0fr', opacity: '0', transform: 'scale(0.9)' } },
+        // Modo edición: temblor de los iconos de iOS (solo rotación, ±1°).
+        jiggle: { from: { transform: 'rotate(-1deg)' }, to: { transform: 'rotate(1deg)' } },
       },
       // Duraciones desiguales y desfasadas para que nunca se muevan al compás.
       animation: {
@@ -88,6 +90,7 @@ export default {
         'clock-out': 'clock-out 600ms cubic-bezier(0.32, 0.72, 0, 1) forwards',
         'clock-in': 'clock-in 600ms cubic-bezier(0.32, 0.72, 0, 1)',
         'card-in': 'card-in 500ms ease-out',
+        jiggle: 'jiggle 260ms ease-in-out infinite alternate',
       },
       // Cristal: brillo interior de 1px en el canto superior + sombra exterior
       // suave que despega la tarjeta del fondo.
