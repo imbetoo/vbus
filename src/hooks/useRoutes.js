@@ -94,6 +94,8 @@ export function useRoutes() {
   }, [refresh]);
 
   const addRoute = useCallback((route) => setRoutes((current) => [...current, route]), []);
+  // Nuevo orden tras arrastrar en modo edición (se guarda con el efecto de arriba).
+  const reorderRoutes = useCallback((ordered) => setRoutes(ordered), []);
   const removeRoute = useCallback((id) => setRoutes((current) => current.filter((route) => route.id !== id)), []);
-  return { routes, addRoute, removeRoute, refresh };
+  return { routes, addRoute, removeRoute, reorderRoutes, refresh };
 }

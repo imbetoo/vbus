@@ -29,12 +29,15 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * `touchmove` se escucha con `passive: false` para poder frenar el rebote
  * nativo del navegador mientras se tira. Devuelve si está refrescando.
  */
-export function usePullToRefresh({ scrollRef, trackRef, onRefresh }) {
+export function usePullToRefresh({ scrollRef, trackRef, onRefresh, enabled = true }) {
   const [refreshing, setRefreshing] = useState(false);
   const onRefreshRef = useRef(onRefresh);
+  // Desactivado (p. ej. en modo edición, donde se arrastran tarjetas).
+  const enabledRef = useRef(enabled);
   useEffect(() => {
     onRefreshRef.current = onRefresh;
-  }, [onRefresh]);
+    enabledRef.current = enabled;
+  }, [onRefresh, enabled]);
 
   useEffect(() => {
     const scroller = scrollRef.current;
@@ -54,7 +57,7 @@ export function usePullToRefresh({ scrollRef, trackRef, onRefresh }) {
     };
 
     const onStart = (event) => {
-      startY = !busy && event.touches.length === 1 && scroller.scrollTop <= 0 ? event.touches[0].clientY : null;
+      startY = enabledRef.current && !busy && event.touches.length === 1 && scroller.scrollTop <= 0 ? event.touches[0].clientY : null;
       pull = 0;
     };
 

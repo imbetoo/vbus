@@ -19,7 +19,8 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * los `busesToShow` primeros (elegidos al crearla) y "Ver más autobuses"
  * despliega el resto, haciendo crecer la tarjeta.
  * El fondo del icono usa el color elegido al crearla (`color`, ver
- * `cardColors.js`).
+ * `cardColors.js`). `headerAction` sustituye a la X de eliminar (en modo
+ * edición, el tirador para arrastrar).
  */
 export default function RouteCard({
   title,
@@ -32,6 +33,7 @@ export default function RouteCard({
   busesToShow = 3,
   sortBy = 'time',
   onRemove,
+  headerAction,
 }) {
   const [showMore, setShowMore] = useState(false);
   const moreId = useId();
@@ -49,7 +51,9 @@ export default function RouteCard({
     <GlassCard as="section" aria-label={title} className="origin-top">
       <div className="flex items-start gap-2">
         <IconHeading icon={Icon} iconTone={`${tone.bg} ${tone.icon}`} title={title} subtitle={subtitle} titleAs="h2" />
-        {onRemove && (
+        {/* `headerAction` (modo edición: el tirador) sustituye a la X. */}
+        {headerAction}
+        {!headerAction && onRemove && (
           <IconButton
             icon={X}
             size="sm"

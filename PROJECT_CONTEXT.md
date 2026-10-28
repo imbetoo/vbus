@@ -120,6 +120,18 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   tarjetas recién creadas entran con la animación inversa (las ya guardadas
   aparecen directamente al abrir la app) y el mensaje de lista vacía
   funde al aparecer y desaparecer.
+- **Modo edición (estilo iOS):** se entra con "Editar" (botón de texto azul
+  junto al reloj; pasa a "Listo") o con una pulsación larga de 500 ms en una
+  tarjeta (`useLongPress`, vibra y se traga el clic). Las tarjetas tiemblan
+  (`animate-jiggle`: ±1°, 260 ms, solo `transform`, desfasado por tarjeta),
+  llevan un círculo rojo con "menos" arriba a la izquierda (borra con la misma
+  animación de salida) y un tirador ≡ a la derecha en lugar de la X. La lista
+  es un `Reorder.Group` de framer-motion (eje Y; `EditableRouteItem` =
+  `Reorder.Item`) y solo se arrastra desde el tirador (`useDragControls`,
+  `touch-action: none`), así el scroll sigue funcionando; la tarjeta
+  arrastrada se levanta (escala 1,03) y deja de temblar. Cada cambio de orden
+  se guarda al momento (`reorderRoutes` → `vbus:routes`). En edición se
+  desactiva "tirar para actualizar"; sin tarjetas, el modo se apaga solo.
 - **Nada aparece de golpe:** mensajes de estado y textos que cambian entran con
   `animate-fade-in`; los subtítulos de los pasos de la hoja van en una sola
   línea para que su alto no cambie y no muevan el contenido.
