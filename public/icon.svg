@@ -1,89 +1,114 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <title>VigoBus</title>
   <defs>
-    <!-- Forma del icono: "squircle" de iOS aproximado (radio ≈ 22,4 %).
-         scripts/generate-icons.js pone rx a 0 para los iconos a sangre
+    <!-- Forma: "squircle" de Apple aproximado (rx 115). scripts/generate-icons.js
+         pone a 0 el rx de #shape-rect y #rim para los iconos a sangre
          (maskable y apple-touch-icon), que recorta el propio sistema. -->
     <clipPath id="shape">
       <rect id="shape-rect" width="512" height="512" rx="115" />
     </clipPath>
 
-    <!-- Lienzo perla y "esferas" del mesh: degradados radiales que se funden
-         en transparente, sin desenfoques (nítido a cualquier tamaño). -->
-    <linearGradient id="pearl" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FBFAFF" />
-      <stop offset="1" stop-color="#EDE6FA" />
+    <!-- 1 · Fondo oscuro y mesh gradient líquido -->
+    <linearGradient id="base" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#141A3A" />
+      <stop offset="1" stop-color="#090B1C" />
     </linearGradient>
-    <radialGradient id="blue">
-      <stop offset="0" stop-color="#7FA8FA" />
-      <stop offset="0.45" stop-color="#A2C2FC" stop-opacity="0.85" />
-      <stop offset="1" stop-color="#A2C2FC" stop-opacity="0" />
+    <radialGradient id="magenta">
+      <stop offset="0" stop-color="#FF5BDB" />
+      <stop offset="0.5" stop-color="#E032C9" stop-opacity="0.85" />
+      <stop offset="1" stop-color="#C026D3" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="lavender">
-      <stop offset="0" stop-color="#C98BF5" />
-      <stop offset="0.45" stop-color="#E2B7FC" stop-opacity="0.85" />
-      <stop offset="1" stop-color="#E2B7FC" stop-opacity="0" />
+    <radialGradient id="electric">
+      <stop offset="0" stop-color="#4C7DFF" />
+      <stop offset="0.5" stop-color="#2F5BFF" stop-opacity="0.85" />
+      <stop offset="1" stop-color="#2546E0" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="indigo">
-      <stop offset="0" stop-color="#6F78E0" />
-      <stop offset="0.5" stop-color="#8E96E8" stop-opacity="0.75" />
-      <stop offset="1" stop-color="#8E96E8" stop-opacity="0" />
+    <radialGradient id="cyan">
+      <stop offset="0" stop-color="#4DF0FF" />
+      <stop offset="0.5" stop-color="#14C8E0" stop-opacity="0.85" />
+      <stop offset="1" stop-color="#06B6D4" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="peach">
-      <stop offset="0" stop-color="#FFB59A" />
-      <stop offset="0.45" stop-color="#FFC9B5" stop-opacity="0.8" />
-      <stop offset="1" stop-color="#FFC9B5" stop-opacity="0" />
+    <radialGradient id="violet">
+      <stop offset="0" stop-color="#9B5CFF" />
+      <stop offset="0.5" stop-color="#7C3AED" stop-opacity="0.8" />
+      <stop offset="1" stop-color="#6D28D9" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="rose">
-      <stop offset="0" stop-color="#F5A9DE" />
-      <stop offset="0.5" stop-color="#F2C4E8" stop-opacity="0.7" />
-      <stop offset="1" stop-color="#F2C4E8" stop-opacity="0" />
+    <radialGradient id="pearl">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="0.45" stop-color="#FFE3F6" stop-opacity="0.9" />
+      <stop offset="1" stop-color="#F5D0FE" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="shine" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9" />
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
-    </radialGradient>
-
-    <!-- Relieve: sombra interior abajo y luz interior arriba (inner shadow
-         con feOffset + feComposite + feFlood sobre la propia forma). -->
-    <filter id="relief" x="-10%" y="-10%" width="120%" height="120%">
-      <feOffset in="SourceAlpha" dy="-16" result="up" />
-      <feGaussianBlur in="up" stdDeviation="16" result="upBlur" />
-      <feComposite in="SourceAlpha" in2="upBlur" operator="out" result="bottomEdge" />
-      <feFlood flood-color="#3B2F7A" flood-opacity="0.42" />
-      <feComposite in2="bottomEdge" operator="in" result="innerShadow" />
-      <feOffset in="SourceAlpha" dy="7" result="down" />
-      <feGaussianBlur in="down" stdDeviation="5" result="downBlur" />
-      <feComposite in="SourceAlpha" in2="downBlur" operator="out" result="topEdge" />
-      <feFlood flood-color="#FFFFFF" flood-opacity="0.7" />
-      <feComposite in2="topEdge" operator="in" result="innerLight" />
-      <feMerge>
-        <feMergeNode in="innerShadow" />
-        <feMergeNode in="innerLight" />
-      </feMerge>
+    <!-- Desenfoque intenso: las esferas se funden como un líquido. -->
+    <filter id="liquid" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40" />
     </filter>
 
-    <!-- El autobús flota sobre el fondo. -->
-    <filter id="float" x="-30%" y="-30%" width="160%" height="170%">
-      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2A1E6B" flood-opacity="0.35" />
+    <!-- 2 · Cristal -->
+    <!-- Reflejo superior: superficie convexa y brillante. -->
+    <!-- En px: transparente del todo a la altura de los extremos de la curva
+         (y = 196), así su borde no deja línea en los laterales. -->
+    <linearGradient id="glare" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="196">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.4" />
+      <stop offset="0.6" stop-color="#FFFFFF" stop-opacity="0.1" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <!-- Reborde de cristal tallado: luz arriba, sombra abajo. -->
+    <linearGradient id="rim-light" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75" />
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.18" />
+      <stop offset="0.7" stop-color="#000000" stop-opacity="0.08" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0.4" />
+    </linearGradient>
+    <!-- Sombra interior global: el contenido queda embutido en el cristal. -->
+    <filter id="inner-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="22" result="blur" />
+      <feOffset in="blur" dy="10" result="shifted" />
+      <!-- Lo que hay dentro de la forma pero no en su copia desenfocada: el borde. -->
+      <feComposite in="SourceAlpha" in2="shifted" operator="arithmetic" k2="1" k3="-1" result="edge" />
+      <feFlood flood-color="#05061A" flood-opacity="0.75" />
+      <feComposite in2="edge" operator="in" />
+    </filter>
+
+    <!-- 3 · Autobús -->
+    <linearGradient id="bus-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="0.6" stop-color="#F4F6FB" />
+      <stop offset="1" stop-color="#D5DBE8" />
+    </linearGradient>
+    <filter id="float" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#02030F" flood-opacity="0.5" />
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#1B0B4A" flood-opacity="0.45" />
     </filter>
   </defs>
 
   <g clip-path="url(#shape)">
-    <rect width="512" height="512" fill="url(#pearl)" />
-    <circle cx="96" cy="88" r="260" fill="url(#blue)" />
-    <circle cx="452" cy="150" r="250" fill="url(#lavender)" />
-    <circle cx="110" cy="470" r="250" fill="url(#indigo)" />
-    <circle cx="470" cy="470" r="230" fill="url(#peach)" />
-    <circle cx="300" cy="330" r="190" fill="url(#rose)" />
-    <ellipse cx="236" cy="200" rx="230" ry="120" fill="url(#shine)" opacity="0.55" />
-    <rect width="512" height="512" fill="#000" filter="url(#relief)" />
+    <!-- Fondo oscuro y elegante. -->
+    <rect width="512" height="512" fill="url(#base)" />
+
+    <!-- Mesh gradient: esferas masivas descentradas, fundidas entre sí. -->
+    <g filter="url(#liquid)">
+      <circle cx="90" cy="120" r="240" fill="url(#magenta)" />
+      <circle cx="460" cy="130" r="240" fill="url(#electric)" />
+      <circle cx="440" cy="470" r="230" fill="url(#cyan)" />
+      <circle cx="70" cy="470" r="200" fill="url(#violet)" />
+      <circle cx="250" cy="300" r="170" fill="url(#violet)" opacity="0.7" />
+      <circle cx="330" cy="70" r="120" fill="url(#pearl)" opacity="0.7" />
+    </g>
+
+    <!-- Reflejo de luz en la mitad superior (cristal convexo). -->
+    <path d="M0 0H512V196C436 246 346 262 256 262S76 246 0 196Z" fill="url(#glare)" />
+
+    <!-- Sombra interior global. -->
+    <rect width="512" height="512" fill="#000" filter="url(#inner-shadow)" />
+
+    <!-- Reborde interior brillante (cristal tallado). -->
+    <rect id="rim" x="3" y="3" width="506" height="506" rx="112" fill="none" stroke="url(#rim-light)" stroke-width="5" />
   </g>
 
-  <!-- Autobús de frente estilo SF Symbols ("bus.fill"): carrocería maciza con
-       el parabrisas, el rótulo y los faros calados (evenodd), retrovisores y
-       ruedas. Blanco puro, centrado en la zona segura de los iconos maskable. -->
-  <g fill="#FFFFFF" filter="url(#float)">
+  <!-- Autobús de frente estilo SF Symbols ("bus.fill"), macizo: parabrisas,
+       rótulo y faros calados (evenodd), retrovisores y ruedas. Degradado de
+       blanco a gris perla y sombra que lo hace flotar sobre el cristal. -->
+  <g fill="url(#bus-fill)" filter="url(#float)">
     <path
       fill-rule="evenodd"
       d="M200 116h112c33 0 54 21 54 54v150c0 25-15 42-38 42H184c-23 0-38-17-38-42V170c0-33 21-54 54-54Z
