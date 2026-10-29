@@ -10,7 +10,15 @@ import StopRow from './StopRow';
  * flechas y Enter; Escape las cierra. Al elegir una, `onSelect(stop)`.
  * Con `loading` muestra un indicador giratorio a la derecha.
  */
-export default function StopSearchField({ value, onChange, onSelect, suggestions = [], loading = false, describedBy }) {
+export default function StopSearchField({
+  value,
+  onChange,
+  onSelect,
+  suggestions = [],
+  loading = false,
+  describedBy,
+  inputRef,
+}) {
   const id = useId();
   const listId = useId();
   const [focused, setFocused] = useState(false);
@@ -61,6 +69,7 @@ export default function StopSearchField({ value, onChange, onSelect, suggestions
       />
       <input
         id={id}
+        ref={inputRef}
         type="search"
         role="combobox"
         aria-autocomplete="list"

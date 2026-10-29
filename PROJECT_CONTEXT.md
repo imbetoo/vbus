@@ -18,15 +18,16 @@ fricción, sin mapas interactivos ni navegación compleja.
   Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
   tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
   `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
-  `public/icon.svg` (favicon y manifest), estilo "liquid glass" de iOS 26 /
-  visionOS: "squircle" (rx 115) sobre fondo oscuro con un mesh gradient
-  líquido (esferas magenta, azul eléctrico, cian, violeta y perla con
-  `feGaussianBlur` 40), reflejo de luz convexo en la mitad superior, sombra
-  interior global (`feGaussianBlur` + `feOffset` + `feComposite` +
-  `feFlood`), reborde de cristal tallado (trazo de 5 px, blanco arriba →
-  negro abajo) y autobús de frente estilo SF Symbols con degradado blanco →
-  gris perla y doble `feDropShadow` que lo hace flotar; sin imágenes
-  incrustadas. Los PNG (192, 512, maskable y
+  `public/icon.svg` (favicon y manifest), conceptual como las apps de Apple
+  (Mapas, Bolsa): el lienzo entero es un plano nocturno de la ciudad
+  ("squircle" rx 115, fondo midnight con manzanas en cuadrícula girada muy
+  sutil, la ría y un parque insinuados) cruzado por dos líneas de ruta
+  gruesas y curvas (cian → verde neón con eje discontinuo, y magenta →
+  naranja), con su borde oscuro y sombra sobre el plano; en el cruce, el nodo
+  de parada (resplandor, aro blanco y cristal azul iOS con brillo convexo) con
+  el autobús SF Symbols dentro. Acabado de cristal: reflejo curvo arriba,
+  sombra interior global y bisel (trazo blanco arriba → negro abajo); sin
+  imágenes incrustadas. Los PNG (192, 512, maskable y
   apple-touch-icon a sangre) se generan con `npm run icons`
   (`scripts/generate-icons.js`, `sharp`). Frontend en
   Vercel (`https://vbus-flame.vercel.app`).
@@ -117,12 +118,22 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   8480 · 10 m · líneas"); elegir una la busca por número. Estados: "Buscando
   tu ubicación…", permiso denegado, sin señal/tiempo agotado, navegador sin
   GPS y fuera de Vigo (parada más cercana a más de 15 km). La ubicación no se
-  guarda.
+  guarda. Buscador y cercanas forman `StopPicker`, reutilizable: solo
+  devuelve la parada elegida (`onSelect`), sin crear nada.
+- **Consulta rápida (lupa de la cabecera):** `QuickSearchSheet` (hoja con
+  `StopPicker`) y, al elegir parada, `QuickLookSheet`: panel inferior con
+  framer-motion dentro de un `<dialog>` modal (entra y sale deslizándose con
+  muelle; se cierra con la X, Escape, tocando fuera o arrastrando el asa o la
+  cabecera hacia abajo) con las llegadas en tiempo real de esa parada
+  (`useStopArrivals`: mismo refresco y formato de tiempo que las tarjetas).
+  No se guarda nada: solo "Añadir a Mis Rutas" (botón secundario de cristal)
+  crea la tarjeta, con todas las líneas de la parada, y cierra el panel.
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
-  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo tres botones
-  circulares: Editar (lápiz/✓), Sol/Luna y Ajustes. "Mis rutas" no se parte en
+  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo cuatro
+  botones circulares: Consulta rápida (lupa), Editar (lápiz/✓), Sol/Luna y
+  Ajustes (36 px por debajo de 400 px de ancho). "Mis rutas" no se parte en
   pantallas estrechas (baja de tamaño por debajo de 380 px).
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
