@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "vite --mode api",
+    "prebuild": "node scripts/generate-routes.mjs --soft",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "icons": "node scripts/generate-icons.js"
+    "icons": "node scripts/generate-icons.js",
+    "routes": "node scripts/generate-routes.mjs"
   },
   "dependencies": {
     "framer-motion": "^14.7.1",
@@ -22,6 +24,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "autoprefixer": "^10.6.1",
+    "fflate": "^0.8.3",
     "oxlint": "^1.88.0",
     "postcss": "^8.5.31",
     "sharp": "^0.35.5",

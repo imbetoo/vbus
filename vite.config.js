@@ -40,7 +40,9 @@ const pwa = VitePWA({
     ],
   },
   workbox: {
-    globPatterns: ['**/*.{js,css,html,svg,png}'],
+    // `json`: los recorridos del GTFS (`routes.json`), para el sentido de la
+    // marcha en la consulta rápida también sin conexión.
+    globPatterns: ['**/*.{js,css,html,svg,png,json}'],
     // Las peticiones a la API no son páginas de la app.
     navigateFallbackDenylist: [/^\/vigobus/],
     runtimeCaching: [

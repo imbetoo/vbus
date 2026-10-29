@@ -51,6 +51,22 @@ export function nearestStops(position, { limit = 5, maxMeters = 800 } = {}) {
   };
 }
 
+/**
+ * Paradas a menos de `maxMeters` de `point` (`{ lat, lon }`), sin contar
+ * `excludeId`, de la más cercana a la más lejana y con su `distance` en
+ * metros (`[]` si no hay coordenadas o aún no se ha cargado la lista).
+ */
+export function stopsNear(point, maxMeters, excludeId) {
+  if (!Number.isFinite(point?.lat) || !Number.isFinite(point?.lon)) return [];
+  const near = [];
+  for (const stop of stopsList) {
+    if (stop.id === excludeId || !Number.isFinite(stop.lat) || !Number.isFinite(stop.lon)) continue;
+    const distance = haversineMeters(point, stop);
+    if (distance <= maxMeters) near.push({ ...stop, distance });
+  }
+  return near.sort((a, b) => a.distance - b.distance);
+}
+
 // Resultados que se pintan: una lista corta se dibuja al instante en móvil y
 // caben todas las paradas de una calle larga (Torrecedeira tiene 9).
 const MAX_RESULTS = 15;

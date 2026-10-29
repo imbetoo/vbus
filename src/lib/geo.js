@@ -15,7 +15,9 @@ export function haversineMeters(a, b) {
 
 /** "85 m", "450 m", "1,2 km", "12 km". */
 export function formatDistance(meters) {
-  if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10)} m`;
+  // Se redondea antes de elegir la unidad: 997 m es "1 km", no "1000 m".
+  const rounded = Math.round(meters / 10) * 10;
+  if (rounded < 1000) return `${Math.max(10, rounded)} m`;
   const km = meters / 1000;
   return `${km.toLocaleString('es-ES', { maximumFractionDigits: km < 10 ? 1 : 0 })} km`;
 }

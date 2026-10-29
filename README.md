@@ -15,9 +15,10 @@ iOS/Android (React Native/Expo).
 ```sh
 npm install
 npm run dev      # servidor de desarrollo
-npm run build    # build de producción en dist/
+npm run build    # build de producción en dist/ (antes regenera los recorridos, ver abajo)
 npm run preview  # sirve el build
 npm run lint     # oxlint
+npm run routes   # recorridos de Vitrasa desde el GTFS (src/data/routes.json)
 ```
 
 ## Paradas
@@ -31,6 +32,32 @@ Sale de los datos abiertos del Concello
 node scripts/update-stops.mjs                 # la descarga de datos.vigo.org
 node scripts/update-stops.mjs paradas.json    # o desde un fichero ya descargado
 ```
+
+## Recorridos (sentido de la marcha)
+
+`src/data/routes.json` tiene los recorridos de Vitrasa con el orden de sus
+paradas: `[{ line, dir, head, stops, m }]` (línea, sentido, letrero, números de
+marquesina en orden de paso y metros acumulados). La consulta rápida lo usa
+para que un trayecto A → B solo sea directo si el autobús pasa por A y,
+después, por B. Sale del GTFS oficial del Concello
+(`https://datos.vigo.org/data/transporte/gtfs_vigo.zip`, licencia Open Data
+Commons Attribution):
+
+```sh
+npm run routes                                  # descarga el GTFS y lo genera
+node scripts/generate-routes.mjs gtfs_vigo.zip  # o desde un ZIP ya descargado
+```
+
+- **Build (Vercel):** `prebuild` lo regenera con `--soft`. Si el GTFS no se
+  puede descargar o viene corrupto, avisa y el build sigue con el
+  `routes.json` que hubiera. Si no hay ninguno, escribe `[]` y la app avisa de
+  que no puede verificar el sentido. `vercel.json` fija `npm run build` para
+  que `prebuild` se ejecute.
+- **GitHub Actions** (`update-routes.yml`, los lunes y con "Run workflow"): lo
+  regenera sin `--soft` (si falla, el job falla y no se toca nada) y, si ha
+  cambiado, lo sube a `main`.
+- **Local:** sin `npm run routes`, `routes.json` puede estar vacío (`[]`) y la
+  consulta rápida usará el cruce plano de líneas con el aviso.
 
 ## PWA
 

@@ -1,11 +1,11 @@
-import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff } from 'lucide-react';
+import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert } from 'lucide-react';
 import { memo, useMemo } from 'react';
-import { filterBusesByLines, formatLines } from '../../lib/directRoute';
+import { filterBusesByLines, filterReachingBuses } from '../../lib/directRoute';
 import { formatDistance } from '../../lib/geo';
-import { lineColor, sortBuses } from '../../services/vigobusAdapter';
+import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from '../bus/BusLineItem';
-import LineBadge from '../bus/LineBadge';
 import IconTile from '../ui/IconTile';
+import DirectLines from './DirectLines';
 import MapsLink from './MapsLink';
 
 const BENTO = 'rounded-3xl border border-white/10 bg-white/[0.06]';
@@ -43,15 +43,15 @@ function Loading({ children }) {
   );
 }
 
-/** Aviso con icono (sin GPS, errores de red…). */
-function Notice({ tone = 'warning', children }) {
+/** Aviso con icono (sin GPS, sentido sin verificar, errores de red…). */
+function Notice({ tone = 'warning', icon: Icon = CircleAlert, children }) {
   return (
     <p
       className={`flex animate-fade-in items-start gap-2 ${BENTO} px-4 py-3 text-base font-medium motion-reduce:animate-none ${
         tone === 'error' ? 'text-red-200' : 'text-white/80'
       }`}
     >
-      <CircleAlert
+      <Icon
         className={`mt-0.5 h-5 w-5 shrink-0 ${tone === 'error' ? 'text-urgent' : 'text-amber-300'}`}
         strokeWidth={2.5}
         aria-hidden="true"
@@ -131,9 +131,13 @@ function Arrivals({ arrivals, buses, emptyText, timeFormat }) {
  * - `no-origin`: buscando la ubicación, por qué no hay GPS o qué falta.
  * - `stop` (solo origen): sus llegadas, como siempre.
  * - `same` (A = B): "Ya te encuentras en esta parada", sin pedir tiempos.
+ * - `checking`: cargando los recorridos para comprobar el sentido.
  * - `no-direct`: "Sin línea directa", sin pedir tiempos (el enlace a Mapas va
  *   abajo como acción principal).
- * - `direct`: las líneas directas y solo sus llegadas; al final, Mapas.
+ * - `direct`: dónde subir y bajar, las líneas de menos a más rodeo y solo los
+ *   autobuses que llegan (`plan`: sin variantes cortas ni sentido contrario).
+ *   Sin `plan` (recorridos no disponibles), cruce plano de líneas con aviso.
+ *   Al final, Mapas.
  *
  * Memorizado: escribir en los campos no lo vuelve a pintar.
  */
@@ -141,6 +145,9 @@ function RouteResults({
   mode,
   origin,
   destination,
+  boarding,
+  boardingDistance,
+  plan,
   directLines,
   arrivals,
   usingLocation,
@@ -149,12 +156,12 @@ function RouteResults({
   mapsUrl,
   timeFormat,
 }) {
-  const buses = useMemo(() => {
-    if (!arrivals) return [];
+  const { buses, hidden } = useMemo(() => {
+    if (!arrivals) return { buses: [], hidden: 0 };
     const sorted = sortBuses(arrivals.buses, [], 'time');
-    return mode === 'direct' ? filterBusesByLines(sorted, directLines) : sorted;
-  }, [arrivals, mode, directLines]);
-  const distance = usingLocation ? origin?.distance : null;
+    if (mode !== 'direct') return { buses: sorted, hidden: 0 };
+    return plan ? filterReachingBuses(sorted, plan) : { buses: filterBusesByLines(sorted, directLines), hidden: 0 };
+  }, [arrivals, mode, plan, directLines]);
 
   let content;
   if (mode === 'no-origin') {
@@ -178,7 +185,7 @@ function RouteResults({
   } else if (mode === 'stop') {
     content = (
       <>
-        <StopSummary stop={origin} distance={distance} />
+        <StopSummary stop={origin} distance={boardingDistance} />
         <Arrivals arrivals={arrivals} buses={buses} timeFormat={timeFormat} emptyText="No hay autobuses previstos ahora mismo." />
       </>
     );
@@ -188,36 +195,49 @@ function RouteResults({
         {`${origin.name} (parada ${origin.id}) es a la vez el origen y el destino.`}
       </EmptyState>
     );
+  } else if (mode === 'checking') {
+    content = (
+      <div className={`${BENTO} px-4 py-1`}>
+        <Loading>Comprobando el sentido de la marcha…</Loading>
+      </div>
+    );
   } else if (mode === 'no-direct') {
-    const unknown = !origin.lines?.length ? origin : !destination.lines?.length ? destination : null;
+    const unknown = plan ? null : !origin.lines?.length ? origin : !destination.lines?.length ? destination : null;
     content = (
       <EmptyState icon={RouteOff} title="Sin línea directa">
         {unknown
           ? `No tenemos las líneas de ${unknown.name}: mira la ruta en Mapas.`
-          : `Ninguna línea de Vitrasa va de ${origin.name} a ${destination.name} sin transbordo.`}
+          : `Ninguna línea de Vitrasa va de ${origin.name} a ${destination.name} en ese sentido sin transbordo.`}
       </EmptyState>
     );
   } else {
+    const switched = boarding.id !== origin.id;
     content = (
       <>
-        <StopSummary stop={origin} distance={distance}>
-          <div className="mt-3 border-t border-white/10 pt-3">
-            <p className="text-sm font-medium text-white/60">
-              {`${directLines.length === 1 ? 'Línea directa' : 'Líneas directas'} a ${destination.name}`}
+        {!plan && <Notice icon={TriangleAlert}>No se pudo verificar el sentido. Confirma en Mapas.</Notice>}
+        <StopSummary stop={boarding} distance={boardingDistance}>
+          {switched && (
+            <p className="mt-2 text-sm font-medium text-[#409CFF]">
+              {`En ${origin.name} no pasa ninguna directa en tu sentido: sube en esta, a ${formatDistance(
+                plan.boardingWalk,
+              )}.`}
             </p>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {directLines.map((line) => (
-                <LineBadge as="li" key={line} line={line} color={lineColor(line)} />
-              ))}
-            </ul>
-          </div>
+          )}
+          <DirectLines from={boarding} destination={destination} options={plan?.options ?? []} lines={directLines} />
         </StopSummary>
         <Arrivals
           arrivals={arrivals}
           buses={buses}
           timeFormat={timeFormat}
-          emptyText={`Hay conexión directa (${formatLines(directLines)}), pero no hay autobuses próximos.`}
+          emptyText="No hay autobuses próximos que lleguen hasta tu destino."
         />
+        {hidden > 0 && (
+          <p className="animate-fade-in px-1 text-sm font-medium text-white/50 motion-reduce:animate-none">
+            {hidden === 1
+              ? 'Se oculta 1 autobús de estas líneas que no llega a tu destino (acaba antes o va en el otro sentido).'
+              : `Se ocultan ${hidden} autobuses de estas líneas que no llegan a tu destino (acaban antes o van en el otro sentido).`}
+          </p>
+        )}
         <MapsLink href={mapsUrl}>Ver ruta en Mapas</MapsLink>
       </>
     );
