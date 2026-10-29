@@ -105,7 +105,16 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   lista). Cada sugerencia enseña el nombre entero (pasa a dos líneas si hace
   falta; la última palabra va pegada al número del portal, que nunca se corta:
   en una calle hay muchas paradas) y debajo "Parada N · líneas". Elegir una la
-  busca por número como siempre. Fuente (`src/data/stops.js`):
+  busca por número como siempre. Alias del callejero (`normalizeSearchText`,
+  aplicado a la consulta y, una vez, a los nombres del índice): sin tildes ni
+  mayúsculas, y las formas completas o abreviadas de castellano y gallego van
+  a un mismo token como palabra entera (avenida/avda/av → avda;
+  travesía/trav → tva; plaza/praza → pza; camino/camiño → cno; calle/rúa →
+  rua; estrada/carretera/ctra → est; doctor/doutor → dr; arquitecto → arq;
+  ingeniero/enxeñeiro → ing), así "Avenida de Europa" encuentra "Avda. de
+  Europa" y "Plaza de América" encuentra "Praza de América"; la última
+  palabra también vale a medio escribir ("aveni" → avda). Fuente
+  (`src/data/stops.js`):
   `src/data/stopsList.json` con las 1157 paradas de Vitrasa de los datos
   abiertos del Concello (`datos.vigo.org/data/transporte/paradas.json`; su
   `id` es el número de la marquesina), en un fichero aparte (`loadStopsList`) que `App.jsx` precarga en segundo
@@ -296,7 +305,11 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
-  iOS, la indicación "Compartir → Añadir a pantalla de inicio".
+  iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
+  versión en gris pequeño y centrada ("VigoBus • Build: 29/10/2026, 22:42 ·
+  4c8e5b7"): hora de compilación (Europa/Madrid) y commit de Vercel,
+  inyectados por `vite.config.js` (`__BUILD_INFO__`); si no coincide con el
+  último despliegue, el móvil usa un build antiguo del caché.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

@@ -7,6 +7,20 @@ import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
 import { PRESSABLE } from '../ui/pressable';
 
+// "VigoBus • Build: 29/10/2026, 22:45 · 4c8e5b7" (hora de Vigo).
+const BUILD_LABEL = (() => {
+  const { time, commit } = __BUILD_INFO__;
+  const date = new Date(time).toLocaleString('es-ES', {
+    timeZone: 'Europe/Madrid',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `VigoBus • Build: ${date}${commit ? ` · ${commit}` : ''}`;
+})();
+
 const SORT_OPTIONS = [
   { value: 'time', label: 'Llegada' },
   { value: 'preference', label: 'Preferencia' },
@@ -158,6 +172,10 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
         <PillButton onClick={onClose} className="mt-1">
           Hecho
         </PillButton>
+
+        {/* Versión: si no coincide con la del último despliegue, el móvil está
+            usando un build antiguo del caché (basta con cerrar y abrir la app). */}
+        <p className="text-center text-xs font-medium tabular-nums text-white/40">{BUILD_LABEL}</p>
       </div>
     </Modal>
   );
