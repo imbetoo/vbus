@@ -1,7 +1,8 @@
 import { BusFront, CircleAlert, CircleCheck, Plus, Route, SlidersHorizontal, X } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { loadStopsList, stopLines } from '../../data/stops';
 import { useStopLookup } from '../../hooks/useStopLookup';
-import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
+import { lineColor, toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
 import PillButton from '../ui/PillButton';
@@ -44,7 +45,18 @@ const BUSES_OPTIONS = [
   { value: 3, label: '3 autobuses' },
 ];
 
-function StopStatus({ id, lookup, query, suggestionCount }) {
+/**
+ * Líneas que se pueden elegir en una parada: las teóricas de los datos
+ * abiertos (`stopsList.json`), circulen o no ahora (a las 23:20 no pasan
+ * todas y la tarjeta puede ser para mañana). Solo si la parada no está en la
+ * lista (nueva), las que llegan ahora según la API.
+ */
+function selectableLines(stop, buses) {
+  const known = stopLines(stop.id);
+  return known.length ? known.map((line) => ({ line, color: lineColor(line) })) : uniqueLines(buses);
+}
+
+function StopStatus({ id, lookup, lines, query, suggestionCount }) {
   if (lookup.status === 'error') {
     return (
       <p id={id} className="mt-3 flex animate-fade-in items-start gap-2 rounded-2xl border border-urgent/30 bg-urgent/10 px-3.5 py-2.5 text-sm font-medium text-red-200 motion-reduce:animate-none">
@@ -54,7 +66,7 @@ function StopStatus({ id, lookup, query, suggestionCount }) {
     );
   }
   if (lookup.status === 'success') {
-    const count = uniqueLines(lookup.buses).length;
+    const count = lines.length;
     return (
       <p id={id} className="mt-3 flex animate-fade-in items-center gap-2 text-sm font-medium text-white/80 motion-reduce:animate-none">
         <CircleCheck className="h-4 w-4 shrink-0 text-emerald-400" strokeWidth={2.5} aria-hidden="true" />
@@ -82,7 +94,19 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
   const [query, setQuery] = useState('');
   const lookup = useStopLookup(query);
   const stop = lookup.status === 'success' ? lookup.stop : null;
-  const lines = stop ? uniqueLines(lookup.buses) : [];
+  // La lista de paradas suele estar ya cargada (la usa el buscador); al
+  // llegar, se recalculan las líneas.
+  const [, setStopsLoaded] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    loadStopsList()
+      .then(() => alive && setStopsLoaded(true))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const lines = stop ? selectableLines(stop, lookup.buses) : [];
 
   // La selección pertenece a una parada concreta: si cambia, empieza vacía.
   const [selection, setSelection] = useState({ stopId: null, lines: [] });
@@ -157,6 +181,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
                 <StopStatus
                   key={`${statusKind(lookup)}-${lookup.status === 'invalid' && suggestionCount > 0}`}
                   id={statusId}
+                  lines={lines}
                   lookup={lookup}
                   query={query}
                   suggestionCount={suggestionCount}
