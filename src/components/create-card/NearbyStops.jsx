@@ -1,25 +1,13 @@
 import { CircleAlert, LoaderCircle, LocateFixed } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { loadStopsList, nearestStops } from '../../data/stops';
-import { formatDistance } from '../../lib/geo';
+import { OUTSIDE_VIGO_M, formatDistance, getCurrentPosition, locationErrorStatus } from '../../lib/geo';
 import { PRESSABLE } from '../ui/pressable';
 import StopRow from './StopRow';
 
 // Radio en el que se buscan paradas "cerca de mí" y número de resultados.
 const RADIUS_M = 800;
 const LIMIT = 5;
-// Si la parada más cercana está más lejos que esto, se está fuera de Vigo.
-const OUTSIDE_VIGO_M = 15_000;
-
-function locate() {
-  return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => resolve({ lat: position.coords.latitude, lon: position.coords.longitude }),
-      reject,
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
-    );
-  });
-}
 
 // Mensaje para cada estado que no son resultados.
 function statusMessage(state) {
@@ -63,7 +51,7 @@ export default function NearbyStops({ onSelect }) {
     }
     setState({ status: 'locating' });
     try {
-      const [position] = await Promise.all([locate(), loadStopsList()]);
+      const [position] = await Promise.all([getCurrentPosition(), loadStopsList()]);
       if (!alive.current) return;
       const result = nearestStops(position, { limit: LIMIT, maxMeters: RADIUS_M });
       setState(
@@ -73,8 +61,7 @@ export default function NearbyStops({ onSelect }) {
       );
     } catch (error) {
       if (!alive.current) return;
-      // `GeolocationPositionError.PERMISSION_DENIED` = 1.
-      setState({ status: error?.code === 1 ? 'denied' : 'unavailable' });
+      setState({ status: locationErrorStatus(error) });
     }
   };
 

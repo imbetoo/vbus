@@ -115,11 +115,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   por si alguna nueva aún no está. Rendimiento: al cargar la lista se
   construye una vez un índice (nombre normalizado, nombre principal, calle y
   portal), las paradas extra se cachean y solo se recalculan si cambia lo
-  guardado, el input busca con 200 ms de debounce (`useDebouncedValue`) y
-  `useMemo`, y la lista corta (15) no necesita virtualización.
+  guardado, el input busca con 200 ms de debounce y `useMemo`
+  (`useStopSearch`, sobre `useDebouncedValue`), y la lista corta (15) no
+  necesita virtualización. Cada sugerencia lleva sus coordenadas (`lat`,
+  `lon`) si se conocen.
 - **Paradas cerca de mí (misma hoja):** botón de cristal con `LocateFixed` bajo
-  el buscador (`NearbyStops`). Pide la ubicación (`navigator.geolocation`, alta
-  precisión, 15 s) y con Haversine (`src/lib/geo.js`, sin librerías) ordena
+  el buscador (`NearbyStops`). Pide la ubicación (`getCurrentPosition` de
+  `src/lib/geo.js`: alta precisión, 15 s) y con Haversine (sin librerías) ordena
   las 1157 paradas: enseña las 5 más cercanas a menos de 800 m (o las 5 más
   próximas si no hay ninguna tan cerca) con su distancia en la fila ("Parada
   8480 · 10 m · líneas"); elegir una la busca por número. Estados: "Buscando
@@ -127,14 +129,48 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   GPS y fuera de Vigo (parada más cercana a más de 15 km). La ubicación no se
   guarda. Buscador y cercanas forman `StopPicker`, reutilizable: solo
   devuelve la parada elegida (`onSelect`), sin crear nada.
-- **Consulta rápida (lupa de la cabecera):** `QuickSearchSheet` (hoja con
-  `StopPicker`) y, al elegir parada, `QuickLookSheet`: panel inferior con
-  framer-motion dentro de un `<dialog>` modal (entra y sale deslizándose con
-  muelle; se cierra con la X, Escape, tocando fuera o arrastrando el asa o la
-  cabecera hacia abajo) con las llegadas en tiempo real de esa parada
-  (`useStopArrivals`: mismo refresco y formato de tiempo que las tarjetas).
-  No se guarda nada: solo "Añadir a Mis Rutas" (botón secundario de cristal)
-  crea la tarjeta, con todas las líneas de la parada, y cierra el panel.
+- **Consulta rápida (lupa de la cabecera) · Asistente de rutas directas:**
+  `QuickLookSheet`, panel inferior con framer-motion dentro de un `<dialog>`
+  modal (entra y sale deslizándose con muelle; alto fijo del 85 % para que
+  nada salte al cambiar el contenido; se cierra con la X, Escape, tocando
+  fuera o arrastrando el asa o la cabecera hacia abajo). Dentro,
+  `RoutePlanner`: dos campos al estilo de Apple Maps (`RouteFields`, un
+  bloque de cristal con línea punteada entre los iconos):
+  - **Origen (A):** empieza como "Mi ubicación actual" (texto azul, flecha
+    rellena): `useNearestStop` pide el GPS y lo ancla con Haversine a la
+    parada más cercana. Al enfocarlo se busca otra; con el campo vacío la
+    lista ofrece volver a "Mi ubicación actual". Sin permiso, sin señal, sin
+    GPS o fuera de Vigo, queda vacío ("Buscar parada de origen…") con un
+    aviso, y se escribe a mano.
+  - **Destino (B):** búsqueda predictiva sobre `stopsList.json`.
+  - Cada campo tiene su X para limpiarlo, y el botón ⇄ (`ArrowUpDown`) invierte
+    el trayecto girando media vuelta con muelle. Las sugerencias del campo
+    activo (`StopSuggestions`, combobox con flechas + Enter; Escape deja de
+    editar sin cerrar el panel) sustituyen a los resultados mientras se
+    escribe.
+  - **Lógica (`src/lib/directRoute.js`, todo en el cliente):** solo A → sus
+    llegadas, como siempre. A y B → `findDirectLines` cruza las líneas de las
+    dos paradas (sin distinguir mayúsculas ni espacios: "PSA 1" = "PSA1"). Si
+    hay líneas directas, se piden los tiempos de A con la misma llamada de
+    siempre (`useStopArrivals`) y se enseñan solo los de esas líneas, con sus
+    distintivos ("Líneas directas a…"). Si no las hay, NO se llama a la API:
+    estado vacío "Sin línea directa" y "Ver ruta con transbordos" como acción
+    principal (píldora blanca). Misma parada → "Ya te encuentras en esta
+    parada", sin llamada. Directa sin autobuses → "Hay conexión directa
+    (Líneas X, Y), pero no hay autobuses próximos". API caída → aviso y Mapas
+    sigue disponible.
+  - **Mapas (`MapsLink`):** enlace universal
+    `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
+    (desde el GPS, la posición exacta del usuario; si una parada no tiene
+    coordenadas, su nombre) en una pestaña nueva: el sistema lo abre en la app
+    nativa. Botón de cristal al final de los resultados con ruta directa.
+  - No se guarda nada: solo "Añadir a Mis Rutas" (botón secundario de
+    cristal) crea la tarjeta de la parada de origen, con todas sus líneas o,
+    en una ruta directa, solo las directas, y cierra el panel.
+  - Rendimiento: búsquedas con debounce de 200 ms y `useMemo`
+    (`useStopSearch`, compartido con "Nueva tarjeta"), cruce y filtrado con
+    `useMemo`, manejadores con `useCallback` y `RouteResults` en `React.memo`
+    (escribir no lo repinta).
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde

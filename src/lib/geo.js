@@ -19,3 +19,27 @@ export function formatDistance(meters) {
   const km = meters / 1000;
   return `${km.toLocaleString('es-ES', { maximumFractionDigits: km < 10 ? 1 : 0 })} km`;
 }
+
+// Si la parada más cercana está más lejos que esto, se está fuera de Vigo.
+export const OUTSIDE_VIGO_M = 15_000;
+
+/**
+ * Posición actual del GPS (`{ lat, lon }`), con alta precisión y 15 s de
+ * margen. Rechaza con el `GeolocationPositionError` del navegador (permiso
+ * denegado, sin señal o tiempo agotado). La ubicación no se guarda.
+ */
+export function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve({ lat: position.coords.latitude, lon: position.coords.longitude }),
+      reject,
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
+    );
+  });
+}
+
+/** Estado de un error de geolocalización: `denied` (permiso) o `unavailable` (sin señal o tiempo agotado). */
+export function locationErrorStatus(error) {
+  // `GeolocationPositionError.PERMISSION_DENIED` = 1.
+  return error?.code === 1 ? 'denied' : 'unavailable';
+}

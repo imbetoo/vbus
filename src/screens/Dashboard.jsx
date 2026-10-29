@@ -7,7 +7,6 @@ import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
 import QuickLookSheet from '../components/quick-look/QuickLookSheet';
-import QuickSearchSheet from '../components/quick-look/QuickSearchSheet';
 import Clock from '../components/settings/Clock';
 import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
@@ -66,10 +65,9 @@ export default function Dashboard({ settings, onSettingChange }) {
   const { theme, toggleTheme } = useTheme();
   const [isCreating, setIsCreating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  // Consulta rápida (lupa): buscador y, al elegir parada, panel efímero con
-  // sus tiempos. No se guarda nada salvo que se pulse "Añadir a Mis Rutas".
-  const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
-  const [quickStop, setQuickStop] = useState(null);
+  // Consulta rápida (lupa): panel efímero Origen → Destino con los tiempos.
+  // No se guarda nada salvo que se pulse "Añadir a Mis Rutas".
+  const [isQuickLookOpen, setIsQuickLookOpen] = useState(false);
   // Tarjetas que ya estaban guardadas al abrir la app: aparecen sin animación
   // de entrada (esa animación es solo para las que se crean ahora).
   const [savedIds] = useState(() => new Set(routes.map((route) => route.id)));
@@ -116,7 +114,7 @@ export default function Dashboard({ settings, onSettingChange }) {
               icon={Search}
               label="Consulta rápida"
               aria-haspopup="dialog"
-              onClick={() => setIsQuickSearchOpen(true)}
+              onClick={() => setIsQuickLookOpen(true)}
               className={HEADER_BUTTON}
             />
             {routes.length > 0 && (
@@ -223,26 +221,16 @@ export default function Dashboard({ settings, onSettingChange }) {
           refresh();
         }}
       />
-      <QuickSearchSheet
-        open={isQuickSearchOpen}
-        onClose={() => setIsQuickSearchOpen(false)}
-        onPick={(stop) => {
-          setIsQuickSearchOpen(false);
-          setQuickStop(stop);
-        }}
-      />
       {/* `AnimatePresence`: el panel sigue montado mientras sale deslizándose. */}
       <AnimatePresence>
-        {quickStop && (
+        {isQuickLookOpen && (
           <QuickLookSheet
-            key={quickStop.id}
-            stop={quickStop}
             timeFormat={settings.timeFormat}
             refreshMs={settings.refreshSeconds * 1000}
-            onClose={() => setQuickStop(null)}
+            onClose={() => setIsQuickLookOpen(false)}
             onAdd={(route) => {
               addRoute(route);
-              setQuickStop(null);
+              setIsQuickLookOpen(false);
             }}
           />
         )}
