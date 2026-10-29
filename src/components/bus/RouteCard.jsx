@@ -1,5 +1,5 @@
-import { BusFront, GraduationCap, House, X } from 'lucide-react';
-import { useId, useState } from 'react';
+import { BusFront, GraduationCap, House, Pencil, X } from 'lucide-react';
+import { memo, useId, useState } from 'react';
 import Collapse from '../ui/Collapse';
 import DisclosureButton from '../ui/DisclosureButton';
 import GlassCard from '../ui/GlassCard';
@@ -20,10 +20,13 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * despliega el resto, haciendo crecer la tarjeta.
  * El fondo del icono usa el color elegido al crearla (`color`, ver
  * `cardColors.js`). `timeFormat` (ajustes): minutos que faltan o hora de
- * llegada, calculada desde `updatedAt` (cuándo llegaron los tiempos). `headerAction` sustituye a la X de eliminar (en modo
+ * llegada, calculada desde `updatedAt` (cuándo llegaron los tiempos).
+ * `onRemove(id)` y `onEditCard(id)` reciben el id: así el padre puede pasar
+ * siempre las mismas funciones y `memo` evita repintados. `headerAction` sustituye a la X de eliminar (en modo
  * edición, el tirador para arrastrar).
  */
-export default function RouteCard({
+function RouteCard({
+  id,
   title,
   alias,
   stopId,
@@ -36,8 +39,9 @@ export default function RouteCard({
   sortBy = 'time',
   timeFormat = 'relative',
   updatedAt,
+  editing = false,
   onRemove,
-  headerAction,
+  onEditCard,
 }) {
   const [showMore, setShowMore] = useState(false);
   const moreId = useId();
@@ -60,16 +64,27 @@ export default function RouteCard({
     <GlassCard as="section" aria-label={displayTitle} className="origin-top">
       <div className="flex items-start gap-2">
         <IconHeading icon={Icon} iconTone={`${tone.bg} ${tone.icon}`} title={displayTitle} subtitle={subtitle} titleAs="h2" />
-        {/* `headerAction` (modo edición: el tirador) sustituye a la X. */}
-        {headerAction}
-        {!headerAction && onRemove && (
+        {/* En modo edición, el lápiz ("Editar tarjeta") sustituye a la X. */}
+        {editing ? (
           <IconButton
-            icon={X}
+            icon={Pencil}
             size="sm"
-            label={`Eliminar tarjeta ${displayTitle}`}
-            onClick={onRemove}
+            tone="dark"
+            label={`Editar tarjeta ${displayTitle}`}
+            aria-haspopup="dialog"
+            onClick={() => onEditCard?.(id)}
             className="-mr-1 -mt-1 ml-auto"
           />
+        ) : (
+          onRemove && (
+            <IconButton
+              icon={X}
+              size="sm"
+              label={`Eliminar tarjeta ${displayTitle}`}
+              onClick={() => onRemove(id)}
+              className="-mr-1 -mt-1 ml-auto"
+            />
+          )
         )}
       </div>
 
@@ -105,3 +120,7 @@ export default function RouteCard({
     </GlassCard>
   );
 }
+
+// Memorizada: con props iguales (la misma tarjeta, ajustes sin cambiar) no se
+// vuelve a pintar cuando el Dashboard se re-renderiza (modo edición, reloj…).
+export default memo(RouteCard);

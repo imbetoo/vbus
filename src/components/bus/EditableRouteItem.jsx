@@ -1,8 +1,7 @@
 import { Reorder, useDragControls } from 'framer-motion';
-import { Menu, Pencil, X } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
+import { memo, useState } from 'react';
 import { useLongPress } from '../../hooks/useLongPress';
-import IconButton from '../ui/IconButton';
 import RouteCard from './RouteCard';
 
 /**
@@ -15,7 +14,7 @@ import RouteCard from './RouteCard';
  *   2. Botón oscuro con lápiz arriba a la derecha (en el sitio de la X):
  *      abre "Editar tarjeta" (alias y líneas, `onEditCard`).
  *   3. Tirador ≡ fuera de la tarjeta, en el margen derecho y centrado en
- *      vertical: la tarjeta se estrecha para hacerle sitio. Solo se arrastra
+ *      vertical: la tarjeta se encoge (transform) para hacerle sitio. Solo se arrastra
  *      desde él (`useDragControls` + `dragListener={false}`), así el scroll de
  *      la lista sigue funcionando al tocar el resto de la tarjeta.
  *   La tarjeta tiembla como los iconos de iOS (`animate-jiggle`, solo
@@ -26,7 +25,7 @@ import RouteCard from './RouteCard';
  * (`leaving`). El encogido va en el envoltorio interior porque el `transform`
  * del `li` lo controla framer-motion al arrastrar.
  */
-export default function EditableRouteItem({
+function EditableRouteItem({
   route,
   index,
   editing,
@@ -49,6 +48,8 @@ export default function EditableRouteItem({
       value={route}
       dragListener={false}
       dragControls={controls}
+      // Solo posición: al reordenar no hace falta corregir tamaños (más barato).
+      layout="position"
       onDragStart={() => setDragging(true)}
       onDragEnd={() => setDragging(false)}
       // Levantada mientras se arrastra, por encima de las demás.
@@ -60,54 +61,48 @@ export default function EditableRouteItem({
     >
       <div className={`min-h-0 ${leaving ? 'overflow-hidden' : ''}`}>
         <div className={`pb-5 transition-transform duration-[800ms] ease-out ${leaving ? 'scale-90' : ''}`}>
-          {/* En edición, la tarjeta deja 28px a la derecha para el tirador. */}
-          <div
-            className={`relative transition-[padding] duration-300 ease-smooth motion-reduce:transition-none ${
-              editing ? 'pr-7' : 'pr-0'
-            }`}
-          >
+          {/* En edición, la tarjeta se encoge al 92 % desde la izquierda para dejar
+              sitio al tirador. Con `transform` (no con margen ni padding): el
+              navegador no recalcula el layout de la lista en cada fotograma y
+              framer-motion no tiene que volver a medir las tarjetas. */}
+          <div className="relative">
             <div
-              {...longPress}
-              // Sin selección de texto ni menú de iOS al mantener pulsado.
-              className={`relative select-none [-webkit-touch-callout:none] ${
-                editing && !dragging ? 'animate-jiggle will-change-transform motion-reduce:animate-none' : ''
+              className={`origin-left transition-transform duration-300 ease-smooth motion-reduce:transition-none ${
+                editing ? 'scale-[0.92] will-change-transform' : ''
               }`}
-              // Cada tarjeta empieza el temblor en un punto distinto del ciclo.
-              style={editing ? { animationDelay: `${-(index % 4) * 70}ms` } : undefined}
             >
-              <RouteCard
-                {...route}
-                sortBy={sortBy}
-                timeFormat={timeFormat}
-                onRemove={editing ? undefined : onRemove}
-                headerAction={
-                  editing ? (
-                    <IconButton
-                      icon={Pencil}
-                      size="sm"
-                      tone="dark"
-                      label={`Editar tarjeta ${name}`}
-                      aria-haspopup="dialog"
-                      onClick={onEditCard}
-                      className="-mr-1 -mt-1 ml-auto"
-                    />
-                  ) : undefined
-                }
-              />
-
-              {/* Eliminar (modo edición): círculo rojo de iOS con aspa. */}
-              <button
-                type="button"
-                aria-label={`Eliminar tarjeta ${name}`}
-                onClick={onRemove}
-                tabIndex={editing ? 0 : -1}
-                aria-hidden={!editing}
-                className={`absolute -left-2 -top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-urgent text-white shadow-md shadow-black/30 ring-2 ring-white/90 transition-[transform,opacity] duration-300 ease-spring after:absolute after:-inset-2 after:content-[''] active:scale-90 motion-reduce:transition-none ${
-                  editing ? 'scale-100 opacity-100' : 'pointer-events-none scale-50 opacity-0'
+              <div
+                {...longPress}
+                // Sin selección de texto ni menú de iOS al mantener pulsado.
+                className={`relative select-none [-webkit-touch-callout:none] ${
+                  editing && !dragging ? 'animate-jiggle will-change-transform motion-reduce:animate-none' : ''
                 }`}
+                // Cada tarjeta empieza el temblor en un punto distinto del ciclo.
+                style={editing ? { animationDelay: `${-(index % 4) * 70}ms` } : undefined}
               >
-                <X className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
-              </button>
+                <RouteCard
+                  {...route}
+                  sortBy={sortBy}
+                  timeFormat={timeFormat}
+                  editing={editing}
+                  onRemove={onRemove}
+                  onEditCard={onEditCard}
+                />
+
+                {/* Eliminar (modo edición): círculo rojo de iOS con aspa. */}
+                <button
+                  type="button"
+                  aria-label={`Eliminar tarjeta ${name}`}
+                  onClick={() => onRemove(route.id)}
+                  tabIndex={editing ? 0 : -1}
+                  aria-hidden={!editing}
+                  className={`absolute -left-2 -top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-urgent text-white shadow-md shadow-black/30 ring-2 ring-white/90 transition-[transform,opacity] duration-300 ease-spring after:absolute after:-inset-2 after:content-[''] active:scale-90 motion-reduce:transition-none ${
+                    editing ? 'scale-100 opacity-100' : 'pointer-events-none scale-50 opacity-0'
+                  }`}
+                >
+                  <X className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             {/* Tirador ≡ en el margen derecho, centrado con la tarjeta. Sobre el
@@ -123,7 +118,7 @@ export default function EditableRouteItem({
                 controls.start(event);
               }}
               // `touch-action: none`: el navegador no convierte el gesto en scroll.
-              className={`absolute inset-y-0 -right-1 flex w-8 cursor-grab touch-none items-center justify-center text-black/40 transition-opacity duration-300 active:cursor-grabbing active:text-black/70 dark:text-white/50 dark:active:text-white/80 ${
+              className={`absolute inset-y-0 -right-2 flex w-9 cursor-grab touch-none items-center justify-center text-black/40 transition-opacity duration-300 active:cursor-grabbing active:text-black/70 dark:text-white/50 dark:active:text-white/80 ${
                 editing ? 'opacity-100' : 'pointer-events-none opacity-0'
               }`}
             >
@@ -135,3 +130,7 @@ export default function EditableRouteItem({
     </Reorder.Item>
   );
 }
+
+// Memorizada: con callbacks estables del Dashboard, solo se repinta la tarjeta
+// que cambia (no todas al tocar una).
+export default memo(EditableRouteItem);

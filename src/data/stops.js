@@ -12,13 +12,15 @@ import { haversineMeters } from '../lib/geo';
 
 const STORAGE_KEY = 'vbus:stops';
 
-// La lista completa (~125 KB) va en su propio fichero y se pide al abrir
-// "Nueva tarjeta", no al arrancar la app.
+// La lista completa (~125 KB) va en su propio fichero: se precarga en un
+// momento libre después de arrancar (`App.jsx`) y, si aún no está, al abrir
+// un buscador.
 let stopsList = [];
 let stopsListPromise = null;
 export function loadStopsList() {
   stopsListPromise ??= import('./stopsList.json').then((module) => {
     stopsList = module.default;
+    buildListIndex();
     return stopsList;
   });
   return stopsListPromise;
@@ -49,9 +51,9 @@ export function nearestStops(position, { limit = 5, maxMeters = 800 } = {}) {
   };
 }
 
-// En una calle larga hay muchas paradas (Torrecedeira tiene 9): se enseñan
-// todas en una lista con scroll.
-const MAX_RESULTS = 30;
+// Resultados que se pintan: una lista corta se dibuja al instante en móvil y
+// caben todas las paradas de una calle larga (Torrecedeira tiene 9).
+const MAX_RESULTS = 15;
 
 function readJson(key) {
   try {
@@ -73,21 +75,14 @@ export function rememberStop(stop) {
   }
 }
 
-function knownStops() {
-  const byId = new Map();
-  const add = (id, name, lines = []) => {
-    const numericId = Number(id);
-    if (Number.isInteger(numericId) && numericId > 0 && typeof name === 'string' && name && !byId.has(numericId)) {
-      byId.set(numericId, { id: numericId, name, lines });
-    }
-  };
-  for (const stop of stopsList) add(stop.id, stop.name, stop.lines);
-  const remembered = readJson(STORAGE_KEY);
-  if (Array.isArray(remembered)) for (const stop of remembered) add(stop?.id, stop?.name);
-  const routes = readJson('vbus:routes');
-  if (Array.isArray(routes)) for (const route of routes) add(route?.stopId, route?.stopName);
-  return [...byId.values()];
-}
+// "Rúa do Conde" → "rua do conde": sin tildes, mayúsculas ni signos.
+const normalize = (text) =>
+  String(text)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9ñ]+/g, ' ')
+    .trim();
 
 /**
  * Separa el número del portal del final del nombre ("Rúa do Conde de
@@ -100,54 +95,105 @@ export function splitStopName(name) {
   return match ? { street: match[1], number: match[2] } : { street: String(name), number: '' };
 }
 
-// "Rúa do Conde" → "rua do conde": sin tildes, mayúsculas ni signos.
-const normalize = (text) =>
-  String(text)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9ñ]+/g, ' ')
-    .trim();
+// Entrada del índice de búsqueda: todo lo que la búsqueda y la ordenación
+// necesitan, calculado una sola vez por parada (no en cada pulsación).
+function indexEntry(id, name, lines = []) {
+  return {
+    stop: { id, name, lines },
+    idText: String(id),
+    name: normalize(name),
+    // Nombre principal, sin lo de entre paréntesis ("Rúa de San Paio (Torreiro)").
+    main: normalize(name.split('(')[0]),
+    street: splitStopName(name).street,
+    // Número del portal, para ordenar una misma calle: 23 < 81 < 123.
+    portal: Number(/(\d+)\D*$/.exec(name)?.[1] ?? Infinity),
+  };
+}
 
-// Número del portal del nombre, para ordenar una misma calle: 23 < 81 < 123.
-const portal = (name) => Number(/(\d+)\D*$/.exec(name)?.[1] ?? Infinity);
+// Índice de las 1157 paradas: se construye una vez, al cargar la lista.
+let listIndex = [];
+// Paradas recordadas y de las tarjetas: solo se rehace si cambia lo guardado.
+let extraKey = null;
+let extraIndex = [];
+
+function extraEntries(knownIds) {
+  let remembered = null;
+  let routes = null;
+  try {
+    remembered = localStorage.getItem(STORAGE_KEY);
+    routes = localStorage.getItem('vbus:routes');
+  } catch {
+    // Sin almacenamiento: solo la lista fija.
+  }
+  const key = `${listIndex.length}|${remembered}|${routes}`;
+  if (key === extraKey) return extraIndex;
+  extraKey = key;
+  const byId = new Map();
+  const add = (id, name) => {
+    const numericId = Number(id);
+    if (Number.isInteger(numericId) && numericId > 0 && typeof name === 'string' && name) {
+      if (!knownIds.has(numericId) && !byId.has(numericId)) byId.set(numericId, indexEntry(numericId, name));
+    }
+  };
+  const parse = (text) => {
+    try {
+      const value = JSON.parse(text);
+      return Array.isArray(value) ? value : [];
+    } catch {
+      return [];
+    }
+  };
+  for (const stop of parse(remembered)) add(stop?.id, stop?.name);
+  for (const route of parse(routes)) add(route?.stopId, route?.stopName);
+  extraIndex = [...byId.values()];
+  return extraIndex;
+}
+
+let listIds = new Set();
+function buildListIndex() {
+  listIndex = stopsList.map((stop) => indexEntry(stop.id, stop.name, stop.lines));
+  listIds = new Set(stopsList.map((stop) => stop.id));
+}
+
+const collator = new Intl.Collator('es');
 
 /**
  * Paradas que encajan con lo escrito: por número (empieza por esas cifras) o
  * por dirección (contiene todas las palabras, en cualquier orden y sin
  * importar tildes). Primero las que empiezan igual, luego las que tienen una
  * palabra que empieza igual en el nombre principal y después en lo de entre
- * paréntesis; dentro de cada calle, por número de portal.
+ * paréntesis; dentro de cada calle, por número de portal. Usa el índice
+ * precalculado: en cada búsqueda solo se comparan textos.
  */
 export function searchStops(query) {
   const text = normalize(query);
   if (!text) return [];
   const words = text.split(' ');
   const isNumber = /^\d+$/.test(text);
+  const startsWord = (haystack) => words.every((word) => haystack.startsWith(word) || haystack.includes(` ${word}`));
 
-  return knownStops()
-    .map((stop) => {
-      const name = normalize(stop.name);
-      if (isNumber) return String(stop.id).startsWith(text) ? { stop, score: String(stop.id) === text ? 0 : 1 } : null;
-      if (!words.every((word) => name.includes(word))) return null;
-      // Nombre principal, sin lo de entre paréntesis ("Rúa de San Paio (Torreiro)").
-      const main = normalize(stop.name.split('(')[0]);
-      const startsWord = (haystack) =>
-        words.every((word) => haystack.startsWith(word) || haystack.includes(` ${word}`));
-      let score = 3;
-      if (name.startsWith(text)) score = 0;
-      else if (startsWord(main)) score = 1;
-      else if (startsWord(name)) score = 2;
-      return { stop, score };
-    })
-    .filter(Boolean)
+  const matches = [];
+  for (const entry of [...listIndex, ...extraEntries(listIds)]) {
+    if (isNumber) {
+      if (entry.idText.startsWith(text)) matches.push({ entry, score: entry.idText === text ? 0 : 1 });
+      continue;
+    }
+    if (!words.every((word) => entry.name.includes(word))) continue;
+    let score = 3;
+    if (entry.name.startsWith(text)) score = 0;
+    else if (startsWord(entry.main)) score = 1;
+    else if (startsWord(entry.name)) score = 2;
+    matches.push({ entry, score });
+  }
+
+  return matches
     .sort(
       (a, b) =>
         a.score - b.score ||
-        splitStopName(a.stop.name).street.localeCompare(splitStopName(b.stop.name).street, 'es') ||
-        portal(a.stop.name) - portal(b.stop.name) ||
-        a.stop.id - b.stop.id,
+        collator.compare(a.entry.street, b.entry.street) ||
+        a.entry.portal - b.entry.portal ||
+        a.entry.stop.id - b.entry.stop.id,
     )
     .slice(0, MAX_RESULTS)
-    .map(({ stop }) => stop);
+    .map(({ entry }) => entry.stop);
 }
