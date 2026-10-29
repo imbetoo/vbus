@@ -1,11 +1,13 @@
-import { Reorder, motion } from 'framer-motion';
-import { BusFront, Check, Pencil, Settings } from 'lucide-react';
+import { AnimatePresence, Reorder, motion } from 'framer-motion';
+import { BusFront, Check, Pencil, Search, Settings } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 import EditCardModal from '../components/bus/EditCardModal';
 import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
+import QuickLookSheet from '../components/quick-look/QuickLookSheet';
+import QuickSearchSheet from '../components/quick-look/QuickSearchSheet';
 import Clock from '../components/settings/Clock';
 import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
@@ -19,6 +21,9 @@ import { useTheme } from '../hooks/useTheme';
 // (y un poco arriba, bajo la cabecera) en vez de cortarse en seco.
 const SCROLL_FADE =
   '[mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)]';
+
+// Botones de la cabecera: 36px en móviles estrechos (caben los cuatro).
+const HEADER_BUTTON = 'max-[400px]:h-9 max-[400px]:w-9';
 
 // Duración de la salida de una tarjeta antes de quitarla del estado (igual que
 // su `duration-[800ms]` en la lista): lenta y relajada.
@@ -61,6 +66,10 @@ export default function Dashboard({ settings, onSettingChange }) {
   const { theme, toggleTheme } = useTheme();
   const [isCreating, setIsCreating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // Consulta rápida (lupa): buscador y, al elegir parada, panel efímero con
+  // sus tiempos. No se guarda nada salvo que se pulse "Añadir a Mis Rutas".
+  const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
+  const [quickStop, setQuickStop] = useState(null);
   // Tarjetas que ya estaban guardadas al abrir la app: aparecen sin animación
   // de entrada (esa animación es solo para las que se crean ahora).
   const [savedIds] = useState(() => new Set(routes.map((route) => route.id)));
@@ -92,11 +101,21 @@ export default function Dashboard({ settings, onSettingChange }) {
             Mis rutas
           </h1>
         </div>
-        {/* Reloj encima de los botones, todo alineado a la derecha: editar
-            (lápiz, o check mientras se edita), tema y ajustes. */}
+        {/* Reloj encima de los botones, todo alineado a la derecha: consulta
+            rápida (lupa), editar (lápiz, o check mientras se edita), tema y
+            ajustes. En móviles estrechos los botones bajan a 36px para que
+            quepan los cuatro junto al título. */}
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <Clock />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-[400px]:gap-1.5">
+            <IconButton
+              tone="adaptive"
+              icon={Search}
+              label="Consulta rápida"
+              aria-haspopup="dialog"
+              onClick={() => setIsQuickSearchOpen(true)}
+              className={HEADER_BUTTON}
+            />
             {routes.length > 0 && (
               <IconButton
                 tone="adaptive"
@@ -104,15 +123,17 @@ export default function Dashboard({ settings, onSettingChange }) {
                 label={isEditing ? 'Terminar de editar' : 'Editar tarjetas'}
                 aria-pressed={isEditing}
                 onClick={() => setIsEditing((value) => !value)}
+                className={HEADER_BUTTON}
               />
             )}
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <ThemeToggle theme={theme} onToggle={toggleTheme} className={HEADER_BUTTON} />
             <IconButton
               tone="adaptive"
               icon={Settings}
               label="Ajustes"
               aria-haspopup="dialog"
               onClick={() => setIsSettingsOpen(true)}
+              className={HEADER_BUTTON}
             />
           </div>
         </div>
@@ -199,6 +220,30 @@ export default function Dashboard({ settings, onSettingChange }) {
           refresh();
         }}
       />
+      <QuickSearchSheet
+        open={isQuickSearchOpen}
+        onClose={() => setIsQuickSearchOpen(false)}
+        onPick={(stop) => {
+          setIsQuickSearchOpen(false);
+          setQuickStop(stop);
+        }}
+      />
+      {/* `AnimatePresence`: el panel sigue montado mientras sale deslizándose. */}
+      <AnimatePresence>
+        {quickStop && (
+          <QuickLookSheet
+            key={quickStop.id}
+            stop={quickStop}
+            timeFormat={settings.timeFormat}
+            refreshMs={settings.refreshSeconds * 1000}
+            onClose={() => setQuickStop(null)}
+            onAdd={(route) => {
+              addRoute(route);
+              setQuickStop(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
       <SettingsModal
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

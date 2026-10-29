@@ -117,12 +117,22 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   8480 · 10 m · líneas"); elegir una la busca por número. Estados: "Buscando
   tu ubicación…", permiso denegado, sin señal/tiempo agotado, navegador sin
   GPS y fuera de Vigo (parada más cercana a más de 15 km). La ubicación no se
-  guarda.
+  guarda. Buscador y cercanas forman `StopPicker`, reutilizable: solo
+  devuelve la parada elegida (`onSelect`), sin crear nada.
+- **Consulta rápida (lupa de la cabecera):** `QuickSearchSheet` (hoja con
+  `StopPicker`) y, al elegir parada, `QuickLookSheet`: panel inferior con
+  framer-motion dentro de un `<dialog>` modal (entra y sale deslizándose con
+  muelle; se cierra con la X, Escape, tocando fuera o arrastrando el asa o la
+  cabecera hacia abajo) con las llegadas en tiempo real de esa parada
+  (`useStopArrivals`: mismo refresco y formato de tiempo que las tarjetas).
+  No se guarda nada: solo "Añadir a Mis Rutas" (botón secundario de cristal)
+  crea la tarjeta, con todas las líneas de la parada, y cierra el panel.
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
-  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo tres botones
-  circulares: Editar (lápiz/✓), Sol/Luna y Ajustes. "Mis rutas" no se parte en
+  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo cuatro
+  botones circulares: Consulta rápida (lupa), Editar (lápiz/✓), Sol/Luna y
+  Ajustes (36 px por debajo de 400 px de ancho). "Mis rutas" no se parte en
   pantallas estrechas (baja de tamaño por debajo de 380 px).
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
