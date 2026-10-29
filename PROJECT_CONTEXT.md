@@ -18,16 +18,16 @@ fricción, sin mapas interactivos ni navegación compleja.
   Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
   tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
   `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
-  `public/icon.svg` (favicon y manifest), conceptual como las apps de Apple
-  (Mapas, Bolsa): el lienzo entero es un plano nocturno de la ciudad
-  ("squircle" rx 115, fondo midnight con manzanas en cuadrícula girada muy
-  sutil, la ría y un parque insinuados) cruzado por dos líneas de ruta
-  gruesas y curvas (cian → verde neón con eje discontinuo, y magenta →
-  naranja), con su borde oscuro y sombra sobre el plano; en el cruce, el nodo
-  de parada (resplandor, aro blanco y cristal azul iOS con brillo convexo) con
-  el autobús SF Symbols dentro. Acabado de cristal: reflejo curvo arriba,
-  sombra interior global y bisel (trazo blanco arriba → negro abajo); sin
-  imágenes incrustadas. Los PNG (192, 512, maskable y
+  `public/icon.svg` (favicon y manifest), "símbolo de tránsito" al estilo de
+  Cartera o App Store: un único símbolo focal grande, legible de 16 a 512 px.
+  "Squircle" rx 115 con fondo azul profundo (`#1F5BD8` → `#0B1E4A`, luz
+  arriba a la izquierda) y un autobús de frente que ocupa ~64 % del ancho
+  (carrocería blanca → `#DCE6F7`, sin retrovisores ni detalles finos;
+  parabrisas grande, rótulo y faros en cristal azul noche con un reflejo cian
+  `#5AC8FA`, el único acento). El autobús es una losa de vidrio esmerilado
+  (luz interior arriba, sombra interior abajo) con sombra larga y suave; el
+  lienzo lleva reflejo convexo arriba, sombra interior y bisel (blanco arriba
+  → negro abajo). Sin imágenes incrustadas. Los PNG (192, 512, maskable y
   apple-touch-icon a sangre) se generan con `npm run icons`
   (`scripts/generate-icons.js`, `sharp`). Frontend en
   Vercel (`https://vbus-flame.vercel.app`).
