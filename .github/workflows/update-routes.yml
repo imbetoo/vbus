@@ -1,0 +1,43 @@
+# Regenera src/data/routes.json (recorridos de Vitrasa con el orden de sus
+# paradas, para el sentido de la marcha) desde el GTFS oficial del Concello y,
+# si ha cambiado, lo sube a main: Vercel despliega solo. Así el repositorio
+# siempre tiene una copia buena aunque el build de Vercel no pudiera
+# descargar el GTFS.
+name: Actualizar recorridos (GTFS)
+
+on:
+  schedule:
+    # Lunes a las 4:17 UTC (de madrugada en Vigo).
+    - cron: "17 4 * * 1"
+  # Botón "Run workflow" en la pestaña Actions (p. ej. tras un cambio de líneas).
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  routes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Sin `--soft`: si el GTFS no se descarga o está corrupto, el job falla
+      # (aviso por correo de GitHub) y routes.json no se toca.
+      - name: Generar routes.json
+        run: npm run routes
+      - name: Subir si ha cambiado
+        run: |
+          if git diff --quiet -- src/data/routes.json; then
+            echo "routes.json sin cambios."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/routes.json
+          git commit -m "Actualiza los recorridos de Vitrasa desde el GTFS"
+          git push

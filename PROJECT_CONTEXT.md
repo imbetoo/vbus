@@ -148,29 +148,54 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     activo (`StopSuggestions`, combobox con flechas + Enter; Escape deja de
     editar sin cerrar el panel) sustituyen a los resultados mientras se
     escribe.
-  - **Lógica (`src/lib/directRoute.js`, todo en el cliente):** solo A → sus
-    llegadas, como siempre. A y B → `findDirectLines` cruza las líneas de las
-    dos paradas (sin distinguir mayúsculas ni espacios: "PSA 1" = "PSA1"). Si
-    hay líneas directas, se piden los tiempos de A con la misma llamada de
-    siempre (`useStopArrivals`) y se enseñan solo los de esas líneas, con sus
-    distintivos ("Líneas directas a…"). Si no las hay, NO se llama a la API:
-    estado vacío "Sin línea directa" y "Ver ruta con transbordos" como acción
-    principal (píldora blanca). Misma parada → "Ya te encuentras en esta
-    parada", sin llamada. Directa sin autobuses → "Hay conexión directa
-    (Líneas X, Y), pero no hay autobuses próximos". API caída → aviso y Mapas
-    sigue disponible.
+  - **Lógica con sentido de la marcha (`src/lib/directRoute.js`, todo en el
+    cliente):** solo A → sus llegadas, como siempre. A y B → `planDirectRoute`
+    con los recorridos del GTFS (`src/data/routes.json`, `[{ line, dir, head,
+    stops, m }]`; `useRouteIndex` lo pide al abrir el panel, `fetch` de un
+    asset con 10 s de límite, índice `parada → [recorrido, posición]` en ~5 ms,
+    y el service worker lo precachea). Un trayecto es directo solo si algún
+    recorrido pasa por A y después por B (`pos(B) > pos(A)`). B incluye las
+    paradas a ≤150 m (`NEARBY_STOP_M`: la de enfrente; "Bájate en … · a 20 m de
+    tu destino"), y si desde A no sale ninguna, se sube en la de alrededor que
+    sí (aviso en azul y se piden sus tiempos). Cada línea con su mejor opción y
+    de menos a más rodeo (`m[B] − m[A]` + 4× lo andado); las que doblan el
+    recorrido de la mejor (+1 km) se descartan, y si hasta la mejor triplica la
+    línea recta se avisa ("Da un rodeo…"). Los autobuses de la API se filtran
+    por letrero (`route` = `head` del GTFS, sin tildes ni mayúsculas): las
+    variantes cortas o de sentido contrario se ocultan ("Se oculta 1 autobús…");
+    un letrero desconocido no se descarta. Sin autobuses que lleguen: "No hay
+    autobuses próximos que lleguen hasta tu destino." Mientras cargan los
+    recorridos: "Comprobando el sentido de la marcha…" (sin llamar a la API).
+    Si no cargan (red, `[]`), cruce plano de antes (`findDirectLines`, sin
+    distinguir mayúsculas ni espacios) con el aviso "No se pudo verificar el
+    sentido. Confirma en Mapas." Sin línea directa NO se llama a la API:
+    "Sin línea directa" y "Ver ruta con transbordos" como acción principal
+    (píldora blanca). Misma parada → "Ya te encuentras en esta parada", sin
+    llamada. API caída → aviso y Mapas sigue disponible.
+  - **Datos de recorridos:** `scripts/generate-routes.mjs` (`npm run routes`)
+    descarga el GTFS del Concello (`gtfs_vigo.zip`), lo descomprime en
+    streaming con `fflate` (verificando CRC-32 y tamaño de cada fichero con el
+    directorio central) y lee `stops.txt` (`stop_code` = marquesina),
+    `routes.txt`, `trips.txt` y `stop_times.txt` fila a fila; un recorrido por
+    línea + sentido + letrero + secuencia, metros por Haversine entre paradas
+    consecutivas; escritura atómica. `prebuild` lo ejecuta con `--soft` (si
+    falla, aviso y el build sigue con el fichero anterior o `[]`;
+    `vercel.json` fija `npm run build`) y `update-routes.yml` (GitHub
+    Actions, semanal) sin `--soft` y sube el resultado a `main`.
   - **Mapas (`MapsLink`):** enlace universal
     `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
     (desde el GPS, la posición exacta del usuario; si una parada no tiene
     coordenadas, su nombre) en una pestaña nueva: el sistema lo abre en la app
     nativa. Botón de cristal al final de los resultados con ruta directa.
   - No se guarda nada: solo "Añadir a Mis Rutas" (botón secundario de
-    cristal) crea la tarjeta de la parada de origen, con todas sus líneas o,
-    en una ruta directa, solo las directas, y cierra el panel.
+    cristal) crea la tarjeta de la parada de subida, con todas sus líneas o,
+    en una ruta directa, solo las directas (de menos a más rodeo), y cierra
+    el panel.
   - Rendimiento: búsquedas con debounce de 200 ms y `useMemo`
-    (`useStopSearch`, compartido con "Nueva tarjeta"), cruce y filtrado con
-    `useMemo`, manejadores con `useCallback` y `RouteResults` en `React.memo`
-    (escribir no lo repinta).
+    (`useStopSearch`, compartido con "Nueva tarjeta"); el plan (~0,2 ms) y el
+    filtrado con `useMemo` que solo dependen de A, B y los recorridos (escribir
+    no los recalcula); manejadores con `useCallback` y `RouteResults` en
+    `React.memo`.
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde

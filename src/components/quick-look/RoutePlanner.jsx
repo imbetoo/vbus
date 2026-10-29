@@ -1,9 +1,12 @@
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { stopsNear } from '../../data/stops';
 import { useNearestStop } from '../../hooks/useNearestStop';
+import { useRouteIndex } from '../../hooks/useRouteIndex';
 import { useStopArrivals } from '../../hooks/useStopArrivals';
 import { useStopSearch } from '../../hooks/useStopSearch';
-import { findDirectLines, mapsDirectionsUrl } from '../../lib/directRoute';
+import { NEARBY_STOP_M, findDirectLines, mapsDirectionsUrl, planDirectRoute } from '../../lib/directRoute';
+import { haversineMeters } from '../../lib/geo';
 import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import { DEFAULT_CARD_COLOR } from '../bus/cardColors';
 import { PRESSABLE } from '../ui/pressable';
@@ -24,6 +27,12 @@ function plainStop({ id, name, lines, lat, lon }) {
   return Number.isFinite(lat) && Number.isFinite(lon) ? { id, name, lines, lat, lon } : { id, name, lines };
 }
 
+// Candidatas de un extremo del trayecto: la parada elegida y las de alrededor.
+const candidates = (stop) => [
+  { stop, walk: 0 },
+  ...stopsNear(stop, NEARBY_STOP_M, stop.id).map((near) => ({ stop: near, walk: near.distance })),
+];
+
 /**
  * Asistente de la consulta rápida: Origen (A) → Destino (B), todo en el
  * cliente y sin latencia.
@@ -32,10 +41,14 @@ function plainStop({ id, name, lines, lat, lon }) {
  *   cercana (`useNearestStop`, Haversine). Sin permiso o sin señal, A queda
  *   vacío para escribirlo a mano.
  * - Solo A: sus llegadas, como siempre.
- * - A y B: se cruzan las líneas de las dos paradas (`findDirectLines`). Si hay
- *   alguna directa, se piden los tiempos de A (la misma llamada de siempre) y
- *   se enseñan solo los de esas líneas; si no, no se llama a la API y se
- *   ofrece la ruta con transbordos en Google Maps.
+ * - A y B: con los recorridos del GTFS (`useRouteIndex`, `routes.json`) y el
+ *   sentido de la marcha (`planDirectRoute`): solo valen las líneas que pasan
+ *   por A y después por B (o por una parada a unos pasos de B; si desde A no
+ *   sale ninguna, desde la de enfrente). Se piden los tiempos de la parada de
+ *   subida (la misma llamada de siempre) y se enseñan solo los autobuses que
+ *   llegan (sin variantes cortas). Sin línea directa no se llama a la API y
+ *   se ofrece la ruta con transbordos en Google Maps. Si los recorridos no
+ *   cargan, cruce plano de líneas con un aviso.
  *
  * Rendimiento: las búsquedas van con debounce de 200 ms y memorizadas
  * (`useStopSearch`), el cruce de líneas y el filtrado con `useMemo`, los
@@ -48,6 +61,8 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd }) {
   const destinationInputRef = useRef(null);
 
   const location = useNearestStop();
+  // Recorridos del GTFS: se cargan al abrir el panel.
+  const routeIndex = useRouteIndex();
   const { locate, status: locationStatus, stop: locationStop, position, nearestMeters } = location;
   // Origen: la ubicación (GPS) o una parada elegida a mano (`stop: null` = vacío).
   const [originChoice, setOriginChoice] = useState(LOCATION_ORIGIN);
@@ -82,20 +97,42 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd }) {
   const highlighted = Math.min(activeIndex, options.length - 1);
 
   // --- Trayecto -----------------------------------------------------------
-  const directLines = useMemo(
-    () => (origin && destination ? findDirectLines(origin.lines, destination.lines) : []),
-    [origin, destination],
+  const sameStop = Boolean(origin && destination && origin.id === destination.id);
+  // Plan con sentido de la marcha: `undefined` mientras no se puede calcular,
+  // `null` si A o B no están en los recorridos (no verificable).
+  const plan = useMemo(() => {
+    if (!origin || !destination || sameStop || routeIndex.status !== 'ready') return undefined;
+    return planDirectRoute(routeIndex.index, { boarding: candidates(origin), alighting: candidates(destination) });
+  }, [origin, destination, sameStop, routeIndex]);
+  const verified = Boolean(plan);
+  // Sin recorridos: el cruce plano de antes (sin sentido de la marcha).
+  const flatLines = useMemo(
+    () => (origin && destination && !verified ? findDirectLines(origin.lines, destination.lines) : []),
+    [origin, destination, verified],
   );
+  const directLines = useMemo(
+    () => (verified ? plan.options.map((option) => option.line) : flatLines),
+    [verified, plan, flatLines],
+  );
+
   let mode;
   if (!origin) mode = 'no-origin';
   else if (!destination) mode = 'stop';
-  else if (origin.id === destination.id) mode = 'same';
+  else if (sameStop) mode = 'same';
+  else if (routeIndex.status === 'loading') mode = 'checking';
   else if (directLines.length) mode = 'direct';
   else mode = 'no-direct';
 
+  // Parada donde se sube: A o, si desde A no sale ninguna directa en ese
+  // sentido, la de alrededor desde la que sí (normalmente la de enfrente).
+  const boarding = mode === 'direct' && verified ? plan.boarding : origin;
+  // A cuánto está del usuario, si el origen es su ubicación.
+  const boardingDistance =
+    usingLocation && origin?.position && boarding ? haversineMeters(origin.position, boarding) : null;
+
   // Solo se pide a Vitrasa cuando hay algo que enseñar: la parada sola o una
-  // ruta directa. Misma parada o sin línea directa: ninguna llamada.
-  const fetchId = mode === 'stop' || mode === 'direct' ? origin.id : null;
+  // ruta directa. Misma parada, sin línea directa o comprobando: ninguna llamada.
+  const fetchId = mode === 'stop' || mode === 'direct' ? boarding.id : null;
   const arrivals = useStopArrivals(fetchId, { refreshMs });
   const mapsUrl = useMemo(() => {
     if (!destination || mode === 'same') return null;
@@ -191,15 +228,16 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd }) {
   const destinationView = useMemo(() => ({ text: destination?.name ?? '' }), [destination]);
 
   // --- Pie: guardar la parada (o la ruta directa) o abrir Mapas -------------
-  // Líneas de la tarjeta: las directas o, con solo el origen, las de los datos
-  // abiertos (o, si no está en ellos, las que llegan ahora).
+  // Tarjeta de la parada de subida. Líneas: las directas (de menos a más
+  // rodeo) o, con solo el origen, las de los datos abiertos (o, si no está en
+  // ellos, las que llegan ahora).
   let addLines = [];
   if (mode === 'direct') addLines = directLines;
   else if (mode === 'stop') addLines = origin.lines?.length ? origin.lines : uniqueLines(arrivals.buses).map(({ line }) => line);
   const addRoute = () =>
     onAdd(
       toRouteCard({
-        stop: plainStop(origin),
+        stop: plainStop(boarding),
         buses: arrivals.buses,
         lines: addLines,
         busesToShow: 3,
@@ -255,6 +293,9 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd }) {
             mode={mode}
             origin={origin}
             destination={destination}
+            boarding={boarding}
+            boardingDistance={boardingDistance}
+            plan={verified ? plan : null}
             directLines={directLines}
             arrivals={fetchId ? arrivals : null}
             usingLocation={usingLocation}
