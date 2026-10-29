@@ -8,140 +8,109 @@
       <rect id="shape-rect" width="512" height="512" rx="115" />
     </clipPath>
 
-    <!-- 1 · Plano nocturno de la ciudad -->
-    <linearGradient id="night" x1="0" y1="0" x2="0.35" y2="1">
-      <stop offset="0" stop-color="#1E2742" />
-      <stop offset="1" stop-color="#0B1020" />
+    <!-- Fondo: azul profundo con la luz arriba a la izquierda. -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1F5BD8" />
+      <stop offset="1" stop-color="#0B1E4A" />
     </linearGradient>
-    <!-- Manzanas: cuadrícula de bloques redondeados, girada como un callejero. -->
-    <pattern id="blocks" width="58" height="58" patternUnits="userSpaceOnUse" patternTransform="rotate(-18 256 256)">
-      <rect x="5" y="5" width="48" height="48" rx="9" fill="#FFFFFF" fill-opacity="0.032" />
-    </pattern>
-    <!-- Agua (la ría) y un parque, apenas insinuados. -->
-    <radialGradient id="water" cx="0" cy="1" r="0.75">
-      <stop offset="0" stop-color="#1B5C8C" stop-opacity="0.55" />
-      <stop offset="1" stop-color="#1B5C8C" stop-opacity="0" />
-    </radialGradient>
-    <radialGradient id="park" cx="1" cy="0" r="0.55">
-      <stop offset="0" stop-color="#2F7D5B" stop-opacity="0.35" />
-      <stop offset="1" stop-color="#2F7D5B" stop-opacity="0" />
-    </radialGradient>
-
-    <!-- 2 · Líneas de ruta: trazos vibrantes con degradado en px. -->
-    <linearGradient id="route-main" gradientUnits="userSpaceOnUse" x1="0" y1="430" x2="512" y2="80">
-      <stop offset="0" stop-color="#00E0FF" />
-      <stop offset="1" stop-color="#39FF88" />
-    </linearGradient>
-    <linearGradient id="route-cross" gradientUnits="userSpaceOnUse" x1="70" y1="0" x2="440" y2="512">
-      <stop offset="0" stop-color="#FF3DB8" />
-      <stop offset="1" stop-color="#FF9A2E" />
-    </linearGradient>
-    <!-- Sombra de las rutas sobre el plano (niveles de profundidad). -->
-    <filter id="route-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.5" />
-    </filter>
-
-    <!-- Nodo de parada: resplandor, cristal azul y aro blanco. -->
-    <radialGradient id="glow">
-      <stop offset="0" stop-color="#7FE9FF" stop-opacity="0.8" />
-      <stop offset="0.55" stop-color="#3FA8FF" stop-opacity="0.28" />
-      <stop offset="1" stop-color="#3FA8FF" stop-opacity="0" />
-    </radialGradient>
-    <linearGradient id="node-glass" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5AB0FF" />
-      <stop offset="1" stop-color="#0A5BFF" />
-    </linearGradient>
-    <linearGradient id="node-shine" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55" />
+    <radialGradient id="bg-light" cx="0.18" cy="0.12" r="0.75">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22" />
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Autobús: losa blanca de vidrio esmerilado. -->
+    <linearGradient id="bus-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#DCE6F7" />
     </linearGradient>
-    <filter id="node-shadow" x="-40%" y="-40%" width="180%" height="190%">
-      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#00030F" flood-opacity="0.6" />
+    <!-- Parabrisas: cristal azul noche con un reflejo cian (el único acento). -->
+    <linearGradient id="window" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E2A66" />
+      <stop offset="1" stop-color="#163C8C" />
+    </linearGradient>
+    <linearGradient id="window-shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5AC8FA" stop-opacity="0.35" />
+      <stop offset="0.5" stop-color="#5AC8FA" stop-opacity="0.12" />
+      <stop offset="1" stop-color="#5AC8FA" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Relieve del autobús: luz interior arriba y sombra interior abajo. -->
+    <filter id="slab" x="-5%" y="-5%" width="110%" height="110%">
+      <feOffset in="SourceAlpha" dy="4" result="down" />
+      <feComposite in="SourceAlpha" in2="down" operator="out" result="topEdge" />
+      <feGaussianBlur in="topEdge" stdDeviation="1.5" result="topSoft" />
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.95" />
+      <feComposite in2="topSoft" operator="in" result="innerLight" />
+      <feOffset in="SourceAlpha" dy="-7" result="up" />
+      <feComposite in="SourceAlpha" in2="up" operator="out" result="bottomEdge" />
+      <feGaussianBlur in="bottomEdge" stdDeviation="3" result="bottomSoft" />
+      <feFlood flood-color="#5A6E96" flood-opacity="0.55" />
+      <feComposite in2="bottomSoft" operator="in" result="innerShadow" />
+      <feMerge>
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="innerShadow" />
+        <feMergeNode in="innerLight" />
+      </feMerge>
     </filter>
-    <filter id="bus-shadow" x="-30%" y="-30%" width="160%" height="170%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#002060" flood-opacity="0.45" />
+    <!-- Sombra larga y suave: el autobús flota sobre el fondo. -->
+    <filter id="float" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#061233" flood-opacity="0.45" />
     </filter>
 
-    <!-- 3 · Cristal: reflejo, sombra interior y bisel. -->
-    <linearGradient id="glare" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="200">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28" />
-      <stop offset="0.6" stop-color="#FFFFFF" stop-opacity="0.06" />
+    <!-- Cristal del lienzo: reflejo, sombra interior y bisel. -->
+    <linearGradient id="glare" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="196">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.18" />
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
     </linearGradient>
     <filter id="inner-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="20" result="blur" />
-      <feOffset in="blur" dy="8" result="shifted" />
+      <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="blur" />
+      <feOffset in="blur" dy="6" result="shifted" />
       <!-- Lo que hay dentro de la forma pero no en su copia desenfocada: el borde. -->
       <feComposite in="SourceAlpha" in2="shifted" operator="arithmetic" k2="1" k3="-1" result="edge" />
-      <feFlood flood-color="#02040C" flood-opacity="0.8" />
+      <feFlood flood-color="#030A1F" flood-opacity="0.55" />
       <feComposite in2="edge" operator="in" />
     </filter>
     <linearGradient id="rim-light" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.6" />
-      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0.12" />
-      <stop offset="0.7" stop-color="#000000" stop-opacity="0.1" />
-      <stop offset="1" stop-color="#000000" stop-opacity="0.45" />
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55" />
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.1" />
+      <stop offset="0.7" stop-color="#000000" stop-opacity="0.08" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0.4" />
     </linearGradient>
   </defs>
 
   <g clip-path="url(#shape)">
-    <!-- Plano: noche, manzanas, ría y parque. -->
-    <rect width="512" height="512" fill="url(#night)" />
-    <rect width="512" height="512" fill="url(#blocks)" />
-    <rect width="512" height="512" fill="url(#water)" />
-    <rect width="512" height="512" fill="url(#park)" />
+    <rect width="512" height="512" fill="url(#bg)" />
+    <rect width="512" height="512" fill="url(#bg-light)" />
 
-    <!-- Ruta secundaria (magenta → naranja), por debajo: cruza de arriba a abajo. -->
-    <g filter="url(#route-shadow)" fill="none" stroke-linecap="round">
-      <path d="M86 -30C118 120 196 196 256 256S392 384 432 560" stroke="#0B1020" stroke-width="58" />
-      <path d="M86 -30C118 120 196 196 256 256S392 384 432 560" stroke="url(#route-cross)" stroke-width="44" />
+    <!-- Autobús de frente, símbolo focal (≈ 64 % del ancho): sin retrovisores
+         ni detalles finos, para que a 16 px se lea la silueta. -->
+    <g filter="url(#float)">
+      <g fill="url(#bus-fill)" filter="url(#slab)">
+        <!-- Ruedas (detrás de la carrocería). -->
+        <rect x="128" y="352" width="66" height="70" rx="22" />
+        <rect x="318" y="352" width="66" height="70" rx="22" />
+        <!-- Carrocería con el rótulo, el parabrisas y los faros calados. -->
+        <path
+          fill-rule="evenodd"
+          d="M155 94h202c35 0 64 29 64 64v164c0 35-29 64-64 64H155c-35 0-64-29-64-64V158c0-35 29-64 64-64Z
+             M206 116h100a10 10 0 0 1 0 20H206a10 10 0 0 1 0-20Z
+             M155 156h202c13 0 24 11 24 24v84c0 13-11 24-24 24H155c-13 0-24-11-24-24v-84c0-13 11-24 24-24Z
+             M160 318a22 22 0 1 0 0.01 0Z
+             M352 318a22 22 0 1 0 0.01 0Z"
+        />
+      </g>
     </g>
+    <!-- Cristales: parabrisas, rótulo y faros en azul noche, con reflejo. -->
+    <rect x="131" y="156" width="250" height="132" rx="24" fill="url(#window)" />
+    <path d="M131 222V180c0-13 11-24 24-24h120L176 288h-21c-13 0-24-11-24-24Z" fill="url(#window-shine)" />
+    <rect x="196" y="116" width="120" height="20" rx="10" fill="url(#window)" />
+    <circle cx="160" cy="340" r="22" fill="url(#window)" />
+    <circle cx="352" cy="340" r="22" fill="url(#window)" />
 
-    <!-- Ruta principal (cian → verde neón), encima: de la ría hacia el parque. -->
-    <g filter="url(#route-shadow)" fill="none" stroke-linecap="round">
-      <path d="M-40 418C110 410 170 270 256 256S410 110 560 96" stroke="#0B1020" stroke-width="70" />
-      <path d="M-40 418C110 410 170 270 256 256S410 110 560 96" stroke="url(#route-main)" stroke-width="56" />
-      <!-- Eje de la calzada, como en los mapas. -->
-      <path
-        d="M-40 418C110 410 170 270 256 256S410 110 560 96"
-        stroke="#FFFFFF"
-        stroke-opacity="0.55"
-        stroke-width="4"
-        stroke-dasharray="14 16"
-      />
-    </g>
-
-    <!-- Nodo de parada en el cruce: resplandor, aro blanco y cristal azul con
-         el autobús dentro (parte de la ruta, no un logo encima). -->
-    <circle cx="256" cy="256" r="132" fill="url(#glow)" />
-    <g filter="url(#node-shadow)">
-      <circle cx="256" cy="256" r="82" fill="#FFFFFF" />
-      <circle cx="256" cy="256" r="69" fill="url(#node-glass)" />
-    </g>
-    <!-- Brillo convexo del cristal del nodo. -->
-    <ellipse cx="256" cy="222" rx="52" ry="30" fill="url(#node-shine)" />
-    <!-- Autobús de frente (SF Symbols "bus.fill"), escalado dentro del nodo. -->
-    <g fill="#FFFFFF" filter="url(#bus-shadow)" transform="translate(256 258) scale(0.29) translate(-256 -257)">
-      <path
-        fill-rule="evenodd"
-        d="M200 116h112c33 0 54 21 54 54v150c0 25-15 42-38 42H184c-23 0-38-17-38-42V170c0-33 21-54 54-54Z
-           M214 140h84a10 10 0 0 1 0 20h-84a10 10 0 0 1 0-20Z
-           M186 182h140c9 0 16 7 16 16v66c0 9-7 16-16 16H186c-9 0-16-7-16-16v-66c0-9 7-16 16-16Z
-           M196 300a17 17 0 1 0 0.01 0Z
-           M316 300a17 17 0 1 0 0.01 0Z"
-      />
-      <rect x="120" y="186" width="16" height="58" rx="8" />
-      <rect x="376" y="186" width="16" height="58" rx="8" />
-      <rect x="170" y="352" width="46" height="46" rx="16" />
-      <rect x="296" y="352" width="46" height="46" rx="16" />
-    </g>
-
-    <!-- Cristal pulido: reflejo curvo en la mitad superior. -->
-    <path d="M0 0H512V188C436 236 346 252 256 252S76 236 0 188Z" fill="url(#glare)" />
-
-    <!-- Sombra interior global: el plano queda embutido bajo el cristal. -->
+    <!-- Reflejo convexo en la mitad superior. -->
+    <path d="M0 0H512V196C436 246 346 262 256 262S76 246 0 196Z" fill="url(#glare)" />
+    <!-- Sombra interior global. -->
     <rect width="512" height="512" fill="#000" filter="url(#inner-shadow)" />
-
     <!-- Bisel de cristal: luz arriba, sombra abajo. -->
     <rect id="rim" x="3" y="3" width="506" height="506" rx="112" fill="none" stroke="url(#rim-light)" stroke-width="5" />
   </g>
