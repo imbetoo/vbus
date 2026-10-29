@@ -91,14 +91,54 @@ export function rememberStop(stop) {
   }
 }
 
-// "Rúa do Conde" → "rua do conde": sin tildes, mayúsculas ni signos.
+// "Rúa do Conde" → "rua do conde": sin tildes (ni la virgulilla de la ñ),
+// mayúsculas ni signos.
 const normalize = (text) =>
   String(text)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9ñ]+/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
     .trim();
+
+// Alias del callejero (castellano y gallego): cada forma, completa o
+// abreviada, se convierte en un mismo token. Los nombres oficiales mezclan
+// ambas ("Avda.", "Trav.", "Est." pero "Praza", "Rúa", "Camiño"), así que se
+// aplica igual a las paradas (una vez, en el índice) y a lo que se escribe.
+// Solo palabras enteras (se comparan tokens, no trozos: "avenida" sí, pero
+// "pra" de "praia" no).
+const STREET_ALIASES = {
+  avda: ['avenida', 'avda', 'avd', 'av'],
+  tva: ['travesia', 'trav', 'trv', 'tva'],
+  pza: ['plaza', 'praza', 'pza', 'pz'],
+  cno: ['camino', 'cno'],
+  rua: ['calle', 'rua', 'cl'],
+  est: ['estrada', 'carretera', 'ctra', 'est'],
+  dr: ['doctor', 'doutor', 'dr'],
+  arq: ['arquitecto', 'arq'],
+  ing: ['ingeniero', 'enxenheiro', 'enxeneiro', 'ing'],
+};
+const ALIAS_TO_CANONICAL = new Map(
+  Object.entries(STREET_ALIASES).flatMap(([canonical, forms]) => forms.map((form) => [form, canonical])),
+);
+// Formas completas, para reconocerlas a medio escribir ("aveni" → avda).
+const LONG_FORMS = [...ALIAS_TO_CANONICAL].filter(([form]) => form.length >= 5);
+
+// Tokens canónicos ("avda", "pza"…): se comparan como palabra entera.
+const CANONICAL_WORDS = new Set(Object.keys(STREET_ALIASES));
+
+const canonicalWord = (word) => ALIAS_TO_CANONICAL.get(word) ?? word;
+
+/**
+ * Texto comparable del buscador: sin tildes ni mayúsculas y con los alias del
+ * callejero unificados ("Avenida de Europa" y "Avda. de Europa" → "avda de
+ * europa"; "Plaza de América" → "pza de america"). Se aplica a los nombres de
+ * las paradas al construir el índice y a la consulta en cada búsqueda.
+ */
+export function normalizeSearchText(text) {
+  const normalized = normalize(text);
+  return normalized && normalized.split(' ').map(canonicalWord).join(' ');
+}
 
 /**
  * Separa el número del portal del final del nombre ("Rúa do Conde de
@@ -119,9 +159,9 @@ function indexEntry(id, name, lines = [], lat, lon) {
   return {
     stop: Number.isFinite(lat) && Number.isFinite(lon) ? { id, name, lines, lat, lon } : { id, name, lines },
     idText: String(id),
-    name: normalize(name),
+    name: normalizeSearchText(name),
     // Nombre principal, sin lo de entre paréntesis ("Rúa de San Paio (Torreiro)").
-    main: normalize(name.split('(')[0]),
+    main: normalizeSearchText(name.split('(')[0]),
     street: splitStopName(name).street,
     // Número del portal, para ordenar una misma calle: 23 < 81 < 123.
     portal: Number(/(\d+)\D*$/.exec(name)?.[1] ?? Infinity),
@@ -184,11 +224,39 @@ const collator = new Intl.Collator('es');
  * precalculado: en cada búsqueda solo se comparan textos.
  */
 export function searchStops(query) {
-  const text = normalize(query);
+  const text = normalizeSearchText(query);
   if (!text) return [];
-  const words = text.split(' ');
   const isNumber = /^\d+$/.test(text);
-  const startsWord = (haystack) => words.every((word) => haystack.startsWith(word) || haystack.includes(` ${word}`));
+  // Cada palabra con sus alternativas. Un alias del callejero ("avda") se busca
+  // como palabra entera (si no, "est" de "carretera" casaría con "estación");
+  // el resto, como trozo. La última palabra, que puede estar a medio
+  // escribir, también vale como trozo ("est" → "estación") y como principio de
+  // una forma completa ("aveni" → avda).
+  const tokens = text.split(' ');
+  const typed = normalize(query).split(' ');
+  const words = tokens.map((word, index) => {
+    // A medio escribir: la última palabra, si se ha tecleado tal cual (no
+    // "carretera", que es palabra completa y pasa a "est").
+    const typing = index === tokens.length - 1 && typed[index] === word;
+    const isAlias = CANONICAL_WORDS.has(word);
+    const options = [{ text: word, whole: isAlias && !typing }];
+    if (isAlias && typing) options.push({ text: word, whole: true });
+    if (word.length >= 3 && !isAlias) {
+      for (const [form, canonical] of LONG_FORMS) {
+        if (form.startsWith(word) && !options.some((option) => option.text === canonical)) {
+          options.push({ text: canonical, whole: true });
+        }
+      }
+    }
+    return options;
+  });
+  const has = (haystack, { text: word, whole }) =>
+    whole ? ` ${haystack} `.includes(` ${word} `) : haystack.includes(word);
+  const contains = (haystack, options) => options.some((option) => has(haystack, option));
+  const startsWord = (haystack) =>
+    words.every((options) =>
+      options.some(({ text: word }) => haystack.startsWith(word) || haystack.includes(` ${word}`)),
+    );
 
   const matches = [];
   for (const entry of [...listIndex, ...extraEntries(listIds)]) {
@@ -196,7 +264,7 @@ export function searchStops(query) {
       if (entry.idText.startsWith(text)) matches.push({ entry, score: entry.idText === text ? 0 : 1 });
       continue;
     }
-    if (!words.every((word) => entry.name.includes(word))) continue;
+    if (!words.every((options) => contains(entry.name, options))) continue;
     let score = 3;
     if (entry.name.startsWith(text)) score = 0;
     else if (startsWord(entry.main)) score = 1;

@@ -61,7 +61,18 @@ const pwa = VitePWA({
 });
 
 // https://vite.dev/config/
+// Versión visible en Ajustes (para saber si el móvil tiene el último build o
+// uno antiguo del caché del service worker): hora de compilación y, en
+// Vercel, el commit.
+const BUILD_INFO = {
+  time: new Date().toISOString(),
+  commit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7),
+};
+
 export default defineConfig({
+  define: {
+    __BUILD_INFO__: JSON.stringify(BUILD_INFO),
+  },
   plugins: [react(), pwa],
   server: { proxy: vigobusProxy },
   preview: { proxy: vigobusProxy },
