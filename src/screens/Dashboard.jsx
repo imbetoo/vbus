@@ -1,6 +1,6 @@
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
 import { BusFront, Check, Pencil, Search, Settings } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 import EditCardModal from '../components/bus/EditCardModal';
 import EditableRouteItem from '../components/bus/EditableRouteItem';
@@ -76,7 +76,9 @@ export default function Dashboard({ settings, onSettingChange }) {
   // Tarjetas que están animando su salida: se quitan del estado al terminar.
   const [leavingIds, setLeavingIds] = useState(() => new Set());
 
-  const handleRemove = (id) => {
+  // Callbacks estables (reciben el id): las tarjetas memorizadas no se
+  // repintan cuando el Dashboard se re-renderiza.
+  const handleRemove = useCallback((id) => {
     if (prefersReducedMotion()) {
       removeRoute(id);
       return;
@@ -90,7 +92,8 @@ export default function Dashboard({ settings, onSettingChange }) {
         return next;
       });
     }, REMOVE_MS);
-  };
+  }, [removeRoute]);
+  const startEditing = useCallback(() => setIsEditing(true), []);
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
@@ -187,9 +190,9 @@ export default function Dashboard({ settings, onSettingChange }) {
                 animateIn={!savedIds.has(route.id)}
                 sortBy={settings.sortBy}
                 timeFormat={settings.timeFormat}
-                onRemove={() => handleRemove(route.id)}
-                onEditCard={() => setEditingRouteId(route.id)}
-                onStartEditing={() => setIsEditing(true)}
+                onRemove={handleRemove}
+                onEditCard={setEditingRouteId}
+                onStartEditing={startEditing}
               />
             ))}
           </Reorder.Group>

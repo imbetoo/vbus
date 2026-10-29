@@ -21,8 +21,10 @@ fricción, sin mapas interactivos ni navegación compleja.
   `public/icon.svg` (favicon y manifest), "símbolo de tránsito" al estilo de
   Cartera o App Store: un único símbolo focal grande, legible de 16 a 512 px.
   "Squircle" rx 115 con fondo azul profundo (`#1F5BD8` → `#0B1E4A`, luz
-  arriba a la izquierda) y un autobús de frente que ocupa ~64 % del ancho
-  (carrocería blanca → `#DCE6F7`, sin retrovisores ni detalles finos;
+  arriba a la izquierda, y un rayo de luz diagonal muy tenue, blanco al 9 %,
+  difuminado y desvanecido antes de la mitad) y un autobús de frente reducido
+  un 7 % sobre su centro (`scale(0.93)`, ~60 % del ancho, con más espacio
+  negativo; carrocería blanca → `#DCE6F7`, sin retrovisores ni detalles finos;
   parabrisas grande, rótulo y faros en cristal azul noche con un reflejo cian
   `#5AC8FA`, el único acento). El autobús es una losa de vidrio esmerilado
   (luz interior arriba, sombra interior abajo) con sombra larga y suave; el
@@ -97,7 +99,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Buscador predictivo de paradas (hoja "Nueva tarjeta"):** combobox
   accesible (`StopSearchField`): por dirección ("conde de torrecedeira", sin
   importar tildes ni orden de palabras) o por número ("84…"); las coincidencias
-  salen debajo en una lista con scroll (hasta 30: primero coincidencias en el
+  salen debajo en una lista con scroll (hasta 15: primero coincidencias en el
   nombre principal, luego entre paréntesis; dentro de una calle, por número de
   portal) y se eligen con el dedo o con flechas + Enter (Escape cierra la
   lista). Cada sugerencia enseña el nombre entero (pasa a dos líneas si hace
@@ -106,10 +108,15 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   busca por número como siempre. Fuente (`src/data/stops.js`):
   `src/data/stopsList.json` con las 1157 paradas de Vitrasa de los datos
   abiertos del Concello (`datos.vigo.org/data/transporte/paradas.json`; su
-  `id` es el número de la marquesina), en un fichero aparte que se carga al
-  abrir la hoja (`loadStopsList`); se regenera con `node
-  scripts/update-stops.mjs`. Además, las paradas ya encontradas por número
-  (`vbus:stops`) y las de las tarjetas, por si alguna nueva aún no está.
+  `id` es el número de la marquesina), en un fichero aparte (`loadStopsList`) que `App.jsx` precarga en segundo
+  plano (`requestIdleCallback` 1,5 s después de arrancar), así ya está listo
+  al abrir la hoja; se regenera con `node scripts/update-stops.mjs`. Además,
+  las paradas ya encontradas por número (`vbus:stops`) y las de las tarjetas,
+  por si alguna nueva aún no está. Rendimiento: al cargar la lista se
+  construye una vez un índice (nombre normalizado, nombre principal, calle y
+  portal), las paradas extra se cachean y solo se recalculan si cambia lo
+  guardado, el input busca con 200 ms de debounce (`useDebouncedValue`) y
+  `useMemo`, y la lista corta (15) no necesita virtualización.
 - **Paradas cerca de mí (misma hoja):** botón de cristal con `LocateFixed` bajo
   el buscador (`NearbyStops`). Pide la ubicación (`navigator.geolocation`, alta
   precisión, 15 s) y con Haversine (`src/lib/geo.js`, sin librerías) ordena
@@ -177,7 +184,11 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   (borra con la animación de salida), (2) círculo oscuro con lápiz arriba a la
   derecha en lugar de la X (abre "Editar tarjeta", `EditCardModal`) y (3) el
   tirador ≡ fuera de la tarjeta, en el margen derecho y centrado (la tarjeta
-  se estrecha 28 px para dejarle sitio; el tirador no tiembla). La lista es un
+  se encoge al 92 % desde la izquierda con `transform`, sin tocar márgenes ni
+  layout, para dejarle sitio; el tirador no tiembla). Para no repintar de más,
+  `RouteCard` y `EditableRouteItem` van en `React.memo` con callbacks estables
+  del Dashboard (`onRemove(id)`, `onEditCard(id)`), y `Reorder.Item` usa
+  `layout="position"`. La lista es un
   `Reorder.Group` de framer-motion (eje Y; `EditableRouteItem` =
   `Reorder.Item`) y solo se arrastra desde el tirador (`useDragControls`,
   `touch-action: none`), así el scroll sigue funcionando; la tarjeta

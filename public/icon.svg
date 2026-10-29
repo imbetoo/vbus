@@ -57,6 +57,21 @@
       <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#061233" flood-opacity="0.45" />
     </filter>
 
+    <!-- Rayo de luz diagonal, muy tenue (9 % de blanco), con los bordes
+         difuminados y desvanecido antes de la mitad del icono. -->
+    <linearGradient id="ray" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0.12" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0.09" />
+      <stop offset="0.48" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="ray-fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#000000" />
+    </linearGradient>
+    <mask id="top-half">
+      <rect width="512" height="256" fill="url(#ray-fade)" />
+    </mask>
+
     <!-- Cristal del lienzo: reflejo, sombra interior y bisel. -->
     <linearGradient id="glare" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="196">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.18" />
@@ -81,31 +96,35 @@
   <g clip-path="url(#shape)">
     <rect width="512" height="512" fill="url(#bg)" />
     <rect width="512" height="512" fill="url(#bg-light)" />
+    <rect width="512" height="512" fill="url(#ray)" mask="url(#top-half)" />
 
-    <!-- Autobús de frente, símbolo focal (≈ 64 % del ancho): sin retrovisores
-         ni detalles finos, para que a 16 px se lea la silueta. -->
-    <g filter="url(#float)">
-      <g fill="url(#bus-fill)" filter="url(#slab)">
-        <!-- Ruedas (detrás de la carrocería). -->
-        <rect x="128" y="352" width="66" height="70" rx="22" />
-        <rect x="318" y="352" width="66" height="70" rx="22" />
-        <!-- Carrocería con el rótulo, el parabrisas y los faros calados. -->
-        <path
-          fill-rule="evenodd"
-          d="M155 94h202c35 0 64 29 64 64v164c0 35-29 64-64 64H155c-35 0-64-29-64-64V158c0-35 29-64 64-64Z
-             M206 116h100a10 10 0 0 1 0 20H206a10 10 0 0 1 0-20Z
-             M155 156h202c13 0 24 11 24 24v84c0 13-11 24-24 24H155c-13 0-24-11-24-24v-84c0-13 11-24 24-24Z
-             M160 318a22 22 0 1 0 0.01 0Z
-             M352 318a22 22 0 1 0 0.01 0Z"
-        />
+    <!-- Autobús reducido un 7 % exacto sobre su centro: más espacio negativo. -->
+    <g transform="translate(256 258) scale(0.93) translate(-256 -258)">
+      <!-- Autobús de frente, símbolo focal (≈ 60 % del ancho): sin retrovisores
+           ni detalles finos, para que a 16 px se lea la silueta. -->
+      <g filter="url(#float)">
+        <g fill="url(#bus-fill)" filter="url(#slab)">
+          <!-- Ruedas (detrás de la carrocería). -->
+          <rect x="128" y="352" width="66" height="70" rx="22" />
+          <rect x="318" y="352" width="66" height="70" rx="22" />
+          <!-- Carrocería con el rótulo, el parabrisas y los faros calados. -->
+          <path
+            fill-rule="evenodd"
+            d="M155 94h202c35 0 64 29 64 64v164c0 35-29 64-64 64H155c-35 0-64-29-64-64V158c0-35 29-64 64-64Z
+               M206 116h100a10 10 0 0 1 0 20H206a10 10 0 0 1 0-20Z
+               M155 156h202c13 0 24 11 24 24v84c0 13-11 24-24 24H155c-13 0-24-11-24-24v-84c0-13 11-24 24-24Z
+               M160 318a22 22 0 1 0 0.01 0Z
+               M352 318a22 22 0 1 0 0.01 0Z"
+          />
+        </g>
       </g>
+      <!-- Cristales: parabrisas, rótulo y faros en azul noche, con reflejo. -->
+      <rect x="131" y="156" width="250" height="132" rx="24" fill="url(#window)" />
+      <path d="M131 222V180c0-13 11-24 24-24h120L176 288h-21c-13 0-24-11-24-24Z" fill="url(#window-shine)" />
+      <rect x="196" y="116" width="120" height="20" rx="10" fill="url(#window)" />
+      <circle cx="160" cy="340" r="22" fill="url(#window)" />
+      <circle cx="352" cy="340" r="22" fill="url(#window)" />
     </g>
-    <!-- Cristales: parabrisas, rótulo y faros en azul noche, con reflejo. -->
-    <rect x="131" y="156" width="250" height="132" rx="24" fill="url(#window)" />
-    <path d="M131 222V180c0-13 11-24 24-24h120L176 288h-21c-13 0-24-11-24-24Z" fill="url(#window-shine)" />
-    <rect x="196" y="116" width="120" height="20" rx="10" fill="url(#window)" />
-    <circle cx="160" cy="340" r="22" fill="url(#window)" />
-    <circle cx="352" cy="340" r="22" fill="url(#window)" />
 
     <!-- Reflejo convexo en la mitad superior. -->
     <path d="M0 0H512V196C436 246 346 262 256 262S76 246 0 196Z" fill="url(#glare)" />
