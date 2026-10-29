@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import { loadStopsList, searchStops } from '../../data/stops';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useStopSearch } from '../../hooks/useStopSearch';
 import NearbyStops from './NearbyStops';
 import StopSearchField from './StopSearchField';
 
@@ -25,30 +23,8 @@ export default function StopPicker({
   inputRef,
   children,
 }) {
-  // La lista de paradas suele estar ya precargada (`App.jsx`); si no, se
-  // carga al montar y, al llegar, se vuelve a buscar lo que ya se haya escrito.
-  const [stopsLoaded, setStopsLoaded] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    loadStopsList()
-      .then(() => alive && setStopsLoaded(true))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // El texto del campo responde al momento; la búsqueda espera a que se deje
-  // de teclear 200 ms (en un móvil modesto, buscar en cada letra satura la
-  // CPU). Con el campo vacío no se espera: la lista se cierra ya.
-  const debouncedQuery = useDebouncedValue(query, 200);
-  const searchQuery = query.trim() ? debouncedQuery : '';
-  const suggestions = useMemo(
-    () => searchStops(searchQuery).filter((item) => item.id !== excludeId),
-    // `stopsLoaded`: al llegar la lista hay que volver a buscar.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [searchQuery, excludeId, stopsLoaded],
-  );
+  // Búsqueda con debounce de 200 ms y memorizada (`useStopSearch`).
+  const { suggestions } = useStopSearch(query, { excludeId });
 
   return (
     <>

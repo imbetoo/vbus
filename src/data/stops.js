@@ -96,10 +96,12 @@ export function splitStopName(name) {
 }
 
 // Entrada del índice de búsqueda: todo lo que la búsqueda y la ordenación
-// necesitan, calculado una sola vez por parada (no en cada pulsación).
-function indexEntry(id, name, lines = []) {
+// necesitan, calculado una sola vez por parada (no en cada pulsación). La
+// parada que se devuelve lleva sus coordenadas si se conocen (`lat`, `lon`:
+// el enlace a Mapas de la consulta rápida las usa).
+function indexEntry(id, name, lines = [], lat, lon) {
   return {
-    stop: { id, name, lines },
+    stop: Number.isFinite(lat) && Number.isFinite(lon) ? { id, name, lines, lat, lon } : { id, name, lines },
     idText: String(id),
     name: normalize(name),
     // Nombre principal, sin lo de entre paréntesis ("Rúa de San Paio (Torreiro)").
@@ -151,7 +153,7 @@ function extraEntries(knownIds) {
 
 let listIds = new Set();
 function buildListIndex() {
-  listIndex = stopsList.map((stop) => indexEntry(stop.id, stop.name, stop.lines));
+  listIndex = stopsList.map((stop) => indexEntry(stop.id, stop.name, stop.lines, stop.lat, stop.lon));
   listIds = new Set(stopsList.map((stop) => stop.id));
 }
 
