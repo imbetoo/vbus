@@ -291,7 +291,12 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   chevron (›) gira hacia arriba al expandir. El orden lo marca el ajuste
   "Ordenar autobuses por": llegada (menos minutos primero) o preferencia (el
   próximo de cada línea en el orden en que se eligieron, luego el resto).
-- **Selección de líneas:** pastillas de cristal de ancho fijo: el círculo de
+- **Selección de líneas:** las pastillas de "Nueva tarjeta" son las líneas
+  teóricas de la parada en `stopsList.json` (`stopLines`), circulen o no en
+  ese momento (de noche no pasan todas y la tarjeta puede ser para mañana); el
+  contador "N líneas" usa esa misma lista. Solo si la parada no está en los
+  datos abiertos se usan las que llegan ahora según la API. Pastillas de
+  cristal de ancho fijo: el círculo de
   prioridad siempre ocupa su sitio (anillo vacío sin elegir, blanco con su
   número 1, 2, 3… al elegir), así nada salta de fila. El paso de líneas usa el
   icono `Route`.
