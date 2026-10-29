@@ -39,10 +39,10 @@ La app se instala como "VigoBus" (`vite-plugin-pwa`, configurado en
 instalación, `npm run build && npm run preview` y abrir `http://localhost:4173`.
 En el móvil hace falta HTTPS (por IP de la red local el navegador no registra el
 service worker); en Ajustes aparece "Instalar app" cuando se puede. Los iconos
-salen todos del icono maestro vectorial `public/icon.svg` (estilo "liquid
-glass": mesh gradient líquido sobre fondo oscuro, reflejo, sombra interior,
-reborde de cristal y autobús blanco estilo SF Symbols flotando; sin imágenes
-incrustadas). Si cambias el SVG, regenera los PNG:
+salen todos del icono maestro vectorial `public/icon.svg` (conceptual, como
+Apple Mapas: plano nocturno de la ciudad con dos líneas de ruta que se cruzan
+en un nodo de parada de cristal con el autobús dentro, con reflejo, sombra
+interior y bisel; sin imágenes incrustadas). Si cambias el SVG, regenera los PNG:
 
 ```sh
 npm run icons
