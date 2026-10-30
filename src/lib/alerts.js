@@ -12,7 +12,7 @@
  *   (Safari no deja sonar audio que no empiece con un gesto).
  */
 
-import { ALARM_PATTERN, haptics } from './haptics';
+import { ALARM_PATTERN, haptics, hapticsEnabled } from './haptics';
 
 const IS_IOS =
   typeof navigator !== 'undefined' &&
@@ -97,7 +97,8 @@ export function fireAlert(title, { body, tag }) {
     tag,
     renotify: true,
     requireInteraction: true,
-    vibrate: ALARM_PATTERN,
+    // Sin vibración en Ajustes, la notificación tampoco vibra.
+    vibrate: hapticsEnabled() ? ALARM_PATTERN : [],
   });
 }
 

@@ -11,6 +11,7 @@ const STORAGE_KEY = 'vbus:settings';
  * - `refreshSeconds`: cada cuánto se piden de nuevo los tiempos (15, 30 o 60 s).
  * - `sortByProximity`: la tarjeta de la parada más cercana, la primera
  *   (Smart Sorting; solo cambia la vista, nunca el orden guardado).
+ * - `vibration`: vibración y toques hápticos (también los de las alarmas).
  */
 export const DEFAULT_SETTINGS = {
   sortBy: 'time',
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS = {
   timeFormat: 'relative',
   refreshSeconds: 30,
   sortByProximity: true,
+  vibration: true,
 };
 
 const VALID = {
@@ -26,6 +28,7 @@ const VALID = {
   timeFormat: ['relative', 'absolute'],
   refreshSeconds: [15, 30, 60],
   sortByProximity: [true, false],
+  vibration: [true, false],
 };
 
 function loadSettings() {

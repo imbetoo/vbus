@@ -120,6 +120,19 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
           onChange={(value) => onChange('sortByProximity', value)}
         />
 
+        <SwitchRow
+          title="Vibración"
+          description={
+            <span key={String(settings.vibration)} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.vibration
+                ? 'Toques al usar la app y vibración fuerte en los avisos.'
+                : 'Sin vibración. Los avisos siguen sonando y notificando.'}
+            </span>
+          }
+          checked={settings.vibration}
+          onChange={(value) => onChange('vibration', value)}
+        />
+
         <SettingRow
           title="Formato de tiempo"
           description={
