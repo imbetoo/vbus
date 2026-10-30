@@ -167,9 +167,19 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   primero y sin repetidas (elegir una que ya estaba la sube arriba). Se añaden
   al elegir una parada en la consulta rápida (origen o destino, también por
   QR) o en `StopPicker` (buscador, cercanas o QR). Con el campo enfocado y
-  vacío, la lista enseña "Recientes" (encabezado gris con "Borrar" en azul,
-  `RecentHeader`, fila de presentación del listbox) con las mismas filas que
-  los resultados; al escribir, resultados normales. En el origen van debajo de
+  vacío, la lista enseña "Recientes" (encabezado gris con la pista "Desliza
+  ← para borrar", `RecentHeader`, fila de presentación del listbox) con las
+  mismas filas que los resultados; al escribir, resultados normales. Sin
+  botones de borrar: cada reciente se borra **deslizándola a la izquierda**
+  como en Mail de iOS (`SwipeableOption`, framer-motion): la fila sigue al
+  dedo 1:1 (resistencia hacia la derecha) y destapa un rojo `bg-urgent` con
+  la papelera blanca (el rojo crece con `scaleX`, solo transform); al
+  cruzar el umbral (110 px o un tercio de la fila) la papelera crece y da un
+  toque háptico; al soltar pasado él (o con un gesto rápido) la fila sale
+  por la izquierda con un muelle y su hueco se cierra (`grid-template-rows`,
+  280 ms) → `removeRecentStop`; si no, vuelve con el muelle. Tocar sin
+  arrastrar elige la parada; con teclado, Suprimir (o Retroceso con el campo
+  vacío) borra la marcada. En el origen van debajo de
   "Mi ubicación actual"; en el destino, sin historial, siguen los tiempos.
   `useRecentStops` (`useSyncExternalStore`, también entre pestañas) completa
   cada parada con los datos actuales de `stopsList`. Un LocalStorage vacío,
@@ -280,7 +290,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     se reajustaría con un atasco. El toque de "Avisarme" hace, en el mismo
     gesto (Safari lo exige), `keepScreenOn()` (`src/lib/wakeLock.js`: Screen
     Wake Lock, se recupera solo al volver a la pestaña), desbloquea el sonido
-    (Web Audio) y pide `Notification.requestPermission()` sin esperarlo (con
+    (el `Audio` del timbre) y pide `Notification.requestPermission()` sin esperarlo (con
     la versión de callback del Safari antiguo). Abre a pantalla completa un
     `<dialog>` negro puro (OLED, ahorro de batería) con "Bájate en [parada]"
     y tres fases:
@@ -414,6 +424,21 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   pantallas estrechas (baja de tamaño por debajo de 380 px).
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
+- **Hápticos (`src/lib/haptics.js`):** todo `navigator.vibrate` pasa por
+  aquí, comprobado y en `try/catch` (en iPhone y escritorio no hace nada).
+  Nivel 1, sutil: `select` 12 ms (interruptores y controles segmentados de
+  Ajustes, solo si cambian), `impact` 20 ms (campana, confirmar un aviso,
+  "Avisarme", "Sí, detener", levantar una tarjeta en el arrastre, QR
+  leído), `tap` 10 ms (soltar la tarjeta, pulsación larga) y `threshold`
+  15 ms (cruzar el umbral de deslizar para borrar). Nivel 2, `alarm`
+  `[500, 200, 500, 200, 500]` en el aviso de los modos viaje y salida (y en
+  su notificación), repetido 3 veces más cada 4 s mientras sigue en
+  pantalla (`useAlarmEffect`; "Entendido" o cerrar lo corta con
+  `haptics.stop()`). Timbre del aviso: un `Audio` real (WAV de los tres
+  tonos, dos veces, generado en memoria como `Blob`) con `volume = 1.0`,
+  desbloqueado en el toque de confirmar (se reproduce silenciado un
+  instante): en iPhone suena aunque esté puesto el modo silencio, a
+  diferencia de Web Audio, que queda como plan B (ganancia 1.0).
 - **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
   hoja rebotan con `active:scale-[0.97]` en 400 ms y curva
   `cubic-bezier(0.25, 1, 0.5, 1)` (`ease-spring`), definido una sola vez en
@@ -528,9 +553,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   cercanía" (`sortByProximity`, activado por defecto). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.26 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.27 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.26 = PR #26), hora de compilación
+  PR: `npm version minor`; v1.27 = PR #27), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -618,6 +643,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   finalizado" plegado).
 - Hecho: ir andando a la parada (Apple Maps en Apple, Google Maps en el
   resto, modo a pie).
+- Hecho: pulido nativo (deslizar para borrar recientes, hápticos
+  centralizados y alarma contundente: vibración larga repetida y timbre a
+  todo volumen).
 
 ### Fase 4 · Onboarding — *Pendiente*
 

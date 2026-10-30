@@ -2,6 +2,7 @@ import { Camera, CircleAlert, Flashlight, FlashlightOff, Keyboard, X } from 'luc
 import { useEffect, useId, useRef, useState } from 'react';
 import { findStop, loadStopsList } from '../../data/stops';
 import { useAnimatedDialog } from '../../hooks/useAnimatedDialog';
+import { haptics } from '../../lib/haptics';
 import { createQrDecoder } from '../../lib/qrDecoder';
 import { parseStopQr } from '../../lib/qrStop';
 import IconButton from '../ui/IconButton';
@@ -84,7 +85,7 @@ function Scanner({ titleId, onClose, onScan }) {
     doneRef.current = true;
     await loadStopsList().catch(() => {});
     setStatus('found');
-    navigator.vibrate?.(30);
+    haptics.impact();
     setTimeout(() => onScanRef.current(findStop(stopId)), FOUND_MS);
   };
   const handleTextRef = useRef(handleText);

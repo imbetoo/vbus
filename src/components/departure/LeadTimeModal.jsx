@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useId, useState } from 'react';
 import { useNow } from '../../hooks/useNow';
 import { MAX_LEAD_MINUTES, QUICK_LEADS, defaultLead, leadProblem, parseLead } from '../../lib/departure';
+import { haptics } from '../../lib/haptics';
 import { etaNow, minutesText } from '../../lib/tripTracker';
 import { lineColor } from '../../services/vigobusAdapter';
 import LineBadge from '../bus/LineBadge';
@@ -60,6 +61,7 @@ function LeadTimeForm({ request, titleId, onClose, onConfirm }) {
     event.preventDefault();
     // Se vuelve a comprobar en el momento del toque (la cuenta atrás sigue).
     if (leadProblem(lead, etaNow(bus, fetchedAt, Date.now()))) return;
+    haptics.impact();
     onConfirm(lead);
   };
 

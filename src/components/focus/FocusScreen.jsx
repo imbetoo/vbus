@@ -1,6 +1,7 @@
 import { Bell, BellOff, BellRing, Smartphone, X } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
 import { useAnimatedDialog } from '../../hooks/useAnimatedDialog';
+import { haptics } from '../../lib/haptics';
 import { useWakeLockStatus } from '../../lib/wakeLock';
 import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
@@ -143,7 +144,11 @@ function ConfirmStopModal({ open, onCancel, onConfirm }) {
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => {
+              // Desactivar la alarma también se nota en la mano.
+              haptics.impact();
+              onConfirm();
+            }}
             className={`h-12 rounded-full bg-urgent text-lg font-semibold text-white active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${PRESSABLE}`}
           >
             Sí, detener

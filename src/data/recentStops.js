@@ -66,6 +66,11 @@ export function addRecentStop(stop) {
   write([entry, ...getRecentStops().filter((item) => item.id !== id)].slice(0, MAX_RECENT));
 }
 
+/** Quita una parada del historial (deslizar para borrar). */
+export function removeRecentStop(id) {
+  write(getRecentStops().filter((item) => item.id !== Number(id)));
+}
+
 /** Borra todo el historial. */
 export function clearRecentStops() {
   write([]);
