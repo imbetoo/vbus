@@ -70,6 +70,12 @@ const BUILD_INFO = {
 };
 
 export default defineConfig({
+  build: {
+    // Los JSON importados con `?url` (routes.json) van siempre como fichero
+    // propio, nunca incrustados como `data:`: así siempre están en el precache
+    // del service worker y se pueden actualizar solos.
+    assetsInlineLimit: (file) => (file.endsWith('.json') ? false : undefined),
+  },
   define: {
     __BUILD_INFO__: JSON.stringify(BUILD_INFO),
   },

@@ -1,5 +1,6 @@
 import { ScanQrCode } from 'lucide-react';
 import { useState } from 'react';
+import { addRecentStop, clearRecentStops, useRecentStops } from '../../data/recentStops';
 import { useStopSearch } from '../../hooks/useStopSearch';
 import ScannerSheet from '../scanner/ScannerSheet';
 import { PRESSABLE } from '../ui/pressable';
@@ -9,7 +10,9 @@ import StopSearchField from './StopSearchField';
 /**
  * Selector de parada reutilizable: buscador predictivo (dirección o número,
  * sobre las 1157 paradas), "Paradas cerca de mí" y escáner del QR de la
- * marquesina (`ScannerSheet`). Solo devuelve la parada
+ * marquesina (`ScannerSheet`). Con el buscador vacío y enfocado enseña las
+ * paradas recientes (`useRecentStops`); cada parada elegida, venga de donde
+ * venga, sube al historial. Solo devuelve la parada
  * elegida con `onSelect(stop)` (`{ id, name, lines? }`); quien lo usa decide
  * qué hacer con ella (crear una tarjeta, abrir una consulta rápida…).
  *
@@ -31,20 +34,30 @@ export default function StopPicker({
   // Búsqueda con debounce de 200 ms y memorizada (`useStopSearch`).
   const { suggestions } = useStopSearch(query, { excludeId });
   const [scanning, setScanning] = useState(false);
+  // Con el campo vacío, las recientes (sin la ya elegida).
+  const recents = useRecentStops();
+  const recentOptions = recents.filter((stop) => stop.id !== excludeId);
+  const showRecents = !query.trim() && recentOptions.length > 0;
+  const select = (stop) => {
+    addRecentStop(stop);
+    onSelect(stop);
+  };
 
   return (
     <>
       <StopSearchField
         value={query}
         onChange={onQueryChange}
-        onSelect={onSelect}
-        suggestions={suggestions}
+        onSelect={select}
+        suggestions={showRecents ? recentOptions : suggestions}
+        recent={showRecents}
+        onClearRecents={clearRecentStops}
         loading={loading}
         describedBy={describedBy}
         inputRef={inputRef}
       />
       {children?.(suggestions.length)}
-      <NearbyStops onSelect={onSelect} />
+      <NearbyStops onSelect={select} />
       {/* Escáner del QR de la marquesina: elige la parada sin teclear. */}
       <button
         type="button"
@@ -60,7 +73,7 @@ export default function StopPicker({
         onClose={() => setScanning(false)}
         onScan={(stop) => {
           setScanning(false);
-          onSelect(stop);
+          select(stop);
         }}
       />
     </>

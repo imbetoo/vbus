@@ -128,6 +128,18 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   (`useStopSearch`, sobre `useDebouncedValue`), y la lista corta (15) no
   necesita virtualización. Cada sugerencia lleva sus coordenadas (`lat`,
   `lon`) si se conocen.
+- **Recientes (estilo Apple Maps):** `src/data/recentStops.js` guarda en
+  LocalStorage (`vbus:recent`) las 5 últimas paradas elegidas, la más reciente
+  primero y sin repetidas (elegir una que ya estaba la sube arriba). Se añaden
+  al elegir una parada en la consulta rápida (origen o destino, también por
+  QR) o en `StopPicker` (buscador, cercanas o QR). Con el campo enfocado y
+  vacío, la lista enseña "Recientes" (encabezado gris con "Borrar" en azul,
+  `RecentHeader`, fila de presentación del listbox) con las mismas filas que
+  los resultados; al escribir, resultados normales. En el origen van debajo de
+  "Mi ubicación actual"; en el destino, sin historial, siguen los tiempos.
+  `useRecentStops` (`useSyncExternalStore`, también entre pestañas) completa
+  cada parada con los datos actuales de `stopsList`. Un LocalStorage vacío,
+  con JSON inválido o bloqueado deja el historial vacío sin errores.
 - **Paradas cerca de mí (misma hoja):** botón de cristal con `LocateFixed` bajo
   el buscador (`NearbyStops`). Pide la ubicación (`getCurrentPosition` de
   `src/lib/geo.js`: alta precisión, 15 s) y con Haversine (sin librerías) ordena
@@ -191,6 +203,27 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     falla, aviso y el build sigue con el fichero anterior o `[]`;
     `vercel.json` fija `npm run build`) y `update-routes.yml` (GitHub
     Actions, semanal) sin `--soft` y sube el resultado a `main`.
+  - **Sin conexión (rutas offline):** `routes.json`, `stopsList` y la app van
+    en el precache del service worker (al instalar; `assetsInlineLimit` impide
+    que un JSON se incruste como `data:` y salga del precache), así que el plan
+    con sentido de la marcha funciona en modo avión. Las peticiones a la API
+    (`src/services/vigobus.js`) distinguen tres casos: modo avión
+    (`navigator.onLine === false`: error `offline` sin intentarlo), Lie-Fi
+    (router sin internet: si la API no contesta en 1 s, `probeNetwork` hace un
+    HEAD a nuestro dominio, `icon.svg?probe=…`, fuera del precache, con 3 s de
+    límite; si falla, `AbortController` aborta la petición → `offline` en
+    ≤4 s) y servidor de Render despertando (la sonda contesta: se sigue
+    esperando hasta 60 s; un corte ciego a los 4 s lo daría por caído). Un
+    fallo inmediato de `fetch` también se clasifica con la sonda (`offline` o
+    `network`). `useStopArrivals` no solapa peticiones, nunca deja una
+    excepción suelta y recarga al volver la conexión (`online`). En la
+    consulta rápida: aviso "Sin conexión…" arriba en modo avión
+    (`useOnlineStatus`); solo origen → "Sin conexión. No se pueden cargar los
+    tiempos en directo."; ruta directa → las líneas del GTFS igual y "Líneas
+    directas estáticas (Sin conexión a los tiempos de Vitrasa)."; con tiempos
+    previos, "Sin conexión: son los últimos tiempos recibidos". Mapas sigue
+    disponible. `routes.json` desde la red (sin service worker) también tiene
+    la guarda de Lie-Fi (`guardAgainstLieFi`).
   - **Mapas (`MapsLink`):** enlace universal
     `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
     (desde el GPS, la posición exacta del usuario; si una parada no tiene

@@ -26,6 +26,11 @@ export function loadStopsList() {
   return stopsListPromise;
 }
 
+/** Parada de los datos abiertos por su número, o `null` (no está o aún no se ha cargado la lista). */
+export function stopById(stopId) {
+  return stopsList.find((stop) => stop.id === Number(stopId)) ?? null;
+}
+
 /**
  * Parada por su número de marquesina, con nombre, coordenadas y líneas de los
  * datos abiertos. Si no está en la lista (parada nueva), `{ id, name:

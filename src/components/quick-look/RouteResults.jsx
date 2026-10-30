@@ -1,4 +1,4 @@
-import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert } from 'lucide-react';
+import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert, WifiOff } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { filterBusesByLines, filterReachingBuses } from '../../lib/directRoute';
 import { formatDistance } from '../../lib/geo';
@@ -11,6 +11,7 @@ import MapsLink from './MapsLink';
 const BENTO = 'rounded-3xl border border-white/10 bg-white/[0.06]';
 
 function errorMessage(error) {
+  if (error?.kind === 'offline') return 'Sin conexión. No se pueden cargar los tiempos en directo.';
   if (error?.kind === 'timeout') return 'El servidor está arrancando. Los tiempos llegarán en unos segundos.';
   if (error?.kind === 'network') return 'No se puede conectar con el servidor de VigoBus.';
   if (error?.kind === 'not_found') return 'Vitrasa no reconoce esta parada.';
@@ -91,12 +92,19 @@ function StopSummary({ stop, distance, children }) {
  * los mismos estados que las tarjetas: cargando, error, vacía y lista. Si un
  * refresco falla se conservan los últimos tiempos con un aviso.
  */
-function Arrivals({ arrivals, buses, emptyText, timeFormat }) {
+function Arrivals({ arrivals, buses, emptyText, offlineText, timeFormat }) {
+  const offline = arrivals.error?.kind === 'offline';
   return (
     <>
       <div className={`${BENTO} px-4 py-2`}>
         {arrivals.status === 'loading' && <Loading>Cargando tiempos…</Loading>}
-        {arrivals.status === 'error' && (
+        {arrivals.status === 'error' && offline && (
+          <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-white/80 motion-reduce:animate-none">
+            <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-white/60" strokeWidth={2.5} aria-hidden="true" />
+            {offlineText}
+          </p>
+        )}
+        {arrivals.status === 'error' && !offline && (
           <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-red-200 motion-reduce:animate-none">
             <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-urgent" strokeWidth={2.5} aria-hidden="true" />
             {errorMessage(arrivals.error)}
@@ -117,7 +125,9 @@ function Arrivals({ arrivals, buses, emptyText, timeFormat }) {
       </div>
       {arrivals.status === 'success' && arrivals.error && (
         <p className="animate-fade-in px-1 text-sm font-medium text-white/50 motion-reduce:animate-none">
-          No se pudieron actualizar: son los últimos tiempos recibidos.
+          {offline
+            ? 'Sin conexión: son los últimos tiempos recibidos.'
+            : 'No se pudieron actualizar: son los últimos tiempos recibidos.'}
         </p>
       )}
     </>
@@ -155,6 +165,7 @@ function RouteResults({
   nearestMeters,
   mapsUrl,
   timeFormat,
+  online = true,
 }) {
   const { buses, hidden } = useMemo(() => {
     if (!arrivals) return { buses: [], hidden: 0 };
@@ -186,7 +197,13 @@ function RouteResults({
     content = (
       <>
         <StopSummary stop={origin} distance={boardingDistance} />
-        <Arrivals arrivals={arrivals} buses={buses} timeFormat={timeFormat} emptyText="No hay autobuses previstos ahora mismo." />
+        <Arrivals
+          arrivals={arrivals}
+          buses={buses}
+          timeFormat={timeFormat}
+          emptyText="No hay autobuses previstos ahora mismo."
+          offlineText="Sin conexión. No se pueden cargar los tiempos en directo."
+        />
       </>
     );
   } else if (mode === 'same') {
@@ -230,6 +247,7 @@ function RouteResults({
           buses={buses}
           timeFormat={timeFormat}
           emptyText="No hay autobuses próximos que lleguen hasta tu destino."
+          offlineText="Líneas directas estáticas (Sin conexión a los tiempos de Vitrasa)."
         />
         {hidden > 0 && (
           <p className="animate-fade-in px-1 text-sm font-medium text-white/50 motion-reduce:animate-none">
@@ -246,6 +264,11 @@ function RouteResults({
   // `key`: al cambiar de estado, el bloque nuevo entra con un fundido.
   return (
     <div key={mode} className="flex animate-fade-in flex-col gap-3 motion-reduce:animate-none">
+      {/* Modo avión: aviso fijo arriba. Las rutas directas siguen funcionando
+          (recorridos del GTFS en el móvil); los tiempos no. */}
+      {!online && (
+        <Notice icon={WifiOff}>Sin conexión. Las líneas directas se calculan igual; los tiempos, al volver la red.</Notice>
+      )}
       {content}
     </div>
   );

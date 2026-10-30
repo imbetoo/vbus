@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { addRecentStop, clearRecentStops, useRecentStops } from '../../data/recentStops';
 import { stopsNear } from '../../data/stops';
 import { useNearestStop } from '../../hooks/useNearestStop';
 import { useRouteIndex } from '../../hooks/useRouteIndex';
@@ -7,6 +8,7 @@ import { useStopArrivals } from '../../hooks/useStopArrivals';
 import { useStopSearch } from '../../hooks/useStopSearch';
 import { NEARBY_STOP_M, findDirectLines, mapsDirectionsUrl, planDirectRoute } from '../../lib/directRoute';
 import { haversineMeters } from '../../lib/geo';
+import { useOnlineStatus } from '../../lib/network';
 import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import { DEFAULT_CARD_COLOR } from '../bus/cardColors';
 import { PRESSABLE } from '../ui/pressable';
@@ -63,6 +65,8 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
   const location = useNearestStop();
   // Recorridos del GTFS: se cargan al abrir el panel.
   const routeIndex = useRouteIndex();
+  // Modo avión al instante (el Lie-Fi lo detectan las peticiones).
+  const online = useOnlineStatus();
   const { locate, status: locationStatus, stop: locationStop, position, nearestMeters } = location;
   // Origen: la ubicación (GPS) o una parada elegida a mano (`stop: null` = vacío).
   const [originChoice, setOriginChoice] = useState(LOCATION_ORIGIN);
@@ -73,6 +77,7 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
   if (scannedStop && scannedStop !== appliedScan) {
     setAppliedScan(scannedStop);
     setOriginChoice({ source: 'manual', stop: scannedStop });
+    addRecentStop(scannedStop);
   }
   const usingLocation = originChoice.source === 'location';
 
@@ -91,16 +96,21 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const { suggestions, pending } = useStopSearch(activeField ? query : '');
-  // Con el origen vacío, la única opción es volver a "Mi ubicación actual";
-  // en cuanto se escribe, solo paradas (así Enter elige la que se busca).
-  const offerLocation = activeField === 'origin' && GEOLOCATION_SUPPORTED && !query.trim();
-  const options = useMemo(
-    () => (offerLocation ? [CURRENT_LOCATION, ...suggestions] : suggestions),
-    [offerLocation, suggestions],
-  );
-  // El origen enseña siempre su lista; el destino, en cuanto se escribe (con
-  // el campo vacío siguen los tiempos).
-  const showSuggestions = activeField === 'origin' || (activeField === 'destination' && query.trim() !== '');
+  // Con el campo vacío: "Mi ubicación actual" (origen) y las recientes; en
+  // cuanto se escribe, solo resultados (así Enter elige la que se busca).
+  const recents = useRecentStops();
+  const typing = query.trim() !== '';
+  const offerLocation = activeField === 'origin' && GEOLOCATION_SUPPORTED && !typing;
+  const showRecents = Boolean(activeField) && !typing && recents.length > 0;
+  const options = useMemo(() => {
+    const list = showRecents ? recents : suggestions;
+    return offerLocation ? [CURRENT_LOCATION, ...list] : list;
+  }, [offerLocation, showRecents, recents, suggestions]);
+  const recentFrom = showRecents ? (offerLocation ? 1 : 0) : -1;
+  // El origen enseña siempre su lista; el destino, en cuanto se escribe o si
+  // hay recientes (con el campo vacío y sin historial siguen los tiempos).
+  const showSuggestions =
+    activeField === 'origin' || (activeField === 'destination' && (typing || showRecents));
   const highlighted = Math.min(activeIndex, options.length - 1);
 
   // --- Trayecto -----------------------------------------------------------
@@ -175,8 +185,10 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
         locate();
       } else if (activeField === 'origin') {
         setOriginChoice({ source: 'manual', stop: option });
+        addRecentStop(option);
       } else {
         setDestination(option);
+        addRecentStop(option);
       }
       // Fuera el teclado: vuelven los resultados.
       (activeField === 'origin' ? originInputRef : destinationInputRef).current?.blur();
@@ -254,7 +266,7 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
 
   let hint = null;
   if (showSuggestions) {
-    if (!query.trim()) hint = 'Escribe una calle o el número de la marquesina.';
+    if (!typing) hint = showRecents ? null : 'Escribe una calle o el número de la marquesina.';
     else if (!pending && !suggestions.length) hint = 'No encuentro esa parada. Prueba con otra calle o con el número de la marquesina.';
   }
 
@@ -292,6 +304,8 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
             options={options}
             activeIndex={highlighted}
             hint={hint}
+            recentFrom={recentFrom}
+            onClearRecents={clearRecentStops}
             onChoose={choose}
             onActivate={setActiveIndex}
           />
@@ -310,6 +324,7 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
             nearestMeters={nearestMeters}
             mapsUrl={mapsUrl}
             timeFormat={timeFormat}
+            online={online}
           />
         )}
       </div>

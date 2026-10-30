@@ -1,5 +1,6 @@
 import { LoaderCircle, Search } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
+import RecentHeader from './RecentHeader';
 import StopRow from './StopRow';
 
 /**
@@ -8,13 +9,17 @@ import StopRow from './StopRow';
  * ("Conde de Torrecedeira") o un número ("8480"), debajo aparecen las
  * paradas que encajan (`suggestions`). Se eligen con el dedo, o con las
  * flechas y Enter; Escape las cierra. Al elegir una, `onSelect(stop)`.
- * Con `loading` muestra un indicador giratorio a la derecha.
+ * Con `loading` muestra un indicador giratorio a la derecha. Con `recent`, la
+ * lista son las paradas recientes (campo vacío) bajo el encabezado
+ * "Recientes", con "Borrar" (`onClearRecents`).
  */
 export default function StopSearchField({
   value,
   onChange,
   onSelect,
   suggestions = [],
+  recent = false,
+  onClearRecents,
   loading = false,
   describedBy,
   inputRef,
@@ -113,9 +118,10 @@ export default function StopSearchField({
         <ul
           id={listId}
           role="listbox"
-          aria-label="Paradas sugeridas"
+          aria-label={recent ? 'Paradas recientes' : 'Paradas sugeridas'}
           className="mt-2 animate-fade-in divide-y divide-white/10 max-h-80 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-white/[0.06] motion-reduce:animate-none"
         >
+          {recent && <RecentHeader onClear={onClearRecents} />}
           {suggestions.map((stop, index) => (
             <li
               key={stop.id}
