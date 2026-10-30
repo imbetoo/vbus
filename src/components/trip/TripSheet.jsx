@@ -1,44 +1,28 @@
-import { Bell, BellOff, BellRing, CircleAlert, LocateFixed, LocateOff, Smartphone, WifiOff, X } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
-import { useAnimatedDialog } from '../../hooks/useAnimatedDialog';
+import { Bell, CircleAlert, LocateFixed, LocateOff, WifiOff } from 'lucide-react';
+import { useId, useState } from 'react';
 import { useTrip } from '../../hooks/useTrip';
 import { formatDistance, haversineMeters } from '../../lib/geo';
 import { lineKey } from '../../lib/lines';
-import { ALERT_MINUTES } from '../../lib/tripTracker';
-import { useWakeLockStatus } from '../../lib/wakeLock';
+import { ALERT_MINUTES, minutesText } from '../../lib/tripTracker';
 import { lineColor } from '../../services/vigobusAdapter';
 import LineBadge from '../bus/LineBadge';
-import IconButton from '../ui/IconButton';
+import { AlarmPanel, FocusDialog, FocusLayout, NotificationStatus, PANEL, ScreenStatus, StatusRow } from '../focus/FocusScreen';
 import PillButton from '../ui/PillButton';
 import { PRESSABLE } from '../ui/pressable';
 
-const EXIT_MS = 300;
-const PANEL = 'rounded-3xl border border-white/10 bg-white/[0.06]';
-
-// "Llegando", "1 min", "12 min".
-const minutesText = (minutes) => (minutes < 0.5 ? 'Llegando' : `${Math.round(minutes)} min`);
-
 /**
- * Modo viaje a pantalla completa (`<dialog>` modal, fundido). Fondo negro
- * puro: en pantallas OLED los píxeles negros no gastan batería, y la pantalla
- * se queda encendida todo el viaje (`keepScreenOn`).
+ * Modo viaje a pantalla completa (`FocusDialog`: negro puro, la pantalla se
+ * queda encendida todo el viaje).
  */
 export default function TripSheet({ trip, buses, updatedAt, notifications, onEnd }) {
-  const ref = useRef(null);
   const titleId = useId();
-  const { mounted, dialogProps } = useAnimatedDialog({ ref, open: Boolean(trip), onClose: onEnd, exitMs: EXIT_MS });
   // El último trayecto sigue pintado mientras la pantalla sale.
   const [shown, setShown] = useState(trip);
   if (trip && trip !== shown) setShown(trip);
 
   return (
-    <dialog
-      ref={ref}
-      aria-labelledby={titleId}
-      {...dialogProps}
-      className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none overflow-hidden bg-black p-0 text-white opacity-0 transform-gpu transition-opacity duration-300 ease-spring will-change-[opacity] backdrop:bg-black data-[shown]:opacity-100 motion-reduce:transition-none"
-    >
-      {mounted && shown && (
+    <FocusDialog open={Boolean(trip)} onClose={onEnd} labelledBy={titleId}>
+      {shown && (
         <TripView
           key={shown.boarding.id}
           trip={shown}
@@ -49,13 +33,12 @@ export default function TripSheet({ trip, buses, updatedAt, notifications, onEnd
           onEnd={onEnd}
         />
       )}
-    </dialog>
+    </FocusDialog>
   );
 }
 
 function TripView({ trip, buses, updatedAt, notifications, titleId, onEnd }) {
   const state = useTrip(trip, { originBuses: buses, originUpdatedAt: updatedAt, onEnd });
-  const wakeLock = useWakeLockStatus();
   const { phase, alight, alarm } = state;
   const { destination } = trip;
   const walk =
@@ -64,50 +47,34 @@ function TripView({ trip, buses, updatedAt, notifications, titleId, onEnd }) {
       : null;
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-md flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-[calc(env(safe-area-inset-top,0px)+1.25rem)]">
-      <header className="flex shrink-0 items-center justify-between gap-3">
-        <p className="flex items-center gap-2 text-base font-semibold text-white/70">
-          <Bell className="h-5 w-5 text-amber-300" strokeWidth={2.5} aria-hidden="true" />
-          Modo viaje
-        </p>
-        <IconButton icon={X} label="Terminar viaje" onClick={onEnd} />
-      </header>
+    <FocusLayout icon={Bell} label="Modo viaje" endLabel="Terminar viaje" onEnd={onEnd} showFooter={phase !== 'alarm'}>
+      <p className="text-lg font-medium text-white/60">Bájate en</p>
+      <h2 id={titleId} className="text-pretty text-3xl font-bold tracking-tight">
+        {alight.name}
+      </h2>
+      <p className="mt-1 text-base font-medium tabular-nums text-white/60">
+        {`Parada ${alight.id}${walk != null ? ` · a ${formatDistance(walk)} de tu destino` : ''}`}
+      </p>
 
-      <div className="mt-5 min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-live="polite">
-        <p className="text-lg font-medium text-white/60">Bájate en</p>
-        <h2 id={titleId} className="text-pretty text-3xl font-bold tracking-tight">
-          {alight.name}
-        </h2>
-        <p className="mt-1 text-base font-medium tabular-nums text-white/60">
-          {`Parada ${alight.id}${walk != null ? ` · a ${formatDistance(walk)} de tu destino` : ''}`}
-        </p>
-
-        <div className="mt-5">
-          {phase === 'alarm' && <AlarmPanel text={alarm.text} onDone={onEnd} />}
-          {phase === 'riding' && <RidingPanel state={state} />}
-          {phase === 'waiting' && <WaitingPanel state={state} trip={trip} buses={buses} />}
-        </div>
-
-        {phase !== 'alarm' && (
-          <p className="mt-4 px-1 text-base font-medium text-white/60">
-            {`Te aviso unos ${ALERT_MINUTES} min antes de llegar, con el tiempo real de Vitrasa (incluye el tráfico) y tu GPS.`}
-          </p>
-        )}
-
-        <ul className="mt-5 flex flex-col gap-2" aria-label="Estado del aviso">
-          <ScreenStatus status={wakeLock} />
-          <NotificationStatus status={notifications} />
-          <LocationStatus status={state.gpsStatus} />
-          <DataStatus status={state.destStatus} error={state.destError} gpsStatus={state.gpsStatus} />
-        </ul>
+      <div className="mt-5">
+        {phase === 'alarm' && <AlarmPanel title="Prepárate para bajar" text={alarm.text} onDone={onEnd} />}
+        {phase === 'riding' && <RidingPanel state={state} />}
+        {phase === 'waiting' && <WaitingPanel state={state} trip={trip} buses={buses} />}
       </div>
 
       {phase !== 'alarm' && (
-        <p className="shrink-0 pt-3 text-center text-sm font-medium text-white/50">
-          Mantén vBus abierta: si cambias de app o bloqueas el móvil, el aviso puede no llegar.
+        <p className="mt-4 px-1 text-base font-medium text-white/60">
+          {`Te aviso unos ${ALERT_MINUTES} min antes de llegar, con el tiempo real de Vitrasa (incluye el tráfico) y tu GPS.`}
         </p>
       )}
-    </div>
+
+      <ul className="mt-5 flex flex-col gap-2" aria-label="Estado del aviso">
+        <ScreenStatus />
+        <NotificationStatus status={notifications} />
+        <LocationStatus status={state.gpsStatus} />
+        <DataStatus status={state.destStatus} error={state.destError} gpsStatus={state.gpsStatus} />
+      </ul>
+    </FocusLayout>
   );
 }
 
@@ -197,7 +164,7 @@ function RidingPanel({ state }) {
     <section className={`${PANEL} p-5`} aria-label="En camino">
       <p className="text-base font-medium text-white/60">Llegas a tu parada en</p>
       <p className="mt-1 text-6xl font-bold tabular-nums tracking-tight">
-        {eta != null ? (eta < 0.5 ? 'Llegando' : `${Math.round(eta)} min`) : '—'}
+        {eta != null ? minutesText(eta) : '—'}
       </p>
       <div className="mt-3 flex items-center gap-3">
         {line && <LineBadge line={line} color={lineColor(line)} />}
@@ -207,74 +174,6 @@ function RidingPanel({ state }) {
       </div>
     </section>
   );
-}
-
-function AlarmPanel({ text, onDone }) {
-  return (
-    <section
-      role="alert"
-      className="flex animate-fade-in flex-col items-center rounded-3xl border-2 border-amber-300/70 bg-amber-300/15 px-5 py-8 text-center motion-reduce:animate-none"
-    >
-      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-300 text-black shadow-relief">
-        <BellRing className="h-8 w-8" strokeWidth={2.5} aria-hidden="true" />
-      </span>
-      <p className="mt-4 text-3xl font-bold tracking-tight">Prepárate para bajar</p>
-      <p className="mt-2 text-pretty text-lg font-medium text-white/80">{text}</p>
-      <PillButton className="mt-6" onClick={onDone}>
-        Entendido
-      </PillButton>
-    </section>
-  );
-}
-
-/** Fila de estado: verde si todo va bien, ámbar si falta algo (con el porqué). */
-function StatusRow({ ok, icon: Icon, children }) {
-  return (
-    <li className={`flex items-start gap-3 ${PANEL} px-4 py-3 text-sm font-medium text-white/80`}>
-      <Icon
-        className={`mt-0.5 h-4 w-4 shrink-0 ${ok ? 'text-emerald-400' : 'text-amber-300'}`}
-        strokeWidth={2.5}
-        aria-hidden="true"
-      />
-      <span>{children}</span>
-    </li>
-  );
-}
-
-function ScreenStatus({ status }) {
-  if (status === 'on') return <StatusRow ok icon={Smartphone}>La pantalla no se apagará durante el viaje.</StatusRow>;
-  if (status === 'pending' || status === 'off') {
-    return <StatusRow ok icon={Smartphone}>Manteniendo la pantalla encendida…</StatusRow>;
-  }
-  return (
-    <StatusRow icon={Smartphone}>
-      Este navegador no puede mantener la pantalla encendida: tócala de vez en cuando para que no se bloquee.
-    </StatusRow>
-  );
-}
-
-function NotificationStatus({ status }) {
-  switch (status) {
-    case 'granted':
-      return <StatusRow ok icon={Bell}>Notificaciones activadas.</StatusRow>;
-    case 'default':
-      return <StatusRow icon={Bell}>Permite las notificaciones para que el aviso llegue también como notificación.</StatusRow>;
-    case 'denied':
-      return (
-        <StatusRow icon={BellOff}>
-          Notificaciones bloqueadas: te aviso aquí con sonido y vibración. Puedes activarlas en los ajustes del navegador.
-        </StatusRow>
-      );
-    case 'ios-install':
-      return (
-        <StatusRow icon={BellOff}>
-          En iPhone, las notificaciones solo funcionan con vBus en la pantalla de inicio (Compartir → Añadir a pantalla de
-          inicio). Te aviso aquí con sonido.
-        </StatusRow>
-      );
-    default:
-      return <StatusRow icon={BellOff}>Este navegador no muestra notificaciones: te aviso aquí con sonido y vibración.</StatusRow>;
-  }
 }
 
 function LocationStatus({ status }) {

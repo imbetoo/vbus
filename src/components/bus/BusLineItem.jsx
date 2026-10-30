@@ -3,7 +3,8 @@ import ArrivalTime from './ArrivalTime';
 import LineBadge from './LineBadge';
 import { isUrgent } from './urgency';
 
-export default function BusLineItem({ line, color, time, destination, timeFormat, fetchedAt }) {
+/** Fila de un autobús: línea, letrero y tiempo. `action`: botón opcional al final (campana de la consulta rápida). */
+export default function BusLineItem({ line, color, time, destination, timeFormat, fetchedAt, action = null }) {
   const urgent = isUrgent(time);
 
   return (
@@ -16,6 +17,7 @@ export default function BusLineItem({ line, color, time, destination, timeFormat
         <PingDot ping={urgent} className={urgent ? 'bg-urgent' : 'bg-white/80'} />
         <ArrivalTime minutes={time} urgent={urgent} format={timeFormat} fetchedAt={fetchedAt} />
       </span>
+      {action}
     </li>
   );
 }

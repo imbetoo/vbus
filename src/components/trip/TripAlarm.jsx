@@ -1,8 +1,6 @@
 import { Bell } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusSession } from '../../hooks/useFocusSession';
 import { TRIP_NOTIFICATION_TAG } from '../../hooks/useTrip';
-import { closeNotification, notificationStatus, requestNotificationPermission, unlockSound } from '../../lib/alerts';
-import { keepScreenOn, releaseScreen } from '../../lib/wakeLock';
 import { PRESSABLE } from '../ui/pressable';
 import TripSheet from './TripSheet';
 
@@ -20,32 +18,13 @@ import TripSheet from './TripSheet';
  */
 export default function TripAlarm({ trip, buses, updatedAt }) {
   // Copia del trayecto al empezar: si la consulta cambia debajo, el viaje no.
-  const [active, setActive] = useState(null);
-  const [notifications, setNotifications] = useState(notificationStatus);
-
-  const start = () => {
-    keepScreenOn();
-    unlockSound();
-    setNotifications(notificationStatus());
-    requestNotificationPermission().then(setNotifications);
-    setActive(trip);
-  };
-
-  const end = useCallback(() => {
-    releaseScreen();
-    closeNotification(TRIP_NOTIFICATION_TAG);
-    setActive(null);
-  }, []);
-
-  // Si los resultados cambian y el botón desaparece, la pantalla vuelve a
-  // poder bloquearse.
-  useEffect(() => releaseScreen, []);
+  const { active, notifications, start, end } = useFocusSession(TRIP_NOTIFICATION_TAG);
 
   return (
     <>
       <button
         type="button"
-        onClick={start}
+        onClick={() => start(trip)}
         aria-haspopup="dialog"
         className={`flex h-14 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-lg font-semibold text-white shadow-relief active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
       >

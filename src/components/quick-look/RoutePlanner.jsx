@@ -305,7 +305,9 @@ export default function RoutePlanner({
 
   return (
     <>
-      <div className="shrink-0 px-5 pt-4">
+      {/* Cabecera y pie opacos por encima de la lista (`z-10`): lo que pasa por
+          debajo se desvanece (`scroll-fade`) y nunca se mezcla con ellos. */}
+      <div className="relative z-10 shrink-0 bg-graphite px-5 pt-4">
         <RouteFields
           origin={originView}
           destination={destinationView}
@@ -327,7 +329,7 @@ export default function RoutePlanner({
 
       {/* Los cambios de los resultados se anuncian (no los de cada sugerencia). */}
       <div
-        className="min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 pb-2 pt-4"
+        className="scroll-fade min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 pb-10 pt-5"
         aria-live={showSuggestions ? 'off' : 'polite'}
       >
         {showSuggestions ? (
@@ -363,7 +365,7 @@ export default function RoutePlanner({
       </div>
 
       {!showSuggestions && (mode === 'stop' || mode === 'direct' || mode === 'no-direct') && (
-        <div className="shrink-0 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-3">
+        <div className="relative z-10 shrink-0 bg-graphite px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-2">
           {mode === 'no-direct' ? (
             <MapsLink href={mapsUrl} primary>
               Ver ruta con transbordos

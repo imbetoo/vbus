@@ -114,6 +114,12 @@ export function routeProgress(path, coords, position, { fromSegment = 0 } = {}) 
   };
 }
 
+/** "1 minuto", "5 minutos". */
+export const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+
+/** "Llegando", "1 min", "12 min". */
+export const minutesText = (minutes) => (minutes < 0.5 ? 'Llegando' : `${Math.round(minutes)} min`);
+
 /** Minutos que le faltan a `bus` ahora, descontando lo que ha pasado desde que llegó el dato. */
 export const etaNow = (bus, fetchedAt, now) => bus.time - Math.max(0, now - fetchedAt) / 60_000;
 
