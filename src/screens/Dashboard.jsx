@@ -1,7 +1,8 @@
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
 import { BusFront, Check, Moon, Pencil, Search, Settings } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
+import { withNearestFirst } from '../lib/proximity';
 import EditCardModal from '../components/bus/EditCardModal';
 import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
@@ -13,6 +14,7 @@ import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
 import PullIndicator from '../components/ui/PullIndicator';
+import { useNearestCard } from '../hooks/useNearestCard';
 import { useNightMode } from '../hooks/useNightMode';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
@@ -22,6 +24,9 @@ import { useTheme } from '../hooks/useTheme';
 // (y un poco arriba, bajo la cabecera) en vez de cortarse en seco.
 const SCROLL_FADE =
   '[mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)]';
+
+// Fuera del modo edición no se arrastra: el orden de la vista no se guarda.
+const ignoreReorder = () => {};
 
 // Botones de la cabecera: 36px en móviles estrechos (caben los cuatro).
 const HEADER_BUTTON = 'max-[400px]:h-9 max-[400px]:w-9';
@@ -129,6 +134,16 @@ export default function Dashboard({ settings, onSettingChange }) {
   const night = useNightMode();
   // Solo se anima el cambio con la app abierta, no al abrirla.
   const [nightAtStart] = useState(night);
+  // Smart Sorting (Ajustes → "Ordenar tarjetas por cercanía"): la tarjeta de
+  // la parada más cercana se enseña la primera. Es solo una vista: el orden
+  // manual (`routes`, el del arrastre, en `vbus:routes`) no cambia nunca, y en
+  // modo edición se ve y se arrastra ese orden.
+  const { nearest } = useNearestCard(routes, settings.sortByProximity);
+  const proximityOn = settings.sortByProximity && !isEditing && nearest != null;
+  const shownRoutes = useMemo(
+    () => (proximityOn ? withNearestFirst(routes, nearest.id) : routes),
+    [proximityOn, routes, nearest],
+  );
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
@@ -227,8 +242,15 @@ export default function Dashboard({ settings, onSettingChange }) {
               `Reorder.Group`: en modo edición las tarjetas se arrastran en
               vertical y cada cambio de orden se guarda al momento
               (`reorderRoutes` → LocalStorage). */}
-          <Reorder.Group as="ul" axis="y" values={routes} onReorder={reorderRoutes} className="flex flex-col pb-24 pt-4">
-            {routes.map((route, index) => (
+          <Reorder.Group
+            as="ul"
+            axis="y"
+            values={shownRoutes}
+            // Solo se reordena (y se guarda) arrastrando en modo edición, sobre el orden manual.
+            onReorder={isEditing ? reorderRoutes : ignoreReorder}
+            className="flex flex-col pb-24 pt-4"
+          >
+            {shownRoutes.map((route, index) => (
               <EditableRouteItem
                 key={route.id}
                 route={route}
@@ -243,6 +265,8 @@ export default function Dashboard({ settings, onSettingChange }) {
                 onEditCard={setEditingRouteId}
                 onStartEditing={startEditing}
                 onDepartureAlarm={setDepartureRequest}
+                // Indicador "A 120 m" en la que ha subido por cercanía.
+                nearMeters={proximityOn && route.id === nearest.id ? nearest.meters : null}
               />
             ))}
           </Reorder.Group>

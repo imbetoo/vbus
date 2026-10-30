@@ -9,14 +9,23 @@ const STORAGE_KEY = 'vbus:settings';
  * - `background`: fondo completo o ligero (menos manchas, para móviles con tirones).
  * - `timeFormat`: llegadas en minutos que faltan ("5 min") o a la hora ("12:45").
  * - `refreshSeconds`: cada cuánto se piden de nuevo los tiempos (15, 30 o 60 s).
+ * - `sortByProximity`: la tarjeta de la parada más cercana, la primera
+ *   (Smart Sorting; solo cambia la vista, nunca el orden guardado).
  */
-export const DEFAULT_SETTINGS = { sortBy: 'time', background: 'full', timeFormat: 'relative', refreshSeconds: 30 };
+export const DEFAULT_SETTINGS = {
+  sortBy: 'time',
+  background: 'full',
+  timeFormat: 'relative',
+  refreshSeconds: 30,
+  sortByProximity: true,
+};
 
 const VALID = {
   sortBy: ['time', 'preference'],
   background: ['full', 'lite'],
   timeFormat: ['relative', 'absolute'],
   refreshSeconds: [15, 30, 60],
+  sortByProximity: [true, false],
 };
 
 function loadSettings() {
