@@ -2,8 +2,11 @@ import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert, WifiOf
 import { memo, useMemo, useState } from 'react';
 import { filterBusesByLines, filterReachingBuses } from '../../lib/directRoute';
 import { formatDistance } from '../../lib/geo';
+import { arrangeForNight } from '../../lib/nightMode';
+import { useNightMode } from '../../hooks/useNightMode';
 import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from '../bus/BusLineItem';
+import DayServiceEnded from '../bus/DayServiceEnded';
 import DepartureAlarm from '../departure/DepartureAlarm';
 import DepartureBell from '../departure/DepartureBell';
 import IconTile from '../ui/IconTile';
@@ -98,9 +101,22 @@ function StopSummary({ stop, distance, action, children }) {
  * refresco falla se conservan los últimos tiempos con un aviso. Cada autobús
  * lleva su campana: "avísame cuando le falten X min" (modo salida,
  * `DepartureAlarm`).
+ *
+ * De noche (Smart Night Mode, 23:00–06:00): las nocturnas con tiempo real
+ * primero y las diurnas que ya terminaron (sin autobuses o a más de 2 h,
+ * entre las de `lines`) al final, plegadas en "Servicio diurno finalizado".
+ * Al cambiar de día a noche con la app abierta, la lista se recoloca con un
+ * fundido.
  */
-function Arrivals({ stop, arrivals, buses, emptyText, offlineText, timeFormat }) {
+function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFormat }) {
   const offline = arrivals.error?.kind === 'offline';
+  const night = useNightMode();
+  const arranged = useMemo(
+    () => (night ? arrangeForNight(buses, lines) : { buses, ended: null }),
+    [night, buses, lines],
+  );
+  const shown = arranged.buses;
+  const endedCount = arranged.ended ? arranged.ended.buses.length + arranged.ended.lines.length : 0;
   // Autobús cuya campana se ha tocado: `{ stop, bus, fetchedAt }`.
   const [request, setRequest] = useState(null);
   return (
@@ -120,9 +136,10 @@ function Arrivals({ stop, arrivals, buses, emptyText, offlineText, timeFormat })
           </p>
         )}
         {arrivals.status === 'success' &&
-          (buses.length ? (
-            <ul className="animate-fade-in motion-reduce:animate-none">
-              {buses.map((bus) => (
+          (shown.length ? (
+            // `key`: al pasar de día a noche (o al revés), la lista nueva entra con un fundido.
+            <ul key={night ? 'night' : 'day'} className="animate-fade-in motion-reduce:animate-none">
+              {shown.map((bus) => (
                 <BusLineItem
                   key={bus.id}
                   {...bus}
@@ -136,9 +153,12 @@ function Arrivals({ stop, arrivals, buses, emptyText, offlineText, timeFormat })
             </ul>
           ) : (
             <p className="animate-fade-in py-3 text-base font-medium text-white/70 motion-reduce:animate-none">
-              {emptyText}
+              {endedCount ? 'Esta noche ya no pasan más autobuses. Abajo, cuándo sale el primero de mañana.' : emptyText}
             </p>
           ))}
+        {arrivals.status === 'success' && arranged.ended && (
+          <DayServiceEnded ended={arranged.ended} fetchedAt={arrivals.updatedAt} />
+        )}
       </div>
       {arrivals.status === 'success' && arrivals.error && (
         <p className="animate-fade-in px-1 text-sm font-medium text-white/50 motion-reduce:animate-none">
@@ -222,6 +242,7 @@ function RouteResults({
         <StopSummary stop={origin} distance={boardingDistance} />
         <Arrivals
           stop={origin}
+          lines={origin.lines}
           arrivals={arrivals}
           buses={buses}
           timeFormat={timeFormat}
@@ -272,6 +293,7 @@ function RouteResults({
         </StopSummary>
         <Arrivals
           stop={boarding}
+          lines={directLines}
           arrivals={arrivals}
           buses={buses}
           timeFormat={timeFormat}

@@ -371,7 +371,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   cámara la tiene. La cámara se apaga al cerrar. `useAnimatedDialog` (y la
   consulta rápida) ignora `cancel`/`close` de diálogos anidados, que React
   propaga al padre.
-- **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
+- **Cabecera:** a la izquierda "Buenos días" (de noche, "Buenas noches" con
+  una luna) / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
   abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo cuatro
@@ -477,9 +478,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.23 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.24 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.23 = PR #23), hora de compilación
+  PR: `npm version minor`; v1.24 = PR #24), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -494,6 +495,26 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   icono, a sangre) generados por `npm run icons`.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
+- **Smart Night Mode (`useNightMode`, `src/lib/nightMode.js`):** de 23:00 a
+  06:00 (hora del dispositivo). `useNightMode` es un store único
+  (`useSyncExternalStore`) con un temporizador programado justo para el
+  próximo cambio (y comprobación al volver a la pestaña): si dan las 23:00 o
+  las 06:00 con la app abierta, todo cambia solo, sin recargar. Indicadores
+  discretos: el saludo pasa a "Buenas noches" con una luna pequeña y el
+  subtítulo de la consulta rápida a "🌙 Modo nocturno". En la lista de
+  llegadas de la consulta rápida y dentro de las tarjetas,
+  `arrangeForNight`: las nocturnas (`isNightLine`: "N" + número, N1 y N4)
+  con tiempo real (≤2 h) suben arriba; luego las diurnas que aún pasan esta
+  noche, en su orden; las nocturnas lejanas, al final. Las diurnas
+  terminadas (solo con estimaciones de más de 2 h, que son las de mañana, o
+  sin ningún autobús entre las líneas de la parada o de la tarjeta) no se
+  borran: van al final, plegadas, en "Servicio diurno finalizado · N
+  líneas" (`DayServiceEnded`: `DisclosureButton` + `Collapse`), en gris
+  (`opacity-50 grayscale`), sin campana y con "Primero a las 07:50" o "Sin
+  autobuses hasta mañana". El autobús de mañana de una diurna que aún pasa
+  esta noche no se enseña. Al cambiar de día a noche con la app abierta,
+  las listas y el saludo entran con un fundido (al abrir la app, no). La
+  campana (modo salida) sigue en todas las filas de la lista principal.
 - **Códigos de línea:** siempre se comparan con `lineKey` (`src/lib/lines.js`:
   sin espacios ni mayúsculas, "PSA 1" = "PSA1", "C3d" = "C3D"), también al
   filtrar las llegadas de las tarjetas (`busesOfLines`), al guardarlas y al
@@ -539,6 +560,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Hecho: alarma de salida configurable ("Avisar cuando queden 5 min para el
   C3": campana de cada autobús en la consulta rápida y en Mis rutas, modo
   salida), con confirmación antes de cancelar.
+- Hecho: Smart Night Mode (23:00–06:00: líneas N primero y "Servicio diurno
+  finalizado" plegado).
 
 ### Fase 4 · Onboarding — *Pendiente*
 
