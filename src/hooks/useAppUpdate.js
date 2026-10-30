@@ -6,6 +6,9 @@ const CHECK_EVERY_MS = 60 * 60_000;
 // Si tras "Actualizar" el service worker nuevo no toma el control en este
 // tiempo (navegador raro, ya no hay uno esperando), se recarga igualmente.
 const RELOAD_FALLBACK_MS = 4_000;
+// Las comprobaciones periódicas se programan una sola vez por página: si el
+// registro se repite (recarga en caliente, otro montaje), no se duplican.
+let watching = false;
 
 /**
  * Actualizaciones de la PWA (OTA). Registra el service worker
@@ -29,7 +32,8 @@ export function useAppUpdate() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
-      if (!registration) return;
+      if (!registration || watching) return;
+      watching = true;
       const check = () => {
         // Sin red o con una instalación en curso no hay nada que buscar.
         if (navigator.onLine === false || registration.installing) return;

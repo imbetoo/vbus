@@ -1,15 +1,25 @@
 import { RotateCw } from 'lucide-react';
 
+const TONES = {
+  // Sobre el fondo de la app (Mis rutas): sigue al tema.
+  auto: 'bg-white/80 text-black ring-black/10 dark:bg-graphite/90 dark:text-white dark:ring-white/10',
+  // Dentro de una hoja grafito (consulta rápida).
+  dark: 'bg-white/15 text-white ring-white/10',
+};
+
 /**
- * Indicador de "tirar para actualizar": un círculo de cristal que baja con la
+ * Indicador de "tirar para actualizar": un círculo opaco que baja con la
  * lista. Mientras se tira, aparece y gira según `--pull-progress` (0 → 1); al
- * refrescar, gira sin parar. Lee las variables CSS que escribe
- * `usePullToRefresh`, así no se vuelve a renderizar en cada movimiento.
+ * refrescar, gira sin parar. `usePullToRefresh` escribe las variables CSS en
+ * su raíz (`ref`), así no se vuelve a renderizar en cada movimiento y el
+ * cambio no se propaga a nada más. Va dentro de una pista `relative` con
+ * `overflow-hidden`, encima de la lista.
  */
-export default function PullIndicator({ refreshing }) {
+export default function PullIndicator({ ref, refreshing, tone = 'auto' }) {
   return (
     <>
       <div
+        ref={ref}
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center will-change-[transform,opacity]"
         style={{
@@ -18,7 +28,7 @@ export default function PullIndicator({ refreshing }) {
           transition: 'var(--pull-transition, none)',
         }}
       >
-        <span className="mt-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-black shadow-md shadow-black/10 ring-1 ring-black/10 dark:bg-graphite/90 dark:text-white dark:ring-white/10">
+        <span className={`mt-1.5 flex h-9 w-9 items-center justify-center rounded-full shadow-md shadow-black/10 ring-1 ${TONES[tone]}`}>
           <RotateCw
             className={`h-[18px] w-[18px] ${refreshing ? 'animate-spin motion-reduce:animate-none' : ''}`}
             strokeWidth={2.5}

@@ -12,6 +12,10 @@ import { useSyncExternalStore } from 'react';
 let status = 'off';
 let wanted = false;
 let sentinel = null;
+// Petición en vuelo: sin esto, un `visibilitychange` mientras se espera la
+// primera lanzaba otra, y el bloqueo de la primera quedaba huérfano (nadie lo
+// soltaba al terminar y la pantalla seguía encendida).
+let requesting = false;
 const listeners = new Set();
 
 function setStatus(next) {
@@ -25,12 +29,14 @@ async function acquire() {
     setStatus('unsupported');
     return;
   }
-  if (sentinel || document.visibilityState !== 'visible') return;
+  if (sentinel || requesting || document.visibilityState !== 'visible') return;
+  requesting = true;
   setStatus('pending');
   try {
     const lock = await navigator.wakeLock.request('screen');
-    if (!wanted) {
+    if (!wanted || sentinel) {
       lock.release().catch(() => {});
+      if (!wanted) setStatus('off');
       return;
     }
     sentinel = lock;
@@ -42,6 +48,8 @@ async function acquire() {
     });
   } catch {
     setStatus(wanted ? 'error' : 'off');
+  } finally {
+    requesting = false;
   }
 }
 
