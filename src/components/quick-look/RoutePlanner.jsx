@@ -4,6 +4,7 @@ import { addRecentStop, removeRecentStop, useRecentStops } from '../../data/rece
 import { findStop, loadStopsList, stopsNear } from '../../data/stops';
 import { useNearestStop } from '../../hooks/useNearestStop';
 import { useRouteIndex } from '../../hooks/useRouteIndex';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useStopArrivals } from '../../hooks/useStopArrivals';
 import { useStopSearch } from '../../hooks/useStopSearch';
 import { NEARBY_STOP_M, findDirectLines, mapsDirectionsUrl, planDirectRoute } from '../../lib/directRoute';
@@ -11,6 +12,7 @@ import { haversineMeters } from '../../lib/geo';
 import { useOnlineStatus } from '../../lib/network';
 import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import { DEFAULT_CARD_COLOR } from '../bus/cardColors';
+import PullIndicator from '../ui/PullIndicator';
 import { PRESSABLE } from '../ui/pressable';
 import MapsLink from './MapsLink';
 import RouteFields from './RouteFields';
@@ -184,6 +186,19 @@ export default function RoutePlanner({
   // ruta directa. Misma parada, sin línea directa o comprobando: ninguna llamada.
   const fetchId = mode === 'stop' || mode === 'direct' ? boarding.id : null;
   const arrivals = useStopArrivals(fetchId, { refreshMs });
+  // Tirar hacia abajo desde arriba de la lista vuelve a pedir los tiempos:
+  // solo con tiempos que pedir y nunca con las sugerencias (ahí las recientes
+  // se deslizan para borrarlas).
+  const listRef = useRef(null);
+  const pullContentRef = useRef(null);
+  const pullIndicatorRef = useRef(null);
+  const refreshing = usePullToRefresh({
+    scrollRef: listRef,
+    contentRef: pullContentRef,
+    indicatorRef: pullIndicatorRef,
+    onRefresh: arrivals.refresh,
+    enabled: !showSuggestions && Boolean(fetchId),
+  });
   const mapsUrl = useMemo(() => {
     if (!destination || mode === 'same') return null;
     // Desde el GPS, la posición exacta del usuario; si no, la parada.
@@ -337,11 +352,18 @@ export default function RoutePlanner({
         />
       </div>
 
+      {/* Pista del "tirar para actualizar": recorta el indicador, que espera
+          oculto por encima de la lista. */}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <PullIndicator ref={pullIndicatorRef} refreshing={refreshing} tone="dark" />
       {/* Los cambios de los resultados se anuncian (no los de cada sugerencia). */}
       <div
+        ref={listRef}
         className="scroll-fade min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 pb-10 pt-5"
         aria-live={showSuggestions ? 'off' : 'polite'}
       >
+        {/* Lo baja el gesto (`transform` escrito directamente, sin renders). */}
+        <div ref={pullContentRef} className="will-change-transform">
         {showSuggestions ? (
           <StopSuggestions
             id={listId}
@@ -372,6 +394,8 @@ export default function RoutePlanner({
             online={online}
           />
         )}
+        </div>
+      </div>
       </div>
 
       {!showSuggestions && (mode === 'stop' || mode === 'direct' || mode === 'no-direct') && (

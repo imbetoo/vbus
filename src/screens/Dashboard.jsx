@@ -84,8 +84,9 @@ export default function Dashboard({ settings, onSettingChange }) {
   // Tirar hacia abajo desde arriba del todo vuelve a pedir los tiempos (no en
   // modo edición, donde los gestos son para mover tarjetas).
   const scrollRef = useRef(null);
-  const trackRef = useRef(null);
-  const refreshing = usePullToRefresh({ scrollRef, trackRef, onRefresh: refresh, enabled: !isEditing });
+  const contentRef = useRef(null);
+  const indicatorRef = useRef(null);
+  const refreshing = usePullToRefresh({ scrollRef, contentRef, indicatorRef, onRefresh: refresh, enabled: !isEditing });
   const { theme, toggleTheme } = useTheme();
   // Abierta desde un acceso directo: "Escanear QR" y "Buscar parada" abren la
   // consulta rápida (con el escáner o el destino enfocado); "Nueva tarjeta",
@@ -211,10 +212,10 @@ export default function Dashboard({ settings, onSettingChange }) {
           Va en una única capa de GPU (`transform-gpu`, `will-change`) y nada de
           lo que contiene usa `backdrop-filter`: el scroll solo desplaza esa
           capa ya dibujada. */}
-      {/* Pista del "tirar para actualizar": recorta el indicador (que espera
-          oculto por encima) y lleva las variables CSS del gesto. */}
-      <div ref={trackRef} className="relative -mx-5 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
-        <PullIndicator refreshing={refreshing} />
+      {/* Pista del "tirar para actualizar": recorta el indicador, que espera
+          oculto por encima. */}
+      <div className="relative -mx-5 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+        <PullIndicator ref={indicatorRef} refreshing={refreshing} />
       {/* `layoutScroll`: framer-motion tiene en cuenta el scroll al medir las
           tarjetas que se reordenan. */}
       <motion.main
@@ -222,10 +223,8 @@ export default function Dashboard({ settings, onSettingChange }) {
         ref={scrollRef}
         className={`min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 will-change-transform ${SCROLL_FADE}`}
       >
-        <div
-          className="relative min-h-full will-change-transform"
-          style={{ transform: 'translate3d(0, var(--pull, 0px), 0)', transition: 'var(--pull-transition, none)' }}
-        >
+        {/* Lo baja el gesto (`transform` escrito directamente, sin renders). */}
+        <div ref={contentRef} className="relative min-h-full will-change-transform">
           {/* El mensaje de lista vacía está siempre montado y entra/sale con un
               fundido (con retardo al aparecer, para no pisar la salida de la
               última tarjeta). */}

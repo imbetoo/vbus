@@ -42,7 +42,8 @@ fricción, sin mapas interactivos ni navegación compleja.
   'prompt'` e `injectRegister: false`; la app registra el service worker con
   `useRegisterSW` (`virtual:pwa-register/react`) y busca versiones nuevas al
   abrir, al volver a la app (`visibilitychange`: una PWA de iOS que se
-  reanuda no navega) y cada hora (`registration.update()`, sin red no). La
+  reanuda no navega) y cada hora (`registration.update()`, sin red no; programado una sola vez por
+  página). La
   versión nueva se instala en segundo plano y espera (`needRefresh`): aviso
   flotante abajo, por encima de "Crear nueva tarjeta", sin bloquear nada
   (grafito opaco, sin `backdrop-filter`; entra y sale con `transform` y
@@ -289,7 +290,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     servidor despierto (Render gratis se duerme); además el temporizador no
     se reajustaría con un atasco. El toque de "Avisarme" hace, en el mismo
     gesto (Safari lo exige), `keepScreenOn()` (`src/lib/wakeLock.js`: Screen
-    Wake Lock, se recupera solo al volver a la pestaña), desbloquea el sonido
+    Wake Lock, se recupera solo al volver a la pestaña; nunca hay dos peticiones
+    en vuelo, así ningún bloqueo queda huérfano al terminar), desbloquea el sonido
     (el `Audio` del timbre) y pide `Notification.requestPermission()` sin esperarlo (con
     la versión de callback del Safari antiguo). Abre a pantalla completa un
     `<dialog>` negro puro (OLED, ahorro de batería) con "Bájate en [parada]"
@@ -564,9 +566,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   su notificación; los avisos siguen sonando y notificando. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.28 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.29 • Build: 30/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.28 = PR #28), hora de compilación
+  PR: `npm version minor`; v1.29 = PR #29), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -625,13 +627,27 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   los minutos descuentan con el reloj real.
 - Hecho: actualizaciones OTA de la PWA ("Nueva versión de vBus disponible",
   `useAppUpdate`).
-- Hecho: "tirar para actualizar" (`usePullToRefresh` + `PullIndicator`). Solo
-  empieza con la lista arriba del todo y el dedo bajando; banda elástica de
-  iOS; el indicador de cristal baja, aparece y gira según lo que se tira.
-  Pasados 64 px, la lista se queda a 56 px girando mientras `refresh()` de
-  `useRoutes` pide los tiempos (mínimo 700 ms) y vuelve con un muelle de
-  500 ms; por debajo, vuelve sin refrescar. La posición va en variables CSS
-  (`--pull`, `--pull-progress`), sin renders de React, con `translate3d`.
+- Hecho: "tirar para actualizar" (`usePullToRefresh` + `PullIndicator`) en
+  Mis rutas y en la lista de la consulta rápida. Solo empieza con la lista
+  arriba del todo y el dedo bajando (no si el toque empieza en algo con
+  arrastre propio: `.touch-none`, como el tirador de una tarjeta, o
+  `[data-no-pull]`); banda elástica de iOS; el indicador (círculo opaco;
+  `tone="dark"` en la hoja grafito) baja, aparece y gira según lo que se tira.
+  Al cruzar los 64 px, un toque háptico ligero (`haptics.threshold`, 15 ms;
+  otra vez si se vuelve atrás y se cruza de nuevo). Pasado el umbral, la lista
+  se queda a 56 px girando mientras se piden los tiempos (mínimo 700 ms) y
+  vuelve con un muelle de 500 ms; por debajo, vuelve sin refrescar. En Mis
+  rutas refresca todas las tarjetas (`refresh()` de `useRoutes`; desactivado
+  en modo edición, también si se entra a mitad del gesto); en la consulta
+  rápida, la parada de subida (`refresh()` de `useStopArrivals`, que devuelve
+  la petición en vuelo si la hay), solo con tiempos que pedir y nunca con las
+  sugerencias abiertas. Rendimiento: sin renders de React y una escritura por
+  fotograma (`requestAnimationFrame`): el `transform` (`translate3d`) va
+  directo en el contenedor de la lista (no se hereda: las tarjetas no
+  recalculan estilo) y las variables (`--pull`, `--pull-progress`) solo en la
+  raíz del indicador. `touchstart`, `touchend` y `touchcancel` son pasivos;
+  `touchmove` no puede serlo (su `preventDefault()` frena el scroll y el
+  rebote nativos mientras se tira) y sale en la primera línea sin gesto.
 
 - Fuente: backend propio (`backend/`) sobre la API de datos abiertos del
   Concello (`datos.vigo.org`), con el mismo JSON que VigoBusAPI.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getBuses } from '../services/vigobus';
 import { toBusArrivals } from '../services/vigobusAdapter';
 
@@ -13,11 +13,15 @@ import { toBusArrivals } from '../services/vigobusAdapter';
  * Con la pestaña oculta no se pide nada, salvo con `background` (modo viaje:
  * en Android la página sigue viva un rato y el aviso puede llegar igual).
  *
- * Devuelve `{ status, buses, updatedAt, error }` con `status`: `loading`
- * (aún sin datos), `success` o `error` (sin datos que enseñar).
+ * Devuelve `{ status, buses, updatedAt, error, refresh }` con `status`:
+ * `loading` (aún sin datos), `success` o `error` (sin datos que enseñar).
+ * `refresh()` (estable) pide los tiempos ya ("tirar para actualizar") y
+ * devuelve una promesa que se cumple al llegar (nunca se rechaza); si ya hay
+ * una petición en vuelo, la de esa.
  */
 export function useStopArrivals(stopId, { refreshMs = 30_000, background = false } = {}) {
   const [state, setState] = useState({ stopId, status: 'loading', buses: [] });
+  const loadRef = useRef(null);
 
   useEffect(() => {
     if (!stopId) return undefined;
@@ -25,13 +29,13 @@ export function useStopArrivals(stopId, { refreshMs = 30_000, background = false
     const { signal } = controller;
     // Una petición a la vez: con Lie-Fi cada una tarda hasta ~4 s en darse por
     // perdida y no deben amontonarse.
-    let inFlight = false;
+    let inFlight = null;
     const load = () => {
-      if ((document.hidden && !background) || inFlight) return;
-      inFlight = true;
+      if (inFlight) return inFlight;
+      if (document.hidden && !background) return Promise.resolve();
       // `Promise.resolve().then`: un error síncrono (p. ej. un id no válido)
       // también acaba en `catch`, nunca suelto.
-      Promise.resolve()
+      inFlight = Promise.resolve()
         .then(() => getBuses(stopId, { all: true, signal }))
         .then((response) => {
           if (signal.aborted) return;
@@ -46,15 +50,18 @@ export function useStopArrivals(stopId, { refreshMs = 30_000, background = false
           );
         })
         .finally(() => {
-          inFlight = false;
+          inFlight = null;
         });
+      return inFlight;
     };
+    loadRef.current = load;
     load();
     const interval = setInterval(load, refreshMs);
     document.addEventListener('visibilitychange', load);
     // Al volver la conexión (salir del modo avión), tiempos al momento.
     window.addEventListener('online', load);
     return () => {
+      if (loadRef.current === load) loadRef.current = null;
       controller.abort();
       clearInterval(interval);
       document.removeEventListener('visibilitychange', load);
@@ -62,6 +69,12 @@ export function useStopArrivals(stopId, { refreshMs = 30_000, background = false
     };
   }, [stopId, refreshMs, background]);
 
-  // Datos de otra parada (se acaba de cambiar): aún cargando.
-  return state.stopId === stopId ? state : { stopId, status: 'loading', buses: [] };
+  const refresh = useCallback(() => loadRef.current?.() ?? Promise.resolve(), []);
+
+  // Datos de otra parada (se acaba de cambiar): aún cargando. Memorizado: los
+  // resultados (`React.memo`) solo se repintan cuando llegan datos.
+  return useMemo(
+    () => (state.stopId === stopId ? { ...state, refresh } : { stopId, status: 'loading', buses: [], refresh }),
+    [state, stopId, refresh],
+  );
 }
