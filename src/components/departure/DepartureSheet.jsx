@@ -19,7 +19,7 @@ export default function DepartureSheet({ departure, notifications, onEnd }) {
   if (departure && departure !== shown) setShown(departure);
 
   return (
-    <FocusDialog open={Boolean(departure)} onClose={onEnd} labelledBy={titleId}>
+    <FocusDialog open={Boolean(departure)} onEnd={onEnd} labelledBy={titleId}>
       {shown && <DepartureView key={shown.bus.id} departure={shown} notifications={notifications} titleId={titleId} onEnd={onEnd} />}
     </FocusDialog>
   );
@@ -30,7 +30,7 @@ function DepartureView({ departure, notifications, titleId, onEnd }) {
   const { eta, line, destination, alarm, lost, status, error } = useDeparture(departure, { onEnd });
 
   return (
-    <FocusLayout icon={DoorOpen} label="Modo salida" endLabel="Cancelar aviso" onEnd={onEnd} showFooter={!alarm}>
+    <FocusLayout icon={DoorOpen} label="Modo salida" endLabel="Cancelar aviso" armed={!alarm}>
       <h2 id={titleId} className="text-3xl font-bold tracking-tight">
         {`Esperando al ${line}`}
       </h2>

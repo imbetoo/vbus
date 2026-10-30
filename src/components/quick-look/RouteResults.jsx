@@ -1,11 +1,11 @@
-import { Bell, CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert, WifiOff } from 'lucide-react';
+import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert, WifiOff } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { filterBusesByLines, filterReachingBuses } from '../../lib/directRoute';
 import { formatDistance } from '../../lib/geo';
 import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from '../bus/BusLineItem';
 import DepartureAlarm from '../departure/DepartureAlarm';
-import IconButton from '../ui/IconButton';
+import DepartureBell from '../departure/DepartureBell';
 import IconTile from '../ui/IconTile';
 import DirectLines from './DirectLines';
 import MapsLink from './MapsLink';
@@ -101,7 +101,7 @@ function StopSummary({ stop, distance, action, children }) {
  */
 function Arrivals({ stop, arrivals, buses, emptyText, offlineText, timeFormat }) {
   const offline = arrivals.error?.kind === 'offline';
-  // Autobús cuya campana se ha tocado: `{ bus, fetchedAt }`.
+  // Autobús cuya campana se ha tocado: `{ stop, bus, fetchedAt }`.
   const [request, setRequest] = useState(null);
   return (
     <>
@@ -129,13 +129,7 @@ function Arrivals({ stop, arrivals, buses, emptyText, offlineText, timeFormat })
                   timeFormat={timeFormat}
                   fetchedAt={arrivals.updatedAt}
                   action={
-                    <IconButton
-                      icon={Bell}
-                      size="sm"
-                      label={`Avisarme para salir: ${bus.line}, ${bus.time < 1 ? 'llegando' : `${bus.time} min`}`}
-                      aria-haspopup="dialog"
-                      onClick={() => setRequest({ bus, fetchedAt: arrivals.updatedAt })}
-                    />
+                    <DepartureBell bus={bus} onClick={() => setRequest({ stop, bus, fetchedAt: arrivals.updatedAt })} />
                   }
                 />
               ))}
@@ -153,7 +147,7 @@ function Arrivals({ stop, arrivals, buses, emptyText, offlineText, timeFormat })
             : 'No se pudieron actualizar: son los últimos tiempos recibidos.'}
         </p>
       )}
-      <DepartureAlarm stop={stop} request={request} onClose={() => setRequest(null)} />
+      <DepartureAlarm request={request} onClose={() => setRequest(null)} />
     </>
   );
 }

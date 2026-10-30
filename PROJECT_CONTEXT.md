@@ -296,8 +296,11 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   - **Modo salida · alarma de origen (`DepartureAlarm`, `LeadTimeModal`,
     `DepartureSheet`, `useDeparture`, `src/lib/departure.js`):** cada
     autobús de la lista de llegadas de la consulta rápida (solo origen o ruta
-    directa) lleva una campana (`IconButton` `sm`, acción opcional de
-    `BusLineItem`; las tarjetas del Dashboard no la tienen). Abre una ventana
+    directa) y de las tarjetas de Mis rutas (fuera del modo edición) lleva una
+    campana (`DepartureBell`: `IconButton` `sm`, acción opcional de
+    `BusLineItem`; las tarjetas avisan con `onDepartureAlarm({ stop, bus,
+    fetchedAt })`, estable, y el Dashboard tiene un único `DepartureAlarm`
+    para todas). Abre una ventana
     (`Modal`) "Avisarme para salir": "¿Con cuántos minutos de antelación
     quieres que te avisemos?", atajos 2, 3 y 5 min (`aria-pressed`) y un campo
     de minutos enteros (`inputMode="numeric"`, solo dígitos, 1–90); propone el
@@ -323,6 +326,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     `FocusScreen.jsx` (`FocusDialog` negro, `FocusLayout`, `AlarmPanel`,
     filas de estado de pantalla y notificaciones) y `tripTracker.js`
     (`etaNow`, `pickBus`, `minutesText`, `plural`).
+  - **Anti-cancelación (`FocusDialog`, los dos modos):** con la pantalla
+    siempre encendida y el móvil en la mano, un toque sin querer no cancela
+    la alarma. Tocar fuera no hace nada; la X, Escape, el "atrás" de Android
+    (Chrome cancela el diálogo modal) y el "atrás" del historial (una entrada
+    propia mientras está abierta, que se repone y se quita al terminar) abren
+    una alerta de iOS (`alertdialog`): "¿Detener el aviso?" · "Si sales
+    ahora, se cancelará la alarma programada." con "Cancelar" (neutro, con el
+    foco; también Escape o tocar fuera) y "Sí, detener" (rojo). Si el
+    navegador cierra el diálogo a la fuerza, se reabre y pregunta. Tras sonar
+    (`FocusLayout` `armed={false}`), la X sale sin preguntar; "Entendido" y
+    el apagado solo, siempre directos.
   - **Mapas (`MapsLink`):** enlace universal
     `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
     (desde el GPS, la posición exacta del usuario; si una parada no tiene
@@ -463,9 +477,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.22 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.23 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.22 = PR #22), hora de compilación
+  PR: `npm version minor`; v1.23 = PR #23), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -523,7 +537,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   mañanas: "Ir al instituto" primero; tardes: "Volver a casa" primero).
 - Hecho: alarma de destino ("Avisarme", modo viaje en la consulta rápida).
 - Hecho: alarma de salida configurable ("Avisar cuando queden 5 min para el
-  C3": campana de cada autobús, modo salida).
+  C3": campana de cada autobús en la consulta rápida y en Mis rutas, modo
+  salida), con confirmación antes de cancelar.
 
 ### Fase 4 · Onboarding — *Pendiente*
 

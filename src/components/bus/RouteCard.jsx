@@ -1,6 +1,7 @@
 import { BusFront, GraduationCap, House, Pencil, X } from 'lucide-react';
 import { memo, useId, useState } from 'react';
 import { busesOfLines } from '../../lib/lines';
+import DepartureBell from '../departure/DepartureBell';
 import Collapse from '../ui/Collapse';
 import DisclosureButton from '../ui/DisclosureButton';
 import GlassCard from '../ui/GlassCard';
@@ -25,6 +26,8 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * `onRemove(id)` y `onEditCard(id)` reciben el id: así el padre puede pasar
  * siempre las mismas funciones y `memo` evita repintados. En modo edición (`editing`) el lápiz sustituye a la
  * X de eliminar.
+ * Fuera del modo edición, cada autobús lleva su campana (modo salida):
+ * `onDepartureAlarm({ stop, bus, fetchedAt })`, también estable.
  */
 function RouteCard({
   id,
@@ -43,6 +46,7 @@ function RouteCard({
   editing = false,
   onRemove,
   onEditCard,
+  onDepartureAlarm,
 }) {
   const [showMore, setShowMore] = useState(false);
   const moreId = useId();
@@ -59,6 +63,20 @@ function RouteCard({
   const sorted = sortBuses(shown, lines, sortBy);
   const visible = sorted.slice(0, busesToShow);
   const more = sorted.slice(busesToShow);
+  const stop = { id: stopId, name: stopName || `Parada ${stopId}` };
+  const renderBus = (bus) => (
+    <BusLineItem
+      key={busKey(bus)}
+      {...bus}
+      timeFormat={timeFormat}
+      fetchedAt={updatedAt}
+      action={
+        onDepartureAlarm && stopId && !editing ? (
+          <DepartureBell bus={bus} onClick={() => onDepartureAlarm({ stop, bus, fetchedAt: updatedAt })} />
+        ) : null
+      }
+    />
+  );
 
   return (
     // `origin-top`: el rebote al pulsar no desplaza la tarjeta mientras crece.
@@ -92,18 +110,14 @@ function RouteCard({
       <div className="mx-1 mb-1 mt-3 border-t border-white/10" />
 
       <ul className="px-1">
-        {visible.map((bus) => (
-          <BusLineItem key={busKey(bus)} {...bus} timeFormat={timeFormat} fetchedAt={updatedAt} />
-        ))}
+        {visible.map(renderBus)}
       </ul>
 
       {more.length > 0 && (
         <>
           <Collapse id={moreId} open={showMore}>
             <ul className="px-1">
-              {more.map((bus) => (
-                <BusLineItem key={busKey(bus)} {...bus} timeFormat={timeFormat} fetchedAt={updatedAt} />
-              ))}
+              {more.map(renderBus)}
             </ul>
           </Collapse>
 

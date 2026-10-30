@@ -1,42 +1,171 @@
 import { Bell, BellOff, BellRing, Smartphone, X } from 'lucide-react';
-import { useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
 import { useAnimatedDialog } from '../../hooks/useAnimatedDialog';
 import { useWakeLockStatus } from '../../lib/wakeLock';
 import IconButton from '../ui/IconButton';
+import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
+import { PRESSABLE } from '../ui/pressable';
 
 const EXIT_MS = 300;
 /** Contenedor de cristal de las pantallas de foco. */
 export const PANEL = 'rounded-3xl border border-white/10 bg-white/[0.06]';
+// Marca de la entrada de historial que pone la pantalla de foco.
+const HISTORY_KEY = 'vbusFocus';
+
+// `requestEnd` (salir pidiendo confirmación) y si la alarma sigue pendiente.
+const FocusContext = createContext({ requestEnd: () => {}, armedRef: { current: false } });
 
 /**
  * Pantalla completa de los modos que avisan (viaje y salida): `<dialog>`
  * modal con fundido y fondo negro puro (en OLED, los píxeles negros no gastan
- * batería; la pantalla se queda encendida). `children(…)` se pinta solo
+ * batería; la pantalla se queda encendida). El contenido se pinta solo
  * mientras está montada (también durante la salida).
+ *
+ * Con la pantalla siempre encendida y el móvil en la mano, un toque sin
+ * querer no puede cancelar la alarma:
+ *
+ * - Tocar fuera no hace nada.
+ * - La X (`FocusLayout`), Escape, el gesto o botón "atrás" de Android (que en
+ *   Chrome cancela el diálogo) y el "atrás" del historial (navegadores sin
+ *   ese gesto: se pone una entrada propia) piden confirmación: "¿Detener el
+ *   aviso?" (`ConfirmStopModal`). Si el navegador cierra el diálogo a la
+ *   fuerza, se vuelve a abrir y también pregunta.
+ * - Si la alarma ya sonó (`FocusLayout` con `armed` a `false`), no hay nada
+ *   que cancelar: se sale sin preguntar.
+ *
+ * `onEnd` termina el modo de verdad (también "Entendido" y el apagado solo).
  */
-export function FocusDialog({ open, onClose, labelledBy, children }) {
+export function FocusDialog({ open, onEnd, labelledBy, children }) {
   const ref = useRef(null);
-  const { mounted, dialogProps } = useAnimatedDialog({ ref, open, onClose, exitMs: EXIT_MS });
+  const armedRef = useRef(true);
+  const [confirming, setConfirming] = useState(false);
+  const requestEnd = useCallback(() => {
+    if (armedRef.current) setConfirming(true);
+    else onEnd();
+  }, [onEnd]);
+  // Escape y "atrás" (`cancel`) preguntan; el cierre que sigue a terminar de
+  // verdad (`open` ya en `false`) no.
+  const { mounted, dialogProps } = useAnimatedDialog({
+    ref,
+    open,
+    onClose: () => {
+      if (open) requestEnd();
+    },
+    exitMs: EXIT_MS,
+  });
+
+  // "Atrás" del historial: una entrada propia mientras está abierta; al
+  // volver atrás se repone y se pregunta. Al cerrar, se quita.
+  const requestEndRef = useRef(requestEnd);
+  useEffect(() => {
+    requestEndRef.current = requestEnd;
+  });
+  useEffect(() => {
+    if (!open) return undefined;
+    window.history.pushState({ [HISTORY_KEY]: true }, '');
+    const onPopState = () => {
+      window.history.pushState({ [HISTORY_KEY]: true }, '');
+      requestEndRef.current();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      if (window.history.state?.[HISTORY_KEY]) window.history.back();
+    };
+  }, [open]);
 
   return (
     <dialog
       ref={ref}
       aria-labelledby={labelledBy}
       {...dialogProps}
+      // Tocar fuera no cierra (ni pregunta).
+      onClick={undefined}
+      onClose={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (!open) {
+          dialogProps.onClose(event);
+          return;
+        }
+        // Cerrado por el navegador sin pedirlo (p. ej. "atrás" repetido): se
+        // vuelve a abrir y se pregunta.
+        event.currentTarget.showModal();
+        event.currentTarget.toggleAttribute('data-shown', true);
+        requestEnd();
+      }}
       className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none overflow-hidden bg-black p-0 text-white opacity-0 transform-gpu transition-opacity duration-300 ease-spring will-change-[opacity] backdrop:bg-black data-[shown]:opacity-100 motion-reduce:transition-none"
     >
-      {mounted && children}
+      <FocusContext.Provider value={{ requestEnd, armedRef }}>{mounted && children}</FocusContext.Provider>
+      <ConfirmStopModal
+        open={open && confirming}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => {
+          setConfirming(false);
+          onEnd();
+        }}
+      />
     </dialog>
   );
 }
 
 /**
- * Columna de una pantalla de foco: cabecera (icono ámbar + nombre del modo y
- * X para terminar), contenido con scroll y, si no ha avisado aún, la nota de
- * mantener la app abierta.
+ * "¿Detener el aviso?" (alerta de iOS): "Cancelar" (neutro, con el foco y la
+ * acción de Escape o de tocar fuera) y "Sí, detener" (rojo, destructivo).
  */
-export function FocusLayout({ icon: Icon, label, endLabel, onEnd, showFooter = true, children }) {
+function ConfirmStopModal({ open, onCancel, onConfirm }) {
+  const titleId = useId();
+  const messageId = useId();
+
+  return (
+    <Modal
+      open={open}
+      onClose={onCancel}
+      labelledBy={titleId}
+      describedBy={messageId}
+      role="alertdialog"
+      className="w-[min(88vw,20rem)]"
+    >
+      <div className="flex flex-col gap-2 p-5 text-center">
+        <h2 id={titleId} className="text-xl/tight font-bold tracking-[-0.01em]">
+          ¿Detener el aviso?
+        </h2>
+        <p id={messageId} className="text-pretty text-base font-medium text-white/70">
+          Si sales ahora, se cancelará la alarma programada.
+        </p>
+        <div className="mt-3 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className={`h-12 rounded-full border border-white/15 bg-white/10 text-lg font-semibold text-white active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`h-12 rounded-full bg-urgent text-lg font-semibold text-white active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${PRESSABLE}`}
+          >
+            Sí, detener
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * Columna de una pantalla de foco: cabecera (icono ámbar + nombre del modo y
+ * X para salir, que pide confirmación mientras la alarma esté pendiente:
+ * `armed`), contenido con scroll y, si no ha avisado aún, la nota de mantener
+ * la app abierta.
+ */
+export function FocusLayout({ icon: Icon, label, endLabel, armed = true, children }) {
+  const { requestEnd, armedRef } = useContext(FocusContext);
+  useEffect(() => {
+    armedRef.current = armed;
+  }, [armedRef, armed]);
+
   return (
     <div className="mx-auto flex h-full w-full max-w-md flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-[calc(env(safe-area-inset-top,0px)+1.25rem)]">
       <header className="flex shrink-0 items-center justify-between gap-3">
@@ -44,14 +173,14 @@ export function FocusLayout({ icon: Icon, label, endLabel, onEnd, showFooter = t
           <Icon className="h-5 w-5 text-amber-300" strokeWidth={2.5} aria-hidden="true" />
           {label}
         </p>
-        <IconButton icon={X} label={endLabel} onClick={onEnd} />
+        <IconButton icon={X} label={endLabel} onClick={requestEnd} />
       </header>
 
       <div className="scroll-fade mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-8 pt-4" aria-live="polite">
         {children}
       </div>
 
-      {showFooter && (
+      {armed && (
         <p className="shrink-0 pt-3 text-center text-sm font-medium text-white/50">
           Mantén vBus abierta: si cambias de app o bloqueas el móvil, el aviso puede no llegar.
         </p>

@@ -21,7 +21,7 @@ export default function TripSheet({ trip, buses, updatedAt, notifications, onEnd
   if (trip && trip !== shown) setShown(trip);
 
   return (
-    <FocusDialog open={Boolean(trip)} onClose={onEnd} labelledBy={titleId}>
+    <FocusDialog open={Boolean(trip)} onEnd={onEnd} labelledBy={titleId}>
       {shown && (
         <TripView
           key={shown.boarding.id}
@@ -47,7 +47,7 @@ function TripView({ trip, buses, updatedAt, notifications, titleId, onEnd }) {
       : null;
 
   return (
-    <FocusLayout icon={Bell} label="Modo viaje" endLabel="Terminar viaje" onEnd={onEnd} showFooter={phase !== 'alarm'}>
+    <FocusLayout icon={Bell} label="Modo viaje" endLabel="Terminar viaje" armed={phase !== 'alarm'}>
       <p className="text-lg font-medium text-white/60">Bájate en</p>
       <h2 id={titleId} className="text-pretty text-3xl font-bold tracking-tight">
         {alight.name}

@@ -36,6 +36,7 @@ function EditableRouteItem({
   onRemove,
   onEditCard,
   onStartEditing,
+  onDepartureAlarm,
 }) {
   const controls = useDragControls();
   const [dragging, setDragging] = useState(false);
@@ -87,6 +88,7 @@ function EditableRouteItem({
                   editing={editing}
                   onRemove={onRemove}
                   onEditCard={onEditCard}
+                  onDepartureAlarm={onDepartureAlarm}
                 />
 
                 {/* Eliminar (modo edición): círculo rojo de iOS con aspa. */}
