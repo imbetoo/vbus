@@ -1,6 +1,7 @@
 import { motion, useDragControls, useReducedMotion } from 'framer-motion';
-import { Search, X } from 'lucide-react';
-import { useEffect, useId, useRef } from 'react';
+import { ScanQrCode, Search, X } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import ScannerSheet from '../scanner/ScannerSheet';
 import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
 import RoutePlanner from './RoutePlanner';
@@ -16,7 +17,8 @@ const SPRING = { type: 'spring', damping: 32, stiffness: 320, mass: 0.9 };
  * asistente Origen → Destino (`RoutePlanner`): tiempos de la parada más
  * cercana o de la que se elija y, con un destino, solo las líneas directas
  * (o la ruta con transbordos en Google Maps). No se guarda nada salvo con
- * "Añadir a Mis Rutas" (`onAdd(route)`).
+ * "Añadir a Mis Rutas" (`onAdd(route)`). El botón QR de la cabecera abre el
+ * escáner (`ScannerSheet`): la parada leída pasa a ser el Origen.
  *
  * Va dentro de un `<dialog>` modal (foco atrapado, Escape, el fondo de la app
  * se pausa) y entra deslizándose desde abajo; sale igual al cerrarlo con la X,
@@ -30,6 +32,9 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs }
   const titleId = useId();
   const dragControls = useDragControls();
   const reduceMotion = useReducedMotion();
+  // Escáner QR: la parada leída pasa a ser el Origen del asistente.
+  const [scanning, setScanning] = useState(false);
+  const [scannedStop, setScannedStop] = useState(null);
 
   // Se abre como modal al montarse (y se quita del DOM al terminar la salida).
   useEffect(() => {
@@ -44,6 +49,8 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs }
       ref={dialogRef}
       aria-labelledby={titleId}
       onCancel={(event) => {
+        // Solo el Escape de este panel (no el del escáner QR, anidado).
+        if (event.target !== event.currentTarget) return;
         // Escape: se anima la salida en vez de cerrar de golpe.
         event.preventDefault();
         onClose();
@@ -92,18 +99,34 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs }
               titleAs="h2"
               titleId={titleId}
             />
-            <IconButton
-              icon={X}
-              label="Cerrar"
-              onClick={onClose}
-              onPointerDown={(event) => event.stopPropagation()}
-              className="ml-auto shrink-0"
-            />
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <IconButton
+                icon={ScanQrCode}
+                label="Escanear el QR de la parada"
+                aria-haspopup="dialog"
+                onClick={() => setScanning(true)}
+                onPointerDown={(event) => event.stopPropagation()}
+              />
+              <IconButton
+                icon={X}
+                label="Cerrar"
+                onClick={onClose}
+                onPointerDown={(event) => event.stopPropagation()}
+              />
+            </div>
           </header>
         </div>
 
-        <RoutePlanner timeFormat={timeFormat} refreshMs={refreshMs} onAdd={onAdd} />
+        <RoutePlanner timeFormat={timeFormat} refreshMs={refreshMs} onAdd={onAdd} scannedStop={scannedStop} />
       </motion.section>
+      <ScannerSheet
+        open={scanning}
+        onClose={() => setScanning(false)}
+        onScan={(stop) => {
+          setScannedStop(stop);
+          setScanning(false);
+        }}
+      />
     </dialog>
   );
 }

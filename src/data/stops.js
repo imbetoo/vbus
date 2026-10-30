@@ -26,6 +26,17 @@ export function loadStopsList() {
   return stopsListPromise;
 }
 
+/**
+ * Parada por su número de marquesina, con nombre, coordenadas y líneas de los
+ * datos abiertos. Si no está en la lista (parada nueva), `{ id, name:
+ * "Parada N", lines: [] }`: la API de tiempos la conoce igualmente.
+ */
+export function findStop(stopId) {
+  const id = Number(stopId);
+  const stop = stopsList.find((item) => item.id === id);
+  return stop ? { ...stop } : { id, name: `Parada ${id}`, lines: [] };
+}
+
 /** Líneas que pasan por una parada según los datos abiertos (`[]` si no está o aún no se ha cargado la lista). */
 export function stopLines(stopId) {
   return stopsList.find((stop) => stop.id === Number(stopId))?.lines ?? [];

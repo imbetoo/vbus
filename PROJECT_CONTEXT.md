@@ -205,6 +205,26 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     filtrado con `useMemo` que solo dependen de A, B y los recorridos (escribir
     no los recalcula); manejadores con `useCallback` y `RouteResults` en
     `React.memo`.
+- **Escáner QR de marquesinas (`ScannerSheet`):** a pantalla completa en un
+  `<dialog>` (fundido), con la cámara trasera (`getUserMedia`, `playsinline`)
+  y un visor cuadrado con esquinas redondeadas (el resto oscurecido con
+  `box-shadow`; se pone verde al leer, vibra en Android y cierra). Se abre con
+  el botón QR de la cabecera de la consulta rápida (la parada leída pasa a ser
+  el Origen) y con "Escanear QR de la parada" en "Nueva tarjeta" (`StopPicker`
+  → `onSelect`). Lectura: `BarcodeDetector` si existe (Chrome Android); si no
+  (Safari/iOS), jsQR en un Web Worker (`src/lib/qrDecoder.js`,
+  `qrWorker.js`, chunk aparte que solo se descarga al escanear), ~8
+  fotogramas/s reducidos a 800 px. El texto se interpreta con `parseStopQr`
+  (`src/lib/qrStop.js`): QR actual
+  `https://infobus.vitrasa.es:8002/Default.aspx?parada=8480`, cualquier URL
+  con `parada=`, el número solo y, en dominios de Vitrasa/Concello, parámetros
+  genéricos o el número al final de la ruta; `findStop` da los datos de
+  `stopsList`. Estados: navegador sin cámara, permiso denegado, sin cámara,
+  QR que no es de Vitrasa (aviso que se borra solo y sigue escaneando). Plan B:
+  "Hacer una foto" (`<input capture>`, se decodifica la imagen); linterna si la
+  cámara la tiene. La cámara se apaga al cerrar. `useAnimatedDialog` (y la
+  consulta rápida) ignora `cancel`/`close` de diálogos anidados, que React
+  propaga al padre.
 - **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
@@ -357,7 +377,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 Métodos para añadir paradas:
 
-1. Escáner de QR integrado con la cámara (para leer los QR de las marquesinas).
+1. Hecho: escáner de QR integrado con la cámara (`ScannerSheet`, ver arriba).
 2. Pegar la URL del QR o el ID numérico de la parada manualmente.
 3. (Bonus futuro) Lector NFC para paradas compatibles.
 

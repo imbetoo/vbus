@@ -1,10 +1,15 @@
+import { ScanQrCode } from 'lucide-react';
+import { useState } from 'react';
 import { useStopSearch } from '../../hooks/useStopSearch';
+import ScannerSheet from '../scanner/ScannerSheet';
+import { PRESSABLE } from '../ui/pressable';
 import NearbyStops from './NearbyStops';
 import StopSearchField from './StopSearchField';
 
 /**
  * Selector de parada reutilizable: buscador predictivo (dirección o número,
- * sobre las 1157 paradas) y "Paradas cerca de mí". Solo devuelve la parada
+ * sobre las 1157 paradas), "Paradas cerca de mí" y escáner del QR de la
+ * marquesina (`ScannerSheet`). Solo devuelve la parada
  * elegida con `onSelect(stop)` (`{ id, name, lines? }`); quien lo usa decide
  * qué hacer con ella (crear una tarjeta, abrir una consulta rápida…).
  *
@@ -25,6 +30,7 @@ export default function StopPicker({
 }) {
   // Búsqueda con debounce de 200 ms y memorizada (`useStopSearch`).
   const { suggestions } = useStopSearch(query, { excludeId });
+  const [scanning, setScanning] = useState(false);
 
   return (
     <>
@@ -39,6 +45,24 @@ export default function StopPicker({
       />
       {children?.(suggestions.length)}
       <NearbyStops onSelect={onSelect} />
+      {/* Escáner del QR de la marquesina: elige la parada sin teclear. */}
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        onClick={() => setScanning(true)}
+        className={`mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 text-base font-semibold text-white shadow-relief active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
+      >
+        <ScanQrCode className="h-5 w-5 text-accent" strokeWidth={2.5} aria-hidden="true" />
+        Escanear QR de la parada
+      </button>
+      <ScannerSheet
+        open={scanning}
+        onClose={() => setScanning(false)}
+        onScan={(stop) => {
+          setScanning(false);
+          onSelect(stop);
+        }}
+      />
     </>
   );
 }

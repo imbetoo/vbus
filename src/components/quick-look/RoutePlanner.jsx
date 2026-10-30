@@ -55,7 +55,7 @@ const candidates = (stop) => [
  * manejadores con `useCallback`, y los resultados (`RouteResults`, memorizado)
  * no se vuelven a pintar mientras se escribe.
  */
-export default function RoutePlanner({ timeFormat, refreshMs, onAdd }) {
+export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop }) {
   const listId = useId();
   const originInputRef = useRef(null);
   const destinationInputRef = useRef(null);
@@ -67,6 +67,13 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd }) {
   // Origen: la ubicación (GPS) o una parada elegida a mano (`stop: null` = vacío).
   const [originChoice, setOriginChoice] = useState(LOCATION_ORIGIN);
   const [destination, setDestination] = useState(null);
+  // Parada leída con el escáner QR: pasa a ser el Origen (estado ajustado en
+  // render, sin efectos; cada lectura es un objeto nuevo).
+  const [appliedScan, setAppliedScan] = useState(null);
+  if (scannedStop && scannedStop !== appliedScan) {
+    setAppliedScan(scannedStop);
+    setOriginChoice({ source: 'manual', stop: scannedStop });
+  }
   const usingLocation = originChoice.source === 'location';
 
   // Al abrir el panel se pide la ubicación ("Mi ubicación actual").
