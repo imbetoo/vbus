@@ -1,33 +1,56 @@
 import { CircleAlert, DoorOpen, WifiOff } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId } from 'react';
 import { useDeparture } from '../../hooks/useDeparture';
 import { whenLeft } from '../../lib/departure';
 import { minutesText } from '../../lib/tripTracker';
 import { lineColor } from '../../services/vigobusAdapter';
 import LineBadge from '../bus/LineBadge';
+import FocusPill from '../focus/FocusPill';
 import { AlarmPanel, FocusDialog, FocusLayout, NotificationStatus, PANEL, ScreenStatus, StatusRow } from '../focus/FocusScreen';
 
 /**
- * Modo salida a pantalla completa (`FocusDialog`: negro puro, la pantalla se
- * queda encendida hasta el aviso). `departure` = `{ stop, bus, fetchedAt,
- * lead }` o `null` (cerrado).
+ * Modo salida (`session.kind === 'departure'`, lo pinta `FocusHost`). El
+ * seguimiento (`useDeparture`: polling, cuenta atrás y aviso) corre aquí,
+ * fuera del diálogo: sigue aunque la pantalla negra se minimice a la píldora.
+ * `session.payload` = `{ stop, bus, fetchedAt, lead }`; `live` a `false`
+ * mientras la pantalla sale tras terminar.
  */
-export default function DepartureSheet({ departure, notifications, onEnd }) {
+export default function DepartureSession({ session, live, onEnd, onMinimize, onRestore }) {
   const titleId = useId();
-  // Lo último sigue pintado mientras la pantalla sale.
-  const [shown, setShown] = useState(departure);
-  if (departure && departure !== shown) setShown(departure);
+  const departure = session.payload;
+  const state = useDeparture(departure, { onEnd, live });
+  const open = live && session.view === 'full';
+
+  // Con la píldora a la vista, el aviso vuelve solo a pantalla completa.
+  useEffect(() => {
+    if (live && state.alarm && session.view === 'pill') onRestore();
+  }, [live, state.alarm, session.view, onRestore]);
 
   return (
-    <FocusDialog open={Boolean(departure)} onEnd={onEnd} labelledBy={titleId}>
-      {shown && <DepartureView key={shown.bus.id} departure={shown} notifications={notifications} titleId={titleId} onEnd={onEnd} />}
-    </FocusDialog>
+    <>
+      <FocusDialog
+        open={open}
+        active={live}
+        onEnd={onEnd}
+        onMinimize={onMinimize}
+        onRestore={onRestore}
+        labelledBy={titleId}
+      >
+        <DepartureView departure={departure} state={state} notifications={session.notifications} titleId={titleId} onEnd={onEnd} />
+      </FocusDialog>
+      <FocusPill
+        visible={live && session.view === 'pill' && !state.alarm}
+        text={`${state.line} ${state.eta < 0.5 ? 'llegando' : `en ${minutesText(state.eta)}`}`}
+        label="Modo salida"
+        onRestore={onRestore}
+      />
+    </>
   );
 }
 
-function DepartureView({ departure, notifications, titleId, onEnd }) {
+function DepartureView({ departure, state, notifications, titleId, onEnd }) {
   const { stop, lead } = departure;
-  const { eta, line, destination, alarm, lost, status, error } = useDeparture(departure, { onEnd });
+  const { eta, line, destination, alarm, lost, status, error } = state;
 
   return (
     <FocusLayout icon={DoorOpen} label="Modo salida" endLabel="Cancelar aviso" armed={!alarm}>

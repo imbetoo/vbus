@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { getLoadedRouteIndex } from '../data/routes';
 import { stopById } from '../data/stops';
+import { FOCUS_TAGS } from '../lib/focusSession';
 import { formatDistance, haversineMeters } from '../lib/geo';
 import { lineKey } from '../lib/lines';
 import {
@@ -29,7 +30,7 @@ const NEAR_MINUTES = 8;
 // Si el autobús seguido desaparece de la parada de bajada cuando estaba a
 // punto de llegar, es que ha llegado (cuenta como aviso).
 const ARRIVED_SLACK_MIN = 5;
-export const TRIP_NOTIFICATION_TAG = 'vbus-trip';
+export const TRIP_NOTIFICATION_TAG = FOCUS_TAGS.trip;
 
 function alarmText({ reason, eta, remainingMetres, alight }) {
   if (reason === 'gps') return `Estás a ${formatDistance(remainingMetres)} de ${alight.name}.`;
@@ -52,8 +53,11 @@ function alarmText({ reason, eta, remainingMetres, alight }) {
  * - `riding`: en camino. Avisa (vibración, sonido y notificación) cuando
  *   faltan ≤3 min según Vitrasa o ≤700 m según el GPS.
  * - `alarm`: ya avisó; pasados 5 min el modo viaje se apaga solo (`onEnd`).
+ *
+ * `live` a `false` (la pantalla está saliendo tras terminar) apaga el GPS, las
+ * peticiones y el aviso.
  */
-export function useTrip(trip, { originBuses, originUpdatedAt, onEnd }) {
+export function useTrip(trip, { originBuses, originUpdatedAt, onEnd, live = true }) {
   const { boarding, destination, options, lines } = trip;
   const now = useNow(TICK_MS);
   // Línea elegida en la espera (`null`: la del primer autobús que llega).
@@ -93,7 +97,7 @@ export function useTrip(trip, { originBuses, originUpdatedAt, onEnd }) {
   const directKeys = useMemo(() => new Set(lines.map(lineKey)), [lines]);
 
   // --- GPS -----------------------------------------------------------------
-  const gps = useWatchPosition(!alarm);
+  const gps = useWatchPosition(live && !alarm);
   const fix = gps.position && gps.position.accuracy <= MAX_GPS_ACCURACY_M ? gps.position : null;
   const progress = useMemo(() => {
     if (!fix) return null;
@@ -131,7 +135,7 @@ export function useTrip(trip, { originBuses, originUpdatedAt, onEnd }) {
   // --- Tiempo real en la parada de bajada ---------------------------------
   const trackedEta = tracked && !tracked.arrived ? etaNow(tracked, tracked.at, now) : null;
   const pollMs = trackedEta != null && trackedEta <= NEAR_MINUTES ? NEAR_POLL_MS : FAR_POLL_MS;
-  const dest = useStopArrivals(alarm ? null : alight.id, { refreshMs: pollMs, background: true });
+  const dest = useStopArrivals(alarm || !live ? null : alight.id, { refreshMs: pollMs, background: true });
 
   if (dest.status === 'success' && dest.updatedAt !== trackedFor) {
     const candidates = dest.buses.filter((bus) => directKeys.has(lineKey(bus.line)));
@@ -168,7 +172,7 @@ export function useTrip(trip, { originBuses, originUpdatedAt, onEnd }) {
     }
   }
 
-  useAlarmEffect(alarm, { title: 'Prepárate para bajar', tag: TRIP_NOTIFICATION_TAG, onEnd });
+  useAlarmEffect(live ? alarm : null, { title: 'Prepárate para bajar', tag: TRIP_NOTIFICATION_TAG, onEnd });
 
   const aEta = busA && originUpdatedAt ? Math.max(0, etaNow(busA, originUpdatedAt, now)) : null;
 

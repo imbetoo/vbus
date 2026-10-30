@@ -65,6 +65,15 @@ export function keepScreenOn() {
   acquire();
 }
 
+/**
+ * Como `keepScreenOn`, pero si ya se quería y el sistema lo soltó (o lo
+ * denegó), lo vuelve a pedir (llamar desde un toque: volver de la píldora).
+ */
+export function ensureScreenOn() {
+  if (!wanted) keepScreenOn();
+  else acquire();
+}
+
 /** Deja que la pantalla vuelva a bloquearse sola. */
 export function releaseScreen() {
   if (!wanted) return;

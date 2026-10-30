@@ -1,44 +1,105 @@
 import { Bell, CircleAlert, LocateFixed, LocateOff, WifiOff } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { useStopArrivals } from '../../hooks/useStopArrivals';
 import { useTrip } from '../../hooks/useTrip';
 import { formatDistance, haversineMeters } from '../../lib/geo';
 import { lineKey } from '../../lib/lines';
 import { ALERT_MINUTES, minutesText } from '../../lib/tripTracker';
-import { lineColor } from '../../services/vigobusAdapter';
+import { filterBusesByLines, filterReachingBuses } from '../../lib/directRoute';
+import { lineColor, sortBuses } from '../../services/vigobusAdapter';
 import LineBadge from '../bus/LineBadge';
+import FocusPill from '../focus/FocusPill';
 import { AlarmPanel, FocusDialog, FocusLayout, NotificationStatus, PANEL, ScreenStatus, StatusRow } from '../focus/FocusScreen';
 import PillButton from '../ui/PillButton';
 import { PRESSABLE } from '../ui/pressable';
 
+// Llegadas a la parada de subida mientras se espera el autobús.
+const ORIGIN_POLL_MS = 30_000;
+
+// Autobuses de la subida que llegan al destino, igual que en la consulta
+// rápida (`RouteResults`): sin variantes cortas ni sentido contrario.
+function reachingBuses(buses, { plan, lines }) {
+  const sorted = sortBuses(buses, [], 'time');
+  return plan ? filterReachingBuses(sorted, plan).buses : filterBusesByLines(sorted, lines);
+}
+
+/** Texto de la píldora: lo que queda, según la fase. */
+function pillText({ phase, busA, aEta, eta, progress }) {
+  if (phase === 'riding') {
+    if (eta != null) return eta < 0.5 ? 'Llegando a tu parada' : `Bajas en ${minutesText(eta)}`;
+    return progress ? `Quedan ${formatDistance(progress.remainingMetres)}` : 'En camino';
+  }
+  if (busA && aEta != null) return `${busA.line} ${aEta < 0.5 ? 'llegando' : `en ${minutesText(aEta)}`}`;
+  return 'Esperando tu autobús';
+}
+
 /**
- * Modo viaje a pantalla completa (`FocusDialog`: negro puro, la pantalla se
- * queda encendida todo el viaje).
+ * Modo viaje (`session.kind === 'trip'`, lo pinta `FocusHost`). El
+ * seguimiento (`useTrip`: GPS, tiempos de la bajada y aviso) corre aquí,
+ * fuera del diálogo, y también las llegadas a la subida mientras se espera
+ * (antes las daba la consulta rápida): sigue aunque se cierre la consulta o
+ * la pantalla negra se minimice a la píldora. `session.payload` = `{
+ * boarding, destination, options, lines, plan, seed }` (`seed`: las llegadas
+ * de la consulta al empezar); `live` a `false` mientras la pantalla sale.
  */
-export default function TripSheet({ trip, buses, updatedAt, notifications, onEnd }) {
+export default function TripSession({ session, live, onEnd, onMinimize, onRestore }) {
   const titleId = useId();
-  // El último trayecto sigue pintado mientras la pantalla sale.
-  const [shown, setShown] = useState(trip);
-  if (trip && trip !== shown) setShown(trip);
+  const trip = session.payload;
+  const [waiting, setWaiting] = useState(true);
+  const arrivals = useStopArrivals(live && waiting ? trip.boarding.id : null, {
+    refreshMs: ORIGIN_POLL_MS,
+    background: true,
+  });
+  // Las llegadas más recientes: las de la consulta al empezar o las propias.
+  const fresh = arrivals.status === 'success' && arrivals.updatedAt > (trip.seed?.updatedAt ?? 0);
+  const updatedAt = fresh ? arrivals.updatedAt : trip.seed?.updatedAt;
+  const arrivalBuses = fresh ? arrivals.buses : null;
+  const buses = useMemo(
+    () => (arrivalBuses ? reachingBuses(arrivalBuses, trip) : (trip.seed?.buses ?? [])),
+    [arrivalBuses, trip],
+  );
+
+  const state = useTrip(trip, { originBuses: buses, originUpdatedAt: updatedAt, onEnd, live });
+  // Ya en el autobús: la subida deja de pedirse (estado ajustado en render).
+  if (waiting && state.phase !== 'waiting') setWaiting(false);
+  const open = live && session.view === 'full';
+  const alarmed = state.phase === 'alarm';
+
+  // Con la píldora a la vista, el aviso vuelve solo a pantalla completa.
+  useEffect(() => {
+    if (live && alarmed && session.view === 'pill') onRestore();
+  }, [live, alarmed, session.view, onRestore]);
 
   return (
-    <FocusDialog open={Boolean(trip)} onEnd={onEnd} labelledBy={titleId}>
-      {shown && (
+    <>
+      <FocusDialog
+        open={open}
+        active={live}
+        onEnd={onEnd}
+        onMinimize={onMinimize}
+        onRestore={onRestore}
+        labelledBy={titleId}
+      >
         <TripView
-          key={shown.boarding.id}
-          trip={shown}
+          trip={trip}
+          state={state}
           buses={buses}
-          updatedAt={updatedAt}
-          notifications={notifications}
+          notifications={session.notifications}
           titleId={titleId}
           onEnd={onEnd}
         />
-      )}
-    </FocusDialog>
+      </FocusDialog>
+      <FocusPill
+        visible={live && session.view === 'pill' && !alarmed}
+        text={pillText(state)}
+        label="Modo viaje"
+        onRestore={onRestore}
+      />
+    </>
   );
 }
 
-function TripView({ trip, buses, updatedAt, notifications, titleId, onEnd }) {
-  const state = useTrip(trip, { originBuses: buses, originUpdatedAt: updatedAt, onEnd });
+function TripView({ trip, state, buses, notifications, titleId, onEnd }) {
   const { phase, alight, alarm } = state;
   const { destination } = trip;
   const walk =

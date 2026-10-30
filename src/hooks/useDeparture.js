@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { headKey } from '../lib/directRoute';
+import { FOCUS_TAGS } from '../lib/focusSession';
 import { lineKey } from '../lib/lines';
 import { etaNow, pickBus, plural } from '../lib/tripTracker';
 import { useAlarmEffect } from './useFocusSession';
 import { useNow } from './useNow';
 import { useStopArrivals } from './useStopArrivals';
 
-export const DEPARTURE_NOTIFICATION_TAG = 'vbus-departure';
+export const DEPARTURE_NOTIFICATION_TAG = FOCUS_TAGS.departure;
 // La cuenta atrás se recalcula cada pocos segundos entre una petición y otra.
 const TICK_MS = 5_000;
 // Polling adaptativo: cada minuto si queda mucho para el aviso; cada 15 s
@@ -34,9 +35,12 @@ function alarmText({ line, stop, eta }) {
  * menos lo que ha pasado), así un atasco retrasa el aviso en vez de
  * adelantarlo. Entre lecturas, la cuenta atrás sigue con el reloj.
  *
+ * `live` a `false` (la pantalla está saliendo tras terminar) deja de pedir
+ * tiempos y de avisar.
+ *
  * Devuelve `{ eta, line, destination, alarm, lost, status, error }`.
  */
-export function useDeparture(departure, { onEnd }) {
+export function useDeparture(departure, { onEnd, live = true }) {
   const { stop, bus, fetchedAt, lead } = departure;
   const key = lineKey(bus.line);
   const head = headKey(bus.destination);
@@ -47,7 +51,7 @@ export function useDeparture(departure, { onEnd }) {
 
   const eta = Math.max(0, etaNow(tracked, tracked.at, now));
   const pollMs = eta - lead <= NEAR_MARGIN_MIN ? NEAR_POLL_MS : FAR_POLL_MS;
-  const arrivals = useStopArrivals(alarm ? null : stop.id, { refreshMs: pollMs, background: true });
+  const arrivals = useStopArrivals(alarm || !live ? null : stop.id, { refreshMs: pollMs, background: true });
 
   // Cada lectura nueva se procesa una vez (estado ajustado en render).
   if (arrivals.status === 'success' && arrivals.updatedAt !== trackedFor) {
@@ -64,7 +68,7 @@ export function useDeparture(departure, { onEnd }) {
   }
 
   if (!alarm && eta <= lead) setAlarm({ text: alarmText({ line: tracked.line, stop, eta }) });
-  useAlarmEffect(alarm, { title: '¡Es hora de salir!', tag: DEPARTURE_NOTIFICATION_TAG, onEnd });
+  useAlarmEffect(live ? alarm : null, { title: '¡Es hora de salir!', tag: DEPARTURE_NOTIFICATION_TAG, onEnd });
 
   return {
     eta,
