@@ -1,6 +1,5 @@
 import { Navigation } from 'lucide-react';
-import { useEffect } from 'react';
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
 import RecentHeader from '../create-card/RecentHeader';
 import StopRow from '../create-card/StopRow';
 

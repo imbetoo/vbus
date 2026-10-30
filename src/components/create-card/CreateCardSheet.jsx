@@ -27,6 +27,7 @@ export default function CreateCardSheet({ open, onClose, onCreate }) {
 }
 
 function lookupErrorMessage(error, query) {
+  if (error?.kind === 'offline') return 'Sin conexión. Comprueba tu conexión a internet e inténtalo de nuevo.';
   if (error?.kind === 'not_found') return `No existe la parada ${query.trim()}. Revisa el número de la marquesina.`;
   if (error?.kind === 'upstream') return 'Vitrasa no responde ahora mismo. Inténtalo en un momento.';
   if (error?.kind === 'timeout') return 'El servidor está arrancando. Vuelve a intentarlo en unos segundos.';

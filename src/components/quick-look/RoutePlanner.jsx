@@ -8,6 +8,7 @@ import { useStopArrivals } from '../../hooks/useStopArrivals';
 import { useStopSearch } from '../../hooks/useStopSearch';
 import { NEARBY_STOP_M, findDirectLines, mapsDirectionsUrl, planDirectRoute } from '../../lib/directRoute';
 import { haversineMeters } from '../../lib/geo';
+import { useOnlineStatus } from '../../lib/network';
 import { toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import { DEFAULT_CARD_COLOR } from '../bus/cardColors';
 import { PRESSABLE } from '../ui/pressable';
@@ -64,6 +65,8 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
   const location = useNearestStop();
   // Recorridos del GTFS: se cargan al abrir el panel.
   const routeIndex = useRouteIndex();
+  // Modo avión al instante (el Lie-Fi lo detectan las peticiones).
+  const online = useOnlineStatus();
   const { locate, status: locationStatus, stop: locationStop, position, nearestMeters } = location;
   // Origen: la ubicación (GPS) o una parada elegida a mano (`stop: null` = vacío).
   const [originChoice, setOriginChoice] = useState(LOCATION_ORIGIN);
@@ -321,6 +324,7 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
             nearestMeters={nearestMeters}
             mapsUrl={mapsUrl}
             timeFormat={timeFormat}
+            online={online}
           />
         )}
       </div>
