@@ -1,6 +1,6 @@
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
 import { BusFront, Check, Pencil, Search, Settings } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 import EditCardModal from '../components/bus/EditCardModal';
 import EditableRouteItem from '../components/bus/EditableRouteItem';
@@ -27,6 +27,13 @@ const HEADER_BUTTON = 'max-[400px]:h-9 max-[400px]:w-9';
 // Duración de la salida de una tarjeta antes de quitarla del estado (igual que
 // su `duration-[800ms]` en la lista): lenta y relajada.
 const REMOVE_MS = 800;
+
+// Accesos directos del icono (manifest `shortcuts`): `/?accion=…`.
+const LAUNCH_ACTIONS = ['escanear', 'buscar', 'nueva'];
+function readLaunchAction() {
+  const action = new URLSearchParams(window.location.search).get('accion');
+  return LAUNCH_ACTIONS.includes(action) ? action : null;
+}
 
 /** Mensaje de la lista vacía (la app empieza sin tarjetas). */
 function EmptyState() {
@@ -63,11 +70,23 @@ export default function Dashboard({ settings, onSettingChange }) {
   const trackRef = useRef(null);
   const refreshing = usePullToRefresh({ scrollRef, trackRef, onRefresh: refresh, enabled: !isEditing });
   const { theme, toggleTheme } = useTheme();
-  const [isCreating, setIsCreating] = useState(false);
+  // Abierta desde un acceso directo: "Escanear QR" y "Buscar parada" abren la
+  // consulta rápida (con el escáner o el destino enfocado); "Nueva tarjeta",
+  // su hoja. Se lee una vez y se quita de la URL (recargar no lo repite).
+  const [launchAction] = useState(readLaunchAction);
+  useEffect(() => {
+    if (!launchAction) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('accion');
+    window.history.replaceState(window.history.state, '', url);
+  }, [launchAction]);
+  const [isCreating, setIsCreating] = useState(launchAction === 'nueva');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // Consulta rápida (lupa): panel efímero Origen → Destino con los tiempos.
   // No se guarda nada salvo que se pulse "Añadir a Mis Rutas".
-  const [isQuickLookOpen, setIsQuickLookOpen] = useState(false);
+  const [isQuickLookOpen, setIsQuickLookOpen] = useState(launchAction === 'escanear' || launchAction === 'buscar');
+  // Cómo empieza la consulta rápida (solo la primera vez, si vino de un acceso directo).
+  const [quickLookStart, setQuickLookStart] = useState(isQuickLookOpen ? launchAction : null);
   // Tarjetas que ya estaban guardadas al abrir la app: aparecen sin animación
   // de entrada (esa animación es solo para las que se crean ahora).
   const [savedIds] = useState(() => new Set(routes.map((route) => route.id)));
@@ -227,10 +246,15 @@ export default function Dashboard({ settings, onSettingChange }) {
           <QuickLookSheet
             timeFormat={settings.timeFormat}
             refreshMs={settings.refreshSeconds * 1000}
-            onClose={() => setIsQuickLookOpen(false)}
+            startWith={quickLookStart}
+            onClose={() => {
+              setIsQuickLookOpen(false);
+              setQuickLookStart(null);
+            }}
             onAdd={(route) => {
               addRoute(route);
               setIsQuickLookOpen(false);
+              setQuickLookStart(null);
             }}
           />
         )}

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react-swc';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -38,6 +39,32 @@ const pwa = VitePWA({
       { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
       { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
+    // Accesos directos al mantener pulsado el icono (Android y escritorio; iOS
+    // no los admite en apps web). La app lee `?accion=` al arrancar
+    // (Dashboard). Iconos: `npm run icons`.
+    shortcuts: [
+      {
+        name: 'Escanear QR de la parada',
+        short_name: 'Escanear QR',
+        description: 'Abre la cámara para leer el QR de la marquesina',
+        url: '/?accion=escanear',
+        icons: [{ src: 'shortcut-scan.png', sizes: '192x192', type: 'image/png' }],
+      },
+      {
+        name: 'Buscar parada',
+        short_name: 'Buscar parada',
+        description: 'Consulta rápida: tiempos y líneas directas',
+        url: '/?accion=buscar',
+        icons: [{ src: 'shortcut-search.png', sizes: '192x192', type: 'image/png' }],
+      },
+      {
+        name: 'Nueva tarjeta',
+        short_name: 'Nueva tarjeta',
+        description: 'Crea una tarjeta con tu parada y tus líneas',
+        url: '/?accion=nueva',
+        icons: [{ src: 'shortcut-new.png', sizes: '192x192', type: 'image/png' }],
+      },
+    ],
   },
   workbox: {
     // `json`: los recorridos del GTFS (`routes.json`), para el sentido de la
@@ -62,9 +89,12 @@ const pwa = VitePWA({
 
 // https://vite.dev/config/
 // Versión visible en Ajustes (para saber si el móvil tiene el último build o
-// uno antiguo del caché del service worker): hora de compilación y, en
+// uno antiguo del caché del service worker): versión de package.json ("v1.19":
+// se sube con cada PR, `npm version minor`), hora de compilación y, en
 // Vercel, el commit.
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 const BUILD_INFO = {
+  version,
   time: new Date().toISOString(),
   commit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7),
 };

@@ -57,7 +57,7 @@ const candidates = (stop) => [
  * manejadores con `useCallback`, y los resultados (`RouteResults`, memorizado)
  * no se vuelven a pintar mientras se escribe.
  */
-export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop }) {
+export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop, focusDestination = false }) {
   const listId = useId();
   const originInputRef = useRef(null);
   const destinationInputRef = useRef(null);
@@ -85,6 +85,14 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
   useEffect(() => {
     locate();
   }, [locate]);
+
+  // Acceso directo "Buscar parada": el destino se enfoca cuando el panel
+  // termina de subir (enfocarlo antes movería la animación).
+  useEffect(() => {
+    if (!focusDestination) return undefined;
+    const timer = setTimeout(() => destinationInputRef.current?.focus(), 450);
+    return () => clearTimeout(timer);
+  }, [focusDestination]);
 
   const origin = useMemo(() => {
     if (!usingLocation) return originChoice.stop;

@@ -7,9 +7,11 @@ import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
 import { PRESSABLE } from '../ui/pressable';
 
-// "VigoBus • Build: 29/10/2026, 22:45 · 4c8e5b7" (hora de Vigo).
+// "VigoBus v1.19 • Build: 29/10/2026, 22:45 · 4c8e5b7" (versión de
+// package.json sin el parche, hora de Vigo y commit).
 const BUILD_LABEL = (() => {
-  const { time, commit } = __BUILD_INFO__;
+  const { version, time, commit } = __BUILD_INFO__;
+  const [major = '1', minor = '0'] = String(version ?? '').split('.');
   const date = new Date(time).toLocaleString('es-ES', {
     timeZone: 'Europe/Madrid',
     day: '2-digit',
@@ -18,7 +20,7 @@ const BUILD_LABEL = (() => {
     hour: '2-digit',
     minute: '2-digit',
   });
-  return `VigoBus • Build: ${date}${commit ? ` · ${commit}` : ''}`;
+  return `VigoBus v${major}.${minor} • Build: ${date}${commit ? ` · ${commit}` : ''}`;
 })();
 
 const SORT_OPTIONS = [
