@@ -128,6 +128,18 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   (`useStopSearch`, sobre `useDebouncedValue`), y la lista corta (15) no
   necesita virtualización. Cada sugerencia lleva sus coordenadas (`lat`,
   `lon`) si se conocen.
+- **Recientes (estilo Apple Maps):** `src/data/recentStops.js` guarda en
+  LocalStorage (`vbus:recent`) las 5 últimas paradas elegidas, la más reciente
+  primero y sin repetidas (elegir una que ya estaba la sube arriba). Se añaden
+  al elegir una parada en la consulta rápida (origen o destino, también por
+  QR) o en `StopPicker` (buscador, cercanas o QR). Con el campo enfocado y
+  vacío, la lista enseña "Recientes" (encabezado gris con "Borrar" en azul,
+  `RecentHeader`, fila de presentación del listbox) con las mismas filas que
+  los resultados; al escribir, resultados normales. En el origen van debajo de
+  "Mi ubicación actual"; en el destino, sin historial, siguen los tiempos.
+  `useRecentStops` (`useSyncExternalStore`, también entre pestañas) completa
+  cada parada con los datos actuales de `stopsList`. Un LocalStorage vacío,
+  con JSON inválido o bloqueado deja el historial vacío sin errores.
 - **Paradas cerca de mí (misma hoja):** botón de cristal con `LocateFixed` bajo
   el buscador (`NearbyStops`). Pide la ubicación (`getCurrentPosition` de
   `src/lib/geo.js`: alta precisión, 15 s) y con Haversine (sin librerías) ordena
