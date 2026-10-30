@@ -17,8 +17,17 @@ const vigobusProxy = {
 // PWA instalable: manifest + service worker (Workbox) que precachea el build,
 // así la app abre al instante y sin conexión. Los tiempos de VigoBusAPI no se
 // guardan nunca: siempre van a la red.
+//
+// Actualizaciones (OTA): `prompt`. El service worker nuevo se instala en
+// segundo plano y espera; la app lo detecta (`useAppUpdate`, también al
+// volver a ella y cada hora) y enseña "Nueva versión de vBus disponible".
+// "Actualizar" le manda `SKIP_WAITING`: toma el control, borra lo que ya no
+// está en el build (`cleanupOutdatedCaches` y el precache de Workbox) y la
+// página se recarga con el código nuevo entero (HTML, JS y CSS).
 const pwa = VitePWA({
-  registerType: 'autoUpdate',
+  registerType: 'prompt',
+  // El registro lo hace la app (`virtual:pwa-register/react`).
+  injectRegister: false,
   includeAssets: ['icon.svg', 'apple-touch-icon.png'],
   manifest: {
     name: 'vBus',
@@ -74,6 +83,10 @@ const pwa = VitePWA({
     navigateFallbackDenylist: [/^\/vigobus/],
     // Tocar la notificación del modo viaje vuelve a la app (`public/`).
     importScripts: ['sw-notifications.js'],
+    // Al activarse una versión nueva: fuera las cachés de versiones antiguas
+    // de Workbox, y el service worker controla ya todas las ventanas.
+    cleanupOutdatedCaches: true,
+    clientsClaim: true,
     runtimeCaching: [
       {
         // Inter (Google Fonts): hoja de estilos y ficheros de fuente.

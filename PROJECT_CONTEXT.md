@@ -15,10 +15,11 @@ fricción, sin mapas interactivos ni navegación compleja.
 
 - **Actual:** Vite + React + Tailwind CSS (SWC plugin). PWA instalable
   ("vBus") con `vite-plugin-pwa`: manifest standalone, service worker de
-  Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
-  tiempos de la API nunca se cachean; `importScripts` añade
-  `public/sw-notifications.js`: tocar la notificación del modo viaje vuelve
-  a la app) y metaetiquetas de iOS (barra de estado
+  Workbox que precachea el build (abre sin conexión; los tiempos de la API
+  nunca se cachean; `importScripts` añade `public/sw-notifications.js`:
+  tocar la notificación del modo viaje vuelve a la app, y al activarse una
+  versión nueva borra cualquier caché que no sea el precache actual o las
+  fuentes) y metaetiquetas de iOS (barra de estado
   `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
   `public/icon.svg` (favicon y manifest), "símbolo de tránsito" al estilo de
   Cartera o App Store: un único símbolo focal grande, legible de 16 a 512 px.
@@ -34,7 +35,26 @@ fricción, sin mapas interactivos ni navegación compleja.
   → negro abajo). Sin imágenes incrustadas. Los PNG (192, 512, maskable y
   apple-touch-icon a sangre) se generan con `npm run icons`
   (`scripts/generate-icons.js`, `sharp`). Frontend en
-  Vercel (`https://vbus-flame.vercel.app`).
+  Vercel (`https://vbus-flame.vercel.app`; `vercel.json` sirve `/`,
+  `index.html`, `sw.js`, `sw-notifications.js` y el manifest con
+  `Cache-Control: no-cache`).
+- **Actualizaciones OTA (`useAppUpdate`, `UpdateToast`):** `registerType:
+  'prompt'` e `injectRegister: false`; la app registra el service worker con
+  `useRegisterSW` (`virtual:pwa-register/react`) y busca versiones nuevas al
+  abrir, al volver a la app (`visibilitychange`: una PWA de iOS que se
+  reanuda no navega) y cada hora (`registration.update()`, sin red no). La
+  versión nueva se instala en segundo plano y espera (`needRefresh`): aviso
+  flotante abajo, por encima de "Crear nueva tarjeta", sin bloquear nada
+  (grafito opaco, sin `backdrop-filter`; entra y sale con `transform` y
+  `opacity`): icono, "Nueva versión de vBus disponible.", "Actualizar"
+  (píldora blanca; "Actualizando…" con indicador) y una X discreta ("Ahora
+  no": vuelve a avisar en el próximo arranque o con la siguiente versión).
+  "Actualizar" manda `SKIP_WAITING` → `skipWaiting()`; el nuevo toma el
+  control (`clientsClaim`), Workbox poda el precache y
+  `cleanupOutdatedCaches` borra el de versiones antiguas, y la página se
+  recarga con el HTML, JS y CSS nuevos (si en 4 s no toma el control, se
+  recarga igual). Sin service worker (navegador antiguo), sin aviso y sin
+  errores.
 - **Backend:** API propia en `backend/` (FastAPI + uvicorn, Python 3.13, sin
   base de datos) con los mismos endpoints y JSON que VigoBusAPI (`/status`,
   `/stop/{id}`, `/buses/{id}`), leyendo `datos.vigo.org` con caché en memoria y, como infobus, 1 minuto
@@ -537,6 +557,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Hecho: refresco automático cada 30 s (15/30/60 s en Ajustes, `useRoutes`), también al abrir la app y
   al volver a la pestaña; pausado con la pestaña oculta. Con datos simulados,
   los minutos descuentan con el reloj real.
+- Hecho: actualizaciones OTA de la PWA ("Nueva versión de vBus disponible",
+  `useAppUpdate`).
 - Hecho: "tirar para actualizar" (`usePullToRefresh` + `PullIndicator`). Solo
   empieza con la lista arriba del todo y el dedo bajando; banda elástica de
   iOS; el indicador de cristal baja, aparece y gira según lo que se tira.
