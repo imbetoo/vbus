@@ -98,6 +98,8 @@ export default function SwipeableOption({ id, selected, label, onChoose, onActiv
           onDragEnd={(_, info) => {
             const width = widthRef.current;
             if (-info.offset.x >= threshold() || info.velocity.x < -800) {
+              // Soltar sí es un gesto para iOS (el umbral, a mitad de arrastre, no siempre).
+              haptics.impact();
               animate(x, -width, { ...SPRING, onComplete: remove });
             } else {
               animate(x, 0, SPRING);

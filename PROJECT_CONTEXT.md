@@ -424,8 +424,16 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   pantallas estrechas (baja de tamaño por debajo de 380 px).
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
-- **Hápticos (`src/lib/haptics.js`):** todo `navigator.vibrate` pasa por
-  aquí, comprobado y en `try/catch` (en iPhone y escritorio no hace nada).
+- **Hápticos (`src/lib/haptics.js`):** todo lo que vibra pasa por aquí,
+  comprobado y en `try/catch`. En Android, `navigator.vibrate` con sus
+  duraciones y patrones. En iPhone, Safari no tiene Vibration API: desde iOS
+  18, cada toque háptico es un clic en un `<input type="checkbox" switch>`
+  oculto (dentro del diálogo abierto, si lo hay), que da el háptico del
+  sistema; iOS solo lo permite dentro de un gesto (sirve para el nivel 1; la
+  alarma, que salta sola, no vibra en iPhone: avisan el timbre y la
+  notificación). `impact` son dos toques en iOS; al soltar un deslizar para
+  borrar también hay uno (el umbral, a mitad de arrastre, no siempre cuenta
+  como gesto). En iOS 17 o anterior y en escritorio, nada.
   Nivel 1, sutil: `select` 12 ms (interruptores y controles segmentados de
   Ajustes, solo si cambian), `impact` 20 ms (campana, confirmar un aviso,
   "Avisarme", "Sí, detener", levantar una tarjeta en el arrastre, QR
@@ -553,9 +561,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   cercanía" (`sortByProximity`, activado por defecto). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.27 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.28 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.27 = PR #27), hora de compilación
+  PR: `npm version minor`; v1.28 = PR #28), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
