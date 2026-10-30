@@ -34,13 +34,18 @@ export function useAnimatedDialog({ ref, open, onClose, exitMs }) {
     return () => clearTimeout(timer);
   }, [ref, open, exitMs]);
 
+  // React propaga `cancel` y `close` de un `<dialog>` anidado (p. ej. el
+  // escáner QR dentro de "Nueva tarjeta") a los manejadores del padre, aunque
+  // en el DOM no burbujeen: solo cuentan los del propio diálogo.
   const dialogProps = {
     onCancel: (event) => {
+      if (event.target !== event.currentTarget) return;
       // Escape: se anima la salida en vez de cerrar de golpe.
       event.preventDefault();
       onClose();
     },
-    onClose: () => {
+    onClose: (event) => {
+      if (event.target !== event.currentTarget) return;
       // Cierre ya completado (tras la animación o forzado por el navegador).
       ref.current.toggleAttribute('data-shown', false);
       setMounted(false);
