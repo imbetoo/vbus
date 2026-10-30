@@ -6,6 +6,7 @@ import EditCardModal from '../components/bus/EditCardModal';
 import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
+import DepartureAlarm from '../components/departure/DepartureAlarm';
 import QuickLookSheet from '../components/quick-look/QuickLookSheet';
 import Clock from '../components/settings/Clock';
 import SettingsModal from '../components/settings/SettingsModal';
@@ -66,6 +67,8 @@ export default function Dashboard({ settings, onSettingChange }) {
   });
   // Tarjeta que se está editando (modal del lápiz: alias y líneas).
   const [editingRouteId, setEditingRouteId] = useState(null);
+  // Campana de un autobús de una tarjeta (modo salida): `{ stop, bus, fetchedAt }`.
+  const [departureRequest, setDepartureRequest] = useState(null);
   const editingRoute = routes.find((route) => route.id === editingRouteId) ?? null;
   // Modo edición (botón "Editar" o pulsación larga en una tarjeta): las
   // tarjetas tiemblan, se arrastran desde su tirador y se borran con el botón
@@ -220,6 +223,7 @@ export default function Dashboard({ settings, onSettingChange }) {
                 onRemove={handleRemove}
                 onEditCard={setEditingRouteId}
                 onStartEditing={startEditing}
+                onDepartureAlarm={setDepartureRequest}
               />
             ))}
           </Reorder.Group>
@@ -240,6 +244,7 @@ export default function Dashboard({ settings, onSettingChange }) {
           setIsCreating(false);
         }}
       />
+      <DepartureAlarm request={departureRequest} onClose={() => setDepartureRequest(null)} />
       <EditCardModal
         route={editingRoute}
         onClose={() => setEditingRouteId(null)}
