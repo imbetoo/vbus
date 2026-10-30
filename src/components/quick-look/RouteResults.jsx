@@ -13,6 +13,7 @@ import IconTile from '../ui/IconTile';
 import DirectLines from './DirectLines';
 import MapsLink from './MapsLink';
 import ShareRouteButton from './ShareRouteButton';
+import WalkToStopButton from '../ui/WalkToStopButton';
 import TripAlarm from '../trip/TripAlarm';
 
 const BENTO = 'rounded-3xl border border-white/10 bg-white/[0.06]';
@@ -80,11 +81,18 @@ function EmptyState({ icon, title, children }) {
   );
 }
 
-/** Parada de salida: nombre, número y, si sale del GPS, a cuánto está. `action`: botón arriba a la derecha. */
+/**
+ * Parada de salida: nombre, número y, si sale del GPS, a cuánto está. Arriba
+ * a la derecha, "cómo llegar andando" (`WalkToStopButton`) y, si hay,
+ * `action` (compartir la ruta).
+ */
 function StopSummary({ stop, distance, action, children }) {
   return (
-    <section aria-label="Parada de salida" className={`relative ${BENTO} px-4 py-3 ${action ? 'pr-14' : ''}`}>
-      {action && <div className="absolute right-3 top-3">{action}</div>}
+    <section aria-label="Parada de salida" className={`relative ${BENTO} px-4 py-3 ${action ? 'pr-24' : 'pr-14'}`}>
+      <div className="absolute right-3 top-3 flex items-center gap-2">
+        <WalkToStopButton stop={stop} />
+        {action}
+      </div>
       <p className="text-sm font-medium text-white/60">Sale de</p>
       <p className="text-pretty text-lg/snug font-semibold">{stop.name}</p>
       <p className="mt-0.5 text-sm font-medium tabular-nums text-white/60">
