@@ -364,10 +364,21 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("VigoBus • Build: 29/10/2026, 22:42 ·
-  4c8e5b7"): hora de compilación (Europa/Madrid) y commit de Vercel,
-  inyectados por `vite.config.js` (`__BUILD_INFO__`); si no coincide con el
-  último despliegue, el móvil usa un build antiguo del caché.
+  versión en gris pequeño y centrada ("VigoBus v1.19 • Build: 29/10/2026,
+  22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
+  PR: `npm version minor`; v1.19 = PR #19), hora de compilación
+  (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
+  (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
+  build antiguo del caché.
+- **Accesos directos del icono (manifest `shortcuts`):** al mantener pulsado
+  el icono (Android y escritorio; iOS no los admite en apps web): "Escanear
+  QR" (`/?accion=escanear`: consulta rápida con el escáner encima, la parada
+  leída como Origen), "Buscar parada" (`/?accion=buscar`: consulta rápida con
+  el Destino enfocado al terminar de subir) y "Nueva tarjeta"
+  (`/?accion=nueva`). El Dashboard lee `accion` una vez y lo quita de la URL
+  (recargar no lo repite; valores desconocidos se ignoran). Iconos
+  `shortcut-*.png` (192 px, glifo de lucide en blanco sobre el azul del
+  icono, a sangre) generados por `npm run icons`.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
 

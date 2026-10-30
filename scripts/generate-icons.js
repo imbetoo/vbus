@@ -8,6 +8,10 @@
 //   esquinas ni transparencia, porque Android e iOS recortan el icono con su
 //   propia forma (en iOS lo transparente saldría negro). El autobús ya cae en
 //   la zona segura del 80 % que pide el formato maskable.
+// - shortcut-*.png (192 px): iconos de los accesos directos del manifest
+//   (mantener pulsado el icono en Android): el glifo de lucide en blanco sobre
+//   el mismo azul profundo del icono, a sangre y dentro de la zona segura
+//   (el lanzador los recorta con su forma).
 import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
@@ -40,4 +44,35 @@ for (const { file, size, svg } of ICONS) {
     .png({ compressionLevel: 9, adaptiveFiltering: true })
     .toFile(new URL(file, PUBLIC_DIR).pathname);
   console.log(`public/${file} (${size}×${size})`);
+}
+
+// Accesos directos: mismos trazos que los botones de la app (lucide).
+const LUCIDE = new URL('../node_modules/lucide-react/dist/esm/icons/', import.meta.url);
+const SHORTCUTS = [
+  { file: 'shortcut-scan.png', icon: 'scan-qr-code' },
+  { file: 'shortcut-search.png', icon: 'search' },
+  { file: 'shortcut-new.png', icon: 'plus' },
+];
+const toSvgNode = ([tag, attrs]) =>
+  `<${tag} ${Object.entries(attrs)
+    .filter(([name]) => name !== 'key')
+    .map(([name, value]) => `${name}="${value}"`)
+    .join(' ')}/>`;
+
+for (const { file, icon } of SHORTCUTS) {
+  const { __iconData } = await import(new URL(`${icon}.mjs`, LUCIDE).href);
+  const glyph = __iconData.node.map(toSvgNode).join('');
+  // Glifo de 24 → 96 px centrado en 192 (50 %: dentro de la zona segura).
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#1F5BD8"/><stop offset="1" stop-color="#0B1E4A"/>
+  </linearGradient></defs>
+  <rect width="192" height="192" fill="url(#bg)"/>
+  <g transform="translate(48 48) scale(4)" fill="none" stroke="#FFFFFF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">${glyph}</g>
+</svg>`;
+  await sharp(Buffer.from(svg), { density: 144 })
+    .resize(192, 192)
+    .png({ compressionLevel: 9, adaptiveFiltering: true })
+    .toFile(new URL(file, PUBLIC_DIR).pathname);
+  console.log(`public/${file} (192×192)`);
 }

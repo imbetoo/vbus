@@ -27,7 +27,7 @@ const SPRING = { type: 'spring', damping: 32, stiffness: 320, mass: 0.9 };
  * Alto fijo (85 % de la pantalla): las sugerencias y los resultados cambian
  * dentro sin que el panel cambie de tamaño.
  */
-export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs }) {
+export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, startWith = null }) {
   const dialogRef = useRef(null);
   const titleId = useId();
   const dragControls = useDragControls();
@@ -41,6 +41,14 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs }
     const dialog = dialogRef.current;
     if (!dialog.open) dialog.showModal();
   }, []);
+
+  // Desde el acceso directo "Escanear QR": el escáner se abre un fotograma
+  // después, cuando el panel ya es modal, para quedar encima de él.
+  useEffect(() => {
+    if (startWith !== 'escanear') return undefined;
+    const frame = requestAnimationFrame(() => setScanning(true));
+    return () => cancelAnimationFrame(frame);
+  }, [startWith]);
 
   const transition = reduceMotion ? { duration: 0 } : SPRING;
 
@@ -117,7 +125,13 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs }
           </header>
         </div>
 
-        <RoutePlanner timeFormat={timeFormat} refreshMs={refreshMs} onAdd={onAdd} scannedStop={scannedStop} />
+        <RoutePlanner
+          timeFormat={timeFormat}
+          refreshMs={refreshMs}
+          onAdd={onAdd}
+          scannedStop={scannedStop}
+          focusDestination={startWith === 'buscar'}
+        />
       </motion.section>
       <ScannerSheet
         open={scanning}
