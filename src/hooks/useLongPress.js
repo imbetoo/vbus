@@ -21,7 +21,8 @@ export function useLongPress(onLongPress, { enabled = true } = {}) {
     start.current = null;
   };
 
-  useEffect(() => cancel, []);
+  // Al desmontar, ningún temporizador pendiente.
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   return {
     onPointerDown: (event) => {

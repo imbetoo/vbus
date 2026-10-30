@@ -7,13 +7,14 @@ import BusLineItem from '../bus/BusLineItem';
 import IconTile from '../ui/IconTile';
 import DirectLines from './DirectLines';
 import MapsLink from './MapsLink';
+import ShareRouteButton from './ShareRouteButton';
 
 const BENTO = 'rounded-3xl border border-white/10 bg-white/[0.06]';
 
 function errorMessage(error) {
   if (error?.kind === 'offline') return 'Sin conexión. No se pueden cargar los tiempos en directo.';
   if (error?.kind === 'timeout') return 'El servidor está arrancando. Los tiempos llegarán en unos segundos.';
-  if (error?.kind === 'network') return 'No se puede conectar con el servidor de VigoBus.';
+  if (error?.kind === 'network') return 'No se puede conectar con el servidor de vBus.';
   if (error?.kind === 'not_found') return 'Vitrasa no reconoce esta parada.';
   return 'Vitrasa no responde ahora mismo. Inténtalo en un momento.';
 }
@@ -73,10 +74,11 @@ function EmptyState({ icon, title, children }) {
   );
 }
 
-/** Parada de salida: nombre, número y, si sale del GPS, a cuánto está. */
-function StopSummary({ stop, distance, children }) {
+/** Parada de salida: nombre, número y, si sale del GPS, a cuánto está. `action`: botón arriba a la derecha. */
+function StopSummary({ stop, distance, action, children }) {
   return (
-    <section aria-label="Parada de salida" className={`${BENTO} px-4 py-3`}>
+    <section aria-label="Parada de salida" className={`relative ${BENTO} px-4 py-3 ${action ? 'pr-14' : ''}`}>
+      {action && <div className="absolute right-3 top-3">{action}</div>}
       <p className="text-sm font-medium text-white/60">Sale de</p>
       <p className="text-pretty text-lg/snug font-semibold">{stop.name}</p>
       <p className="mt-0.5 text-sm font-medium tabular-nums text-white/60">
@@ -232,7 +234,11 @@ function RouteResults({
     content = (
       <>
         {!plan && <Notice icon={TriangleAlert}>No se pudo verificar el sentido. Confirma en Mapas.</Notice>}
-        <StopSummary stop={boarding} distance={boardingDistance}>
+        <StopSummary
+          stop={boarding}
+          distance={boardingDistance}
+          action={<ShareRouteButton origin={boarding} destination={destination} lines={directLines} />}
+        >
           {switched && (
             <p className="mt-2 text-sm font-medium text-[#409CFF]">
               {`En ${origin.name} no pasa ninguna directa en tu sentido: sube en esta, a ${formatDistance(

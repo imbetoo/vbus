@@ -28,11 +28,19 @@ const HEADER_BUTTON = 'max-[400px]:h-9 max-[400px]:w-9';
 // su `duration-[800ms]` en la lista): lenta y relajada.
 const REMOVE_MS = 800;
 
-// Accesos directos del icono (manifest `shortcuts`): `/?accion=…`.
+// Cómo se abrió la app: accesos directos del icono (manifest `shortcuts`,
+// `/?accion=escanear|buscar|nueva`) o una ruta compartida
+// (`/?origen=6860&destino=8480`, ver `src/lib/share.js`).
 const LAUNCH_ACTIONS = ['escanear', 'buscar', 'nueva'];
-function readLaunchAction() {
-  const action = new URLSearchParams(window.location.search).get('accion');
-  return LAUNCH_ACTIONS.includes(action) ? action : null;
+const LAUNCH_PARAMS = ['accion', 'origen', 'destino'];
+const stopParam = (value) => (/^\d{1,6}$/.test(value ?? '') && Number(value) > 0 ? Number(value) : null);
+function readLaunch() {
+  const params = new URLSearchParams(window.location.search);
+  const origin = stopParam(params.get('origen'));
+  const destination = stopParam(params.get('destino'));
+  if (origin && destination) return { action: 'ruta', route: { origin, destination } };
+  const action = params.get('accion');
+  return LAUNCH_ACTIONS.includes(action) ? { action } : null;
 }
 
 /** Mensaje de la lista vacía (la app empieza sin tarjetas). */
@@ -73,20 +81,22 @@ export default function Dashboard({ settings, onSettingChange }) {
   // Abierta desde un acceso directo: "Escanear QR" y "Buscar parada" abren la
   // consulta rápida (con el escáner o el destino enfocado); "Nueva tarjeta",
   // su hoja. Se lee una vez y se quita de la URL (recargar no lo repite).
-  const [launchAction] = useState(readLaunchAction);
+  // Una ruta compartida abre la consulta rápida con ese Origen y Destino.
+  const [launch] = useState(readLaunch);
   useEffect(() => {
-    if (!launchAction) return;
+    if (!launch) return;
     const url = new URL(window.location.href);
-    url.searchParams.delete('accion');
+    LAUNCH_PARAMS.forEach((param) => url.searchParams.delete(param));
     window.history.replaceState(window.history.state, '', url);
-  }, [launchAction]);
-  const [isCreating, setIsCreating] = useState(launchAction === 'nueva');
+  }, [launch]);
+  const [isCreating, setIsCreating] = useState(launch?.action === 'nueva');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // Consulta rápida (lupa): panel efímero Origen → Destino con los tiempos.
   // No se guarda nada salvo que se pulse "Añadir a Mis Rutas".
-  const [isQuickLookOpen, setIsQuickLookOpen] = useState(launchAction === 'escanear' || launchAction === 'buscar');
-  // Cómo empieza la consulta rápida (solo la primera vez, si vino de un acceso directo).
-  const [quickLookStart, setQuickLookStart] = useState(isQuickLookOpen ? launchAction : null);
+  const [isQuickLookOpen, setIsQuickLookOpen] = useState(['escanear', 'buscar', 'ruta'].includes(launch?.action));
+  // Cómo empieza la consulta rápida (solo la primera vez, si vino de un acceso
+  // directo o de una ruta compartida).
+  const [quickLookStart, setQuickLookStart] = useState(isQuickLookOpen ? launch : null);
   // Tarjetas que ya estaban guardadas al abrir la app: aparecen sin animación
   // de entrada (esa animación es solo para las que se crean ahora).
   const [savedIds] = useState(() => new Set(routes.map((route) => route.id)));

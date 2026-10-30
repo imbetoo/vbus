@@ -3,6 +3,9 @@ import { useEffect, useId, useState } from 'react';
 import RecentHeader from './RecentHeader';
 import StopRow from './StopRow';
 
+// Valor por defecto estable (un `[]` nuevo en cada render rompería la igualdad).
+const NO_SUGGESTIONS = [];
+
 /**
  * Buscador de paradas con el estilo de los campos de búsqueda de iOS y
  * autocompletado (combobox accesible): mientras se escribe una dirección
@@ -17,7 +20,7 @@ export default function StopSearchField({
   value,
   onChange,
   onSelect,
-  suggestions = [],
+  suggestions = NO_SUGGESTIONS,
   recent = false,
   onClearRecents,
   loading = false,

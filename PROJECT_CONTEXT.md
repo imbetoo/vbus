@@ -14,7 +14,7 @@ fricción, sin mapas interactivos ni navegación compleja.
 ### Stack técnico
 
 - **Actual:** Vite + React + Tailwind CSS (SWC plugin). PWA instalable
-  ("VigoBus") con `vite-plugin-pwa`: manifest standalone, service worker de
+  ("vBus") con `vite-plugin-pwa`: manifest standalone, service worker de
   Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
   tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
   `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
@@ -117,9 +117,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   (`src/data/stops.js`):
   `src/data/stopsList.json` con las 1157 paradas de Vitrasa de los datos
   abiertos del Concello (`datos.vigo.org/data/transporte/paradas.json`; su
-  `id` es el número de la marquesina), en un fichero aparte (`loadStopsList`) que `App.jsx` precarga en segundo
-  plano (`requestIdleCallback` 1,5 s después de arrancar), así ya está listo
-  al abrir la hoja; se regenera con `node scripts/update-stops.mjs`. Además,
+  `id` es el número de la marquesina), en un fichero JSON aparte (`?url`, en el
+  precache; `loadStopsList` lo lee con `fetchJsonAsset` de
+  `src/lib/network.js`, con guarda de Lie-Fi y, si falla, reintento en la
+  siguiente llamada: un `import()` dinámico fallido no se puede reintentar) que
+  `App.jsx` precarga en segundo plano (`requestIdleCallback` 1,5 s después de
+  arrancar), así ya está listo al abrir la hoja; índice `stopsById` (Map) para
+  `stopLines`, `stopById` y `findStop` en O(1); se regenera con `node scripts/update-stops.mjs`. Además,
   las paradas ya encontradas por número (`vbus:stops`) y las de las tarjetas,
   por si alguna nueva aún no está. Rendimiento: al cargar la lista se
   construye una vez un índice (nombre normalizado, nombre principal, calle y
@@ -224,6 +228,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     previos, "Sin conexión: son los últimos tiempos recibidos". Mapas sigue
     disponible. `routes.json` desde la red (sin service worker) también tiene
     la guarda de Lie-Fi (`guardAgainstLieFi`).
+  - **Compartir ruta (`ShareRouteButton`, `src/lib/share.js`):** botón sutil
+    (icono de compartir de iOS en Apple, de Android en el resto) arriba a la
+    derecha de "Sale de" en una ruta directa. Texto: "🚌 Ruta vBus: De
+    [subida] a [destino]. Líneas directas: […]. Consulta tiempos en [enlace]",
+    con un enlace `/?origen=6860&destino=8480` que abre la app con ese
+    trayecto (consulta rápida con Origen y Destino, sin pedir el GPS; el
+    Dashboard limpia la URL). `navigator.share` (con `canShare`) en
+    `try/catch`: cancelar el menú no avisa; sin Web Share o si falla, se copia
+    (`clipboard.writeText` o, si no, `<textarea>` + `execCommand`) y un aviso
+    "Ruta copiada al portapapeles" (2,2 s, `role="status"`). Un doble toque no
+    abre dos menús.
   - **Mapas (`MapsLink`):** enlace universal
     `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
     (desde el GPS, la posición exacta del usuario; si una parada no tiene
@@ -364,9 +379,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("VigoBus v1.19 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.20 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.19 = PR #19), hora de compilación
+  PR: `npm version minor`; v1.20 = PR #20), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -381,6 +396,14 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   icono, a sangre) generados por `npm run icons`.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
+- **Códigos de línea:** siempre se comparan con `lineKey` (`src/lib/lines.js`:
+  sin espacios ni mayúsculas, "PSA 1" = "PSA1", "C3d" = "C3D"), también al
+  filtrar las llegadas de las tarjetas (`busesOfLines`), al guardarlas y al
+  ordenarlas por preferencia.
+- **Marca:** "vBus" en todo lo visible (manifest `name`/`short_name`,
+  `<title>`, iOS, Ajustes, mensajes). Los identificadores técnicos
+  (`VigoBusAPI`, `VigoBusError`, `/vigobus`, `vigobus-api.onrender.com`) no
+  cambian.
 
 ## 3. Hoja de ruta
 

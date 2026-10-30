@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { addRecentStop, clearRecentStops, useRecentStops } from '../../data/recentStops';
-import { stopsNear } from '../../data/stops';
+import { findStop, loadStopsList, stopsNear } from '../../data/stops';
 import { useNearestStop } from '../../hooks/useNearestStop';
 import { useRouteIndex } from '../../hooks/useRouteIndex';
 import { useStopArrivals } from '../../hooks/useStopArrivals';
@@ -57,7 +57,14 @@ const candidates = (stop) => [
  * manejadores con `useCallback`, y los resultados (`RouteResults`, memorizado)
  * no se vuelven a pintar mientras se escribe.
  */
-export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop, focusDestination = false }) {
+export default function RoutePlanner({
+  timeFormat,
+  refreshMs,
+  onAdd,
+  scannedStop,
+  focusDestination = false,
+  initialRoute = null,
+}) {
   const listId = useId();
   const originInputRef = useRef(null);
   const destinationInputRef = useRef(null);
@@ -69,7 +76,7 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
   const online = useOnlineStatus();
   const { locate, status: locationStatus, stop: locationStop, position, nearestMeters } = location;
   // Origen: la ubicación (GPS) o una parada elegida a mano (`stop: null` = vacío).
-  const [originChoice, setOriginChoice] = useState(LOCATION_ORIGIN);
+  const [originChoice, setOriginChoice] = useState(initialRoute ? NO_ORIGIN : LOCATION_ORIGIN);
   const [destination, setDestination] = useState(null);
   // Parada leída con el escáner QR: pasa a ser el Origen (estado ajustado en
   // render, sin efectos; cada lectura es un objeto nuevo).
@@ -81,10 +88,28 @@ export default function RoutePlanner({ timeFormat, refreshMs, onAdd, scannedStop
   }
   const usingLocation = originChoice.source === 'location';
 
-  // Al abrir el panel se pide la ubicación ("Mi ubicación actual").
+  // Al abrir el panel se pide la ubicación ("Mi ubicación actual"), salvo si
+  // llega una ruta compartida (ya trae su Origen).
   useEffect(() => {
-    locate();
-  }, [locate]);
+    if (!initialRoute) locate();
+  }, [locate, initialRoute]);
+
+  // Ruta compartida (`/?origen=…&destino=…`): Origen y Destino en cuanto está
+  // la lista de paradas (normalmente ya en caché).
+  useEffect(() => {
+    if (!initialRoute) return undefined;
+    let alive = true;
+    loadStopsList()
+      .catch(() => {})
+      .then(() => {
+        if (!alive) return;
+        setOriginChoice({ source: 'manual', stop: findStop(initialRoute.origin) });
+        setDestination(findStop(initialRoute.destination));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [initialRoute]);
 
   // Acceso directo "Buscar parada": el destino se enfoca cuando el panel
   // termina de subir (enfocarlo antes movería la animación).

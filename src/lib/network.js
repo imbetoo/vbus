@@ -52,6 +52,26 @@ export function guardAgainstLieFi(controller, reason, afterMs = 1_000) {
   return () => clearTimeout(timer);
 }
 
+/**
+ * JSON de la propia app (assets `?url`: lista de paradas, recorridos).
+ * Normalmente sale del precache al instante; desde la red, con `timeoutMs` de
+ * límite y aborto en ≤4 s si hay Lie-Fi. Con `fetch` (y no `import()`), un
+ * fallo se puede reintentar: el navegador no lo recuerda como un módulo roto.
+ */
+export async function fetchJsonAsset(url, { timeoutMs = 10_000 } = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new DOMException(url, 'TimeoutError')), timeoutMs);
+  const stopGuard = guardAgainstLieFi(controller, new DOMException('Sin conexión', 'AbortError'));
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+    stopGuard();
+  }
+}
+
 function subscribe(listener) {
   window.addEventListener('online', listener);
   window.addEventListener('offline', listener);

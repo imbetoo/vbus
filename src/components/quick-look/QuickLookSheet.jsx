@@ -45,7 +45,7 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, 
   // Desde el acceso directo "Escanear QR": el escáner se abre un fotograma
   // después, cuando el panel ya es modal, para quedar encima de él.
   useEffect(() => {
-    if (startWith !== 'escanear') return undefined;
+    if (startWith?.action !== 'escanear') return undefined;
     const frame = requestAnimationFrame(() => setScanning(true));
     return () => cancelAnimationFrame(frame);
   }, [startWith]);
@@ -130,7 +130,8 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, 
           refreshMs={refreshMs}
           onAdd={onAdd}
           scannedStop={scannedStop}
-          focusDestination={startWith === 'buscar'}
+          focusDestination={startWith?.action === 'buscar'}
+          initialRoute={startWith?.route ?? null}
         />
       </motion.section>
       <ScannerSheet

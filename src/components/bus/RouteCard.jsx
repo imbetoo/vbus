@@ -1,5 +1,6 @@
 import { BusFront, GraduationCap, House, Pencil, X } from 'lucide-react';
 import { memo, useId, useState } from 'react';
+import { busesOfLines } from '../../lib/lines';
 import Collapse from '../ui/Collapse';
 import DisclosureButton from '../ui/DisclosureButton';
 import GlassCard from '../ui/GlassCard';
@@ -22,8 +23,8 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * `cardColors.js`). `timeFormat` (ajustes): minutos que faltan o hora de
  * llegada, calculada desde `updatedAt` (cuándo llegaron los tiempos).
  * `onRemove(id)` y `onEditCard(id)` reciben el id: así el padre puede pasar
- * siempre las mismas funciones y `memo` evita repintados. `headerAction` sustituye a la X de eliminar (en modo
- * edición, el tirador para arrastrar).
+ * siempre las mismas funciones y `memo` evita repintados. En modo edición (`editing`) el lápiz sustituye a la
+ * X de eliminar.
  */
 function RouteCard({
   id,
@@ -54,7 +55,7 @@ function RouteCard({
   const displayTitle = name || stopName || title;
   const subtitle = name || !stopId ? `Desde ${stopName}` : `Parada ${stopId}`;
   // Solo las líneas visibles de la tarjeta (`lines`, editables con el lápiz).
-  const shown = lines?.length ? buses.filter((bus) => lines.includes(bus.line)) : buses;
+  const shown = busesOfLines(buses, lines);
   const sorted = sortBuses(shown, lines, sortBy);
   const visible = sorted.slice(0, busesToShow);
   const more = sorted.slice(busesToShow);

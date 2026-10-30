@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getBuses } from '../services/vigobus';
+import { busesOfLines } from '../lib/lines';
 import { withFreshBuses } from '../services/vigobusAdapter';
 
 const STORAGE_KEY = 'vbus:routes';
@@ -68,20 +69,38 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
   // Se cancela al desmontar: ninguna respuesta tardía toca el estado.
   const abortRef = useRef(new AbortController());
 
-  const refresh = useCallback(async () => {
-    const { signal } = abortRef.current;
-    const stopIds = [...new Set(routesRef.current.map((route) => route.stopId).filter(Boolean))];
-    if (!stopIds.length) return;
-    const results = await Promise.allSettled(stopIds.map((stopId) => getBuses(stopId, { all: true, signal })));
-    if (signal.aborted) return;
-    const fresh = new Map(
-      stopIds.flatMap((stopId, i) => (results[i].status === 'fulfilled' ? [[stopId, results[i].value]] : [])),
-    );
-    if (!fresh.size) return;
-    // Actualización funcional: respeta tarjetas creadas o borradas mientras tanto.
-    setRoutes((current) =>
-      current.map((route) => (fresh.has(route.stopId) ? withFreshBuses(route, fresh.get(route.stopId)) : route)),
-    );
+  // Un refresco a la vez: el intervalo, volver a la pestaña, volver la
+  // conexión y "tirar para actualizar" comparten el que esté en curso (con
+  // Lie-Fi cada uno tarda hasta ~4 s en darse por perdido).
+  const inFlightRef = useRef(null);
+  const refresh = useCallback(() => {
+    if (inFlightRef.current) return inFlightRef.current;
+    const run = async () => {
+      const { signal } = abortRef.current;
+      const stopIds = [...new Set(routesRef.current.map((route) => route.stopId).filter(Boolean))];
+      if (!stopIds.length) return;
+      // `Promise.resolve().then`: un error síncrono de `getBuses` (id no
+      // válido) queda como rechazo de esa parada, no rompe el refresco.
+      const results = await Promise.allSettled(
+        stopIds.map((stopId) => Promise.resolve().then(() => getBuses(stopId, { all: true, signal }))),
+      );
+      if (signal.aborted) return;
+      const fresh = new Map(
+        stopIds.flatMap((stopId, i) => (results[i].status === 'fulfilled' ? [[stopId, results[i].value]] : [])),
+      );
+      if (!fresh.size) return;
+      // Actualización funcional: respeta tarjetas creadas o borradas mientras tanto.
+      setRoutes((current) =>
+        current.map((route) => (fresh.has(route.stopId) ? withFreshBuses(route, fresh.get(route.stopId)) : route)),
+      );
+    };
+    // Nunca rechaza: quien la llama sin esperar no deja promesas huérfanas.
+    inFlightRef.current = run()
+      .catch(() => {})
+      .finally(() => {
+        inFlightRef.current = null;
+      });
+    return inFlightRef.current;
   }, []);
 
   // Al abrir la app y al volver a la pestaña.
@@ -93,8 +112,11 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
     };
     refreshIfVisible();
     document.addEventListener('visibilitychange', refreshIfVisible);
+    // Al volver la conexión (salir del modo avión), tiempos al momento.
+    window.addEventListener('online', refreshIfVisible);
     return () => {
       document.removeEventListener('visibilitychange', refreshIfVisible);
+      window.removeEventListener('online', refreshIfVisible);
       controller.abort();
     };
   }, [refresh]);
@@ -125,7 +147,7 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
             alias: clean,
             title: clean || route.stopName || route.title,
             lines: visible,
-            buses: route.buses.filter((bus) => visible.includes(bus.line)),
+            buses: busesOfLines(route.buses, visible),
           };
         }),
       ),
