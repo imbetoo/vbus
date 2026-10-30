@@ -8,6 +8,7 @@ import IconTile from '../ui/IconTile';
 import DirectLines from './DirectLines';
 import MapsLink from './MapsLink';
 import ShareRouteButton from './ShareRouteButton';
+import TripAlarm from '../trip/TripAlarm';
 
 const BENTO = 'rounded-3xl border border-white/10 bg-white/[0.06]';
 
@@ -149,7 +150,7 @@ function Arrivals({ arrivals, buses, emptyText, offlineText, timeFormat }) {
  * - `direct`: dónde subir y bajar, las líneas de menos a más rodeo y solo los
  *   autobuses que llegan (`plan`: sin variantes cortas ni sentido contrario).
  *   Sin `plan` (recorridos no disponibles), cruce plano de líneas con aviso.
- *   Al final, Mapas.
+ *   Debajo, "Avisarme" (modo viaje, `TripAlarm`) y, al final, Mapas.
  *
  * Memorizado: escribir en los campos no lo vuelve a pintar.
  */
@@ -175,6 +176,11 @@ function RouteResults({
     if (mode !== 'direct') return { buses: sorted, hidden: 0 };
     return plan ? filterReachingBuses(sorted, plan) : { buses: filterBusesByLines(sorted, directLines), hidden: 0 };
   }, [arrivals, mode, plan, directLines]);
+  // Trayecto para el modo viaje ("Avisarme").
+  const trip = useMemo(
+    () => (mode === 'direct' ? { boarding, destination, options: plan?.options ?? [], lines: directLines } : null),
+    [mode, boarding, destination, plan, directLines],
+  );
 
   let content;
   if (mode === 'no-origin') {
@@ -262,6 +268,7 @@ function RouteResults({
               : `Se ocultan ${hidden} autobuses de estas líneas que no llegan a tu destino (acaban antes o van en el otro sentido).`}
           </p>
         )}
+        <TripAlarm trip={trip} buses={buses} updatedAt={arrivals.updatedAt} />
         <MapsLink href={mapsUrl}>Ver ruta en Mapas</MapsLink>
       </>
     );

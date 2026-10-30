@@ -10,10 +10,13 @@ import { toBusArrivals } from '../services/vigobusAdapter';
  * error al lado). Sin internet (modo avión o Lie-Fi) el error es de tipo
  * `offline` en ≤4 s: nunca se queda cargando.
  *
+ * Con la pestaña oculta no se pide nada, salvo con `background` (modo viaje:
+ * en Android la página sigue viva un rato y el aviso puede llegar igual).
+ *
  * Devuelve `{ status, buses, updatedAt, error }` con `status`: `loading`
  * (aún sin datos), `success` o `error` (sin datos que enseñar).
  */
-export function useStopArrivals(stopId, { refreshMs = 30_000 } = {}) {
+export function useStopArrivals(stopId, { refreshMs = 30_000, background = false } = {}) {
   const [state, setState] = useState({ stopId, status: 'loading', buses: [] });
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export function useStopArrivals(stopId, { refreshMs = 30_000 } = {}) {
     // perdida y no deben amontonarse.
     let inFlight = false;
     const load = () => {
-      if (document.hidden || inFlight) return;
+      if ((document.hidden && !background) || inFlight) return;
       inFlight = true;
       // `Promise.resolve().then`: un error síncrono (p. ej. un id no válido)
       // también acaba en `catch`, nunca suelto.
@@ -57,7 +60,7 @@ export function useStopArrivals(stopId, { refreshMs = 30_000 } = {}) {
       document.removeEventListener('visibilitychange', load);
       window.removeEventListener('online', load);
     };
-  }, [stopId, refreshMs]);
+  }, [stopId, refreshMs, background]);
 
   // Datos de otra parada (se acaba de cambiar): aún cargando.
   return state.stopId === stopId ? state : { stopId, status: 'loading', buses: [] };
