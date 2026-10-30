@@ -357,6 +357,19 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     navegador cierra el diálogo a la fuerza, se reabre y pregunta. Tras sonar
     (`FocusLayout` `armed={false}`), la X sale sin preguntar; "Entendido" y
     el apagado solo, siempre directos.
+  - **Ir andando a la parada (`WalkToStopButton`, `src/lib/walking.js`):**
+    botón sutil de pisadas (`Footprints`, círculo de 32 px como las acciones
+    de tarjeta) arriba a la derecha de "Sale de" (en una ruta directa, a la
+    izquierda de compartir) y en la cabecera de cada tarjeta de Mis rutas, a
+    la izquierda de la X (no en modo edición). Es un enlace en pestaña nueva
+    a la ruta a pie en la app de mapas del sistema, hasta las coordenadas
+    exactas de la parada (`stopsList.json`; las tarjetas solo guardan el
+    número: se completan con la lista al tocar) y desde la ubicación actual
+    (la pone la app de mapas): en iPhone, iPad y Mac, Apple Maps
+    (`https://maps.apple.com/?daddr=lat,lon&dirflg=w`, siempre instalada y
+    abre la app también desde la PWA); en el resto, Google Maps
+    (`https://www.google.com/maps/dir/?api=1&destination=lat,lon&travelmode=walking`).
+    Sin coordenadas, el nombre de la parada en Vigo.
   - **Mapas (`MapsLink`):** enlace universal
     `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
     (desde el GPS, la posición exacta del usuario; si una parada no tiene
@@ -498,9 +511,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.24 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.25 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.24 = PR #24), hora de compilación
+  PR: `npm version minor`; v1.25 = PR #25), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -584,6 +597,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   salida), con confirmación antes de cancelar.
 - Hecho: Smart Night Mode (23:00–06:00: líneas N primero y "Servicio diurno
   finalizado" plegado).
+- Hecho: ir andando a la parada (Apple Maps en Apple, Google Maps en el
+  resto, modo a pie).
 
 ### Fase 4 · Onboarding — *Pendiente*
 

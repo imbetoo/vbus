@@ -4,6 +4,7 @@ import { useNightMode } from '../../hooks/useNightMode';
 import { busesOfLines } from '../../lib/lines';
 import { arrangeForNight } from '../../lib/nightMode';
 import DepartureBell from '../departure/DepartureBell';
+import WalkToStopButton from '../ui/WalkToStopButton';
 import Collapse from '../ui/Collapse';
 import DisclosureButton from '../ui/DisclosureButton';
 import GlassCard from '../ui/GlassCard';
@@ -106,15 +107,13 @@ function RouteCard({
             className="-mr-1 -mt-1 ml-auto"
           />
         ) : (
-          onRemove && (
-            <IconButton
-              icon={X}
-              size="sm"
-              label={`Eliminar tarjeta ${displayTitle}`}
-              onClick={() => onRemove(id)}
-              className="-mr-1 -mt-1 ml-auto"
-            />
-          )
+          // Cómo llegar andando a la parada y, a su lado, eliminar.
+          <div className="-mr-1 -mt-1 ml-auto flex shrink-0 items-center gap-2">
+            {stopId && <WalkToStopButton stop={{ id: stopId, name: stopName || `Parada ${stopId}` }} />}
+            {onRemove && (
+              <IconButton icon={X} size="sm" label={`Eliminar tarjeta ${displayTitle}`} onClick={() => onRemove(id)} />
+            )}
+          </div>
         )}
       </div>
 
