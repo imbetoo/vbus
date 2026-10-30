@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import MeshBackground from './components/ui/MeshBackground';
 import UpdateToast from './components/ui/UpdateToast';
 import { useAppUpdate } from './hooks/useAppUpdate';
+import { setHapticsEnabled } from './lib/haptics';
 import { useSettings } from './hooks/useSettings';
 import { loadStopsList } from './data/stops';
 import Dashboard from './screens/Dashboard';
@@ -12,6 +13,11 @@ export default function App() {
   const { settings, updateSetting } = useSettings();
   // Versión nueva desplegada: aviso para actualizar (OTA).
   const appUpdate = useAppUpdate();
+
+  // Ajustes → "Vibración": se aplica a toda la app (`haptics.js`).
+  useEffect(() => {
+    setHapticsEnabled(settings.vibration);
+  }, [settings.vibration]);
 
   // El backend puede estar dormido: se le avisa nada más abrir la app.
   useEffect(() => {

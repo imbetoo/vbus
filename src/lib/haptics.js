@@ -36,6 +36,18 @@ function vibrate(pattern) {
   }
 }
 
+// Ajustes → "Vibración" (`setHapticsEnabled`, lo sincroniza `App.jsx`).
+let enabled = true;
+
+/** Activa o desactiva toda la vibración de la app (también la de las alarmas). */
+export function setHapticsEnabled(value) {
+  enabled = Boolean(value);
+  if (!enabled) vibrate(0);
+}
+
+/** ¿Está activada la vibración? (la notificación de alarma la lleva o no). */
+export const hapticsEnabled = () => enabled;
+
 let switchLabel = null;
 
 // Un toque háptico de iOS: clic en un interruptor nativo oculto. Va dentro del
@@ -65,6 +77,7 @@ function iosTick() {
 
 // En Android, la duración o el patrón; en iPhone, `ticks` toques seguidos.
 function feedback(pattern, ticks = 1) {
+  if (!enabled) return false;
   if (HAS_VIBRATE) return vibrate(pattern);
   if (!iosTick()) return false;
   for (let i = 1; i < ticks; i++) setTimeout(iosTick, i * 120);

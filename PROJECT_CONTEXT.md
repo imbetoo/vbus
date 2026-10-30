@@ -551,14 +551,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
   (pulgar blanco que se desliza; accesibles como grupo de radios), con scroll
-  si no cabe. Cinco ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  si no cabe. Seis ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
   "Ordenar autobuses por"; "Formato de tiempo": Relativo ("5 min") o Absoluto
   ("12:45", minutos sumados a `updatedAt`, la hora en que llegaron los
   tiempos, así no se desvía entre refrescos); "Actualizar datos": 15, 30
   (por defecto) o 60 s (el intervalo de `useRoutes` se rehace al cambiarlo); y
   "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
   perla) para móviles con tirones; y el interruptor "Ordenar tarjetas por
-  cercanía" (`sortByProximity`, activado por defecto). Si el navegador permite instalar la app (`beforeinstallprompt`,
+  cercanía" (`sortByProximity`, activado por defecto). Interruptor "Vibración"
+  (`vibration`, activado por defecto): apagado, `haptics.js` no vibra nada
+  (`setHapticsEnabled`, sincronizado en `App.jsx`), tampoco las alarmas ni
+  su notificación; los avisos siguen sonando y notificando. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
   versión en gris pequeño y centrada ("vBus v1.28 • Build: 29/10/2026,
