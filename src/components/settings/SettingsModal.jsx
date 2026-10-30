@@ -5,6 +5,7 @@ import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
+import Switch from '../ui/Switch';
 import { PRESSABLE } from '../ui/pressable';
 
 // "vBus v1.20 • Build: 29/10/2026, 22:45 · 4c8e5b7" (versión de
@@ -55,6 +56,22 @@ function SettingRow({ title, description, children }) {
   );
 }
 
+/** Fila Bento con interruptor a la derecha del título (ajustes de sí/no). */
+function SwitchRow({ title, description, checked, onChange }) {
+  const descriptionId = useId();
+  return (
+    <section className="flex items-start gap-3 rounded-3xl border border-white/10 bg-white/[0.06] p-4">
+      <div className="min-w-0 flex-1">
+        <h3 className="text-base font-semibold tracking-[-0.01em]">{title}</h3>
+        <div id={descriptionId} className="mt-0.5 text-sm font-medium text-white/60">
+          {description}
+        </div>
+      </div>
+      <Switch checked={checked} onChange={onChange} label={title} describedBy={descriptionId} />
+    </section>
+  );
+}
+
 /** Menú flotante de ajustes: afecta a cómo se pintan todas las tarjetas. */
 export default function SettingsModal({ open, onClose, settings, onChange }) {
   const titleId = useId();
@@ -89,6 +106,19 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
             onChange={(value) => onChange('sortBy', value)}
           />
         </SettingRow>
+
+        <SwitchRow
+          title="Ordenar tarjetas por cercanía"
+          description={
+            <span key={String(settings.sortByProximity)} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.sortByProximity
+                ? 'La tarjeta de la parada que tienes más cerca sale la primera. Tu orden no se pierde.'
+                : 'Siempre en el orden en que las colocaste.'}
+            </span>
+          }
+          checked={settings.sortByProximity}
+          onChange={(value) => onChange('sortByProximity', value)}
+        />
 
         <SettingRow
           title="Formato de tiempo"

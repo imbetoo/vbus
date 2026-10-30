@@ -465,6 +465,22 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   arrastrada se levanta (escala 1,03) y deja de temblar. Cada cambio de orden
   se guarda al momento (`reorderRoutes` → `vbus:routes`). En edición se
   desactiva "tirar para actualizar"; sin tarjetas, el modo se apaga solo.
+- **Tarjetas inteligentes por GPS (Smart Sorting, `useNearestCard`,
+  `src/lib/proximity.js`):** con el ajuste "Ordenar tarjetas por cercanía"
+  (interruptor de iOS, `Switch`, activado por defecto) y al menos dos
+  tarjetas, la de la parada más cercana se enseña la primera; el resto, en
+  tu orden. Es solo una vista (`withNearestFirst` sobre `routes`): el orden
+  manual de `vbus:routes` no se toca nunca; en modo edición se ve y se
+  arrastra ese orden (`onReorder` solo editando) y, al desactivar el
+  ajuste, vuelve al instante. Ubicación aproximada (`useWatchPosition` con
+  `highAccuracy: false`, `maximumAge` 60 s, pausada con la app oculta) que
+  solo avisa si te mueves ≥50 m; distancias con Haversine a las paradas de
+  las tarjetas (`stopById`); histéresis de 30 m para que dos paradas casi a
+  la misma distancia no se turnen; a más de 2 km de todas (de viaje), tu
+  orden. Distancia redondeada a 10 m (las tarjetas memorizadas no se
+  repintan por unos metros). La que sube lleva bajo el título "📍 A 120 m ·
+  La más cercana" (azul iOS, `text-sm`); el salto lo anima `Reorder`
+  (`layout="position"`). Sin permiso o sin GPS, tu orden, sin errores.
 - **Alias:** cada tarjeta guarda `alias` ("Trabajo 💻"; vacío = sin alias) y
   `title` (lo que se enseña: el alias o el nombre de la parada). Con alias, el
   alias es el título y el nombre oficial va al subtítulo ("Desde Rúa do Conde
@@ -502,18 +518,19 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
   (pulgar blanco que se desliza; accesibles como grupo de radios), con scroll
-  si no cabe. Cuatro ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  si no cabe. Cinco ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
   "Ordenar autobuses por"; "Formato de tiempo": Relativo ("5 min") o Absoluto
   ("12:45", minutos sumados a `updatedAt`, la hora en que llegaron los
   tiempos, así no se desvía entre refrescos); "Actualizar datos": 15, 30
   (por defecto) o 60 s (el intervalo de `useRoutes` se rehace al cambiarlo); y
   "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
-  perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
+  perla) para móviles con tirones; y el interruptor "Ordenar tarjetas por
+  cercanía" (`sortByProximity`, activado por defecto). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.25 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.26 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.25 = PR #25), hora de compilación
+  PR: `npm version minor`; v1.26 = PR #26), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -589,6 +606,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 ### Fase 3 · UX avanzada — *En curso*
 
+- Hecho: tarjetas inteligentes por GPS (la parada más cercana, la primera;
+  tu orden intacto).
 - Orden inteligente: reordenar las tarjetas según la hora del día (p. ej.
   mañanas: "Ir al instituto" primero; tardes: "Volver a casa" primero).
 - Hecho: alarma de destino ("Avisarme", modo viaje en la consulta rápida).
