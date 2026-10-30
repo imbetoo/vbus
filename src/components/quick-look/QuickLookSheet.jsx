@@ -56,8 +56,11 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, 
   const night = useNightMode();
 
   return (
+    // `data-island-host`: con un aviso minimizado, la píldora (`FocusPill`) se
+    // pinta dentro de este diálogo (pantalla completa) para quedar encima.
     <dialog
       ref={dialogRef}
+      data-island-host
       aria-labelledby={titleId}
       onCancel={(event) => {
         // Solo el Escape de este panel (no el del escáner QR, anidado).

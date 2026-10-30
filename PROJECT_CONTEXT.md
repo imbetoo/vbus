@@ -350,19 +350,53 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     estimación y se dice. Con ETA ≤ X: vibración, tres tonos, notificación
     "¡Es hora de salir!" (`tag` `vbus-departure`) y panel ámbar con
     "Entendido" (suelta la pantalla y vuelve a la consulta).
-  - **Infraestructura común de los modos que avisan:** `useFocusSession`
-    (pantalla encendida, sonido y permiso en el toque; `end()` lo suelta y
-    quita la notificación; al desmontarse a mitad, suelta la pantalla),
-    `useAlarmEffect` + `fireAlert` (`alerts.js`: vibración, tonos y
-    notificación; apagado solo a los 5 min), `useNow` (cuenta atrás),
-    `FocusScreen.jsx` (`FocusDialog` negro, `FocusLayout`, `AlarmPanel`,
-    filas de estado de pantalla y notificaciones) y `tripTracker.js`
-    (`etaNow`, `pickBus`, `minutesText`, `plural`).
+  - **Infraestructura común de los modos que avisan:** sesión global
+    (`src/lib/focusSession.js`, store con `useSyncExternalStore`; una sola a
+    la vez: `{ id, kind: trip|departure, payload, view: full|pill,
+    notifications }`). `startFocus` (en el toque: pantalla encendida, sonido
+    y permiso; sustituye a la anterior), `minimizeFocus`, `restoreFocus`
+    (`ensureScreenOn` + sonido, dentro del gesto) y `endFocus` (suelta la
+    pantalla y quita la notificación). `TripAlarm` y `DepartureAlarm` solo
+    la empiezan; la pinta un único `FocusHost` en `App.jsx`, fuera del
+    Dashboard y de la consulta rápida, así sigue aunque se cierren.
+    `TripSession` y `DepartureSession` corren `useTrip`/`useDeparture`
+    **fuera** del `FocusDialog` (minimizar no los desmonta); el modo viaje
+    pide él mismo las llegadas a la subida mientras espera (cada 30 s, con
+    `background`, filtradas como en la consulta: `filterReachingBuses` con
+    el `plan` del payload; empieza con las de la consulta, `seed`). Al
+    terminar, la pantalla se funde 300 ms con lo último pintado y sin pedir
+    nada (`live` a `false`). Además: `useAlarmEffect` + `fireAlert`
+    (`alerts.js`: vibración, tonos y notificación; apagado solo a los 5
+    min), `useNow` (cuenta atrás), `FocusScreen.jsx` (`FocusDialog` negro,
+    `FocusLayout`, `AlarmPanel`, filas de estado de pantalla y
+    notificaciones) y `tripTracker.js` (`etaNow`, `pickBus`, `minutesText`,
+    `plural`).
+  - **Píldora flotante ("Dynamic Island" interna, `FocusPill`):** el chevron
+    "Minimizar" de la cabecera de los modos (a la izquierda de la X, solo
+    con el aviso pendiente) cierra la pantalla negra sin cancelar nada: la
+    pantalla sigue encendida, el polling, el GPS y la cuenta atrás siguen, y
+    arriba en el centro aparece un óvalo negro opaco (`h-11`, `bg-black`,
+    anillo blanco al 15 %, sin blur) con la campana ámbar y un punto que
+    late y lo que queda en tiempo real: "C3d en 4 min" / "C3d llegando"
+    (salida), "4A en 5 min" o "Esperando tu autobús" (viaje esperando),
+    "Bajas en 6 min", "Quedan 1,3 km" o "En camino" (en camino). Cabe en la
+    franja libre sobre el saludo (`safe-area` + 4 px). Entra con un muelle
+    (escala 0,6 → 1 y opacidad; con movimiento reducido, fundido) cuando la
+    pantalla negra termina de fundirse. Tocarla (o el "atrás" del historial)
+    vuelve a la pantalla completa; al sonar, vuelve sola. Si el foco se
+    había perdido al minimizar, lo recoge. Se pinta con `createPortal`: un
+    `<dialog>` modal va en la *top layer* y deja inerte lo de fuera, así que
+    va dentro del diálogo de arriba si lleva `data-island-host` (la consulta
+    rápida: pantalla completa y sin transform) o en `body` sin diálogos; con
+    otro encima (Ajustes, hojas, modales) se oculta y vuelve al cerrarlo
+    (`MutationObserver` del atributo `open`, solo mientras se ve).
   - **Anti-cancelación (`FocusDialog`, los dos modos):** con la pantalla
     siempre encendida y el móvil en la mano, un toque sin querer no cancela
     la alarma. Tocar fuera no hace nada; la X, Escape, el "atrás" de Android
     (Chrome cancela el diálogo modal) y el "atrás" del historial (una entrada
-    propia mientras está abierta, que se repone y se quita al terminar) abren
+    propia mientras dura la sesión, también minimizada, que se repone y se
+    quita al terminar; con la píldora, "atrás" vuelve a la pantalla completa
+    sin preguntar en vez de salir de la app) abren
     una alerta de iOS (`alertdialog`): "¿Detener el aviso?" · "Si sales
     ahora, se cancelará la alarma programada." con "Cancelar" (neutro, con el
     foco; también Escape o tocar fuera) y "Sí, detener" (rojo). Si el
@@ -566,9 +600,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   su notificación; los avisos siguen sonando y notificando. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.29 • Build: 30/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.30 • Build: 30/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.29 = PR #29), hora de compilación
+  PR: `npm version minor`; v1.30 = PR #30), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -673,6 +707,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Hecho: pulido nativo (deslizar para borrar recientes, hápticos
   centralizados y alarma contundente: vibración larga repetida y timbre a
   todo volumen).
+- Hecho: píldora flotante ("Dynamic Island" interna): los modos viaje y
+  salida se minimizan sin cancelar y siguen a la vista arriba.
 
 ### Fase 4 · Onboarding — *Pendiente*
 

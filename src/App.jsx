@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import FocusHost from './components/focus/FocusHost';
 import MeshBackground from './components/ui/MeshBackground';
 import UpdateToast from './components/ui/UpdateToast';
 import { useAppUpdate } from './hooks/useAppUpdate';
@@ -43,6 +44,9 @@ export default function App() {
     <>
       <MeshBackground lite={settings.background === 'lite'} />
       <Dashboard settings={settings} onSettingChange={updateSetting} />
+      {/* Modo viaje o salida activo (pantalla negra o píldora): fuera del
+          Dashboard, sigue aunque se cierre la consulta rápida. */}
+      <FocusHost />
       <UpdateToast
         open={appUpdate.available}
         updating={appUpdate.updating}

@@ -221,7 +221,10 @@ function RouteResults({
   }, [arrivals, mode, plan, directLines]);
   // Trayecto para el modo viaje ("Avisarme").
   const trip = useMemo(
-    () => (mode === 'direct' ? { boarding, destination, options: plan?.options ?? [], lines: directLines } : null),
+    () =>
+      mode === 'direct'
+        ? { boarding, destination, options: plan?.options ?? [], lines: directLines, plan: plan ?? null }
+        : null,
     [mode, boarding, destination, plan, directLines],
   );
 

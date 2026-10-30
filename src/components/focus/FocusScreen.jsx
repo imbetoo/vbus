@@ -1,4 +1,4 @@
-import { Bell, BellOff, BellRing, Smartphone, X } from 'lucide-react';
+import { Bell, BellOff, BellRing, ChevronDown, Smartphone, X } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
 import { useAnimatedDialog } from '../../hooks/useAnimatedDialog';
 import { haptics } from '../../lib/haptics';
@@ -14,8 +14,9 @@ export const PANEL = 'rounded-3xl border border-white/10 bg-white/[0.06]';
 // Marca de la entrada de historial que pone la pantalla de foco.
 const HISTORY_KEY = 'vbusFocus';
 
-// `requestEnd` (salir pidiendo confirmación) y si la alarma sigue pendiente.
-const FocusContext = createContext({ requestEnd: () => {}, armedRef: { current: false } });
+// `requestEnd` (salir pidiendo confirmación), `minimize` (a la píldora; puede
+// no haber) y si la alarma sigue pendiente.
+const FocusContext = createContext({ requestEnd: () => {}, minimize: null, armedRef: { current: false } });
 
 /**
  * Pantalla completa de los modos que avisan (viaje y salida): `<dialog>`
@@ -35,9 +36,15 @@ const FocusContext = createContext({ requestEnd: () => {}, armedRef: { current: 
  * - Si la alarma ya sonó (`FocusLayout` con `armed` a `false`), no hay nada
  *   que cancelar: se sale sin preguntar.
  *
+ * Minimizar (`onMinimize`, el chevron de `FocusLayout`) no cancela nada: el
+ * diálogo se cierra (`open` a `false`) mientras la sesión sigue (`active`) en
+ * la píldora (`FocusPill`). La entrada del historial es de la sesión, no de
+ * la pantalla: con la píldora, "atrás" vuelve a la pantalla completa
+ * (`onRestore`) en vez de salir de la app y perder la alarma.
+ *
  * `onEnd` termina el modo de verdad (también "Entendido" y el apagado solo).
  */
-export function FocusDialog({ open, onEnd, labelledBy, children }) {
+export function FocusDialog({ open, active = open, onEnd, onMinimize, onRestore, labelledBy, children }) {
   const ref = useRef(null);
   const armedRef = useRef(true);
   const [confirming, setConfirming] = useState(false);
@@ -56,25 +63,26 @@ export function FocusDialog({ open, onEnd, labelledBy, children }) {
     exitMs: EXIT_MS,
   });
 
-  // "Atrás" del historial: una entrada propia mientras está abierta; al
-  // volver atrás se repone y se pregunta. Al cerrar, se quita.
-  const requestEndRef = useRef(requestEnd);
+  // "Atrás" del historial: una entrada propia mientras dura la sesión; al
+  // volver atrás se repone y se pregunta (o, minimizada, se vuelve a la
+  // pantalla completa). Al terminar, se quita.
+  const backRef = useRef(null);
   useEffect(() => {
-    requestEndRef.current = requestEnd;
+    backRef.current = open ? requestEnd : onRestore;
   });
   useEffect(() => {
-    if (!open) return undefined;
+    if (!active) return undefined;
     window.history.pushState({ [HISTORY_KEY]: true }, '');
     const onPopState = () => {
       window.history.pushState({ [HISTORY_KEY]: true }, '');
-      requestEndRef.current();
+      backRef.current?.();
     };
     window.addEventListener('popstate', onPopState);
     return () => {
       window.removeEventListener('popstate', onPopState);
       if (window.history.state?.[HISTORY_KEY]) window.history.back();
     };
-  }, [open]);
+  }, [active]);
 
   return (
     <dialog
@@ -97,7 +105,9 @@ export function FocusDialog({ open, onEnd, labelledBy, children }) {
       }}
       className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none overflow-hidden bg-black p-0 text-white opacity-0 transform-gpu transition-opacity duration-300 ease-spring will-change-[opacity] backdrop:bg-black data-[shown]:opacity-100 motion-reduce:transition-none"
     >
-      <FocusContext.Provider value={{ requestEnd, armedRef }}>{mounted && children}</FocusContext.Provider>
+      <FocusContext.Provider value={{ requestEnd, minimize: onMinimize ?? null, armedRef }}>
+        {mounted && children}
+      </FocusContext.Provider>
       <ConfirmStopModal
         open={open && confirming}
         onCancel={() => setConfirming(false)}
@@ -160,13 +170,13 @@ function ConfirmStopModal({ open, onCancel, onConfirm }) {
 }
 
 /**
- * Columna de una pantalla de foco: cabecera (icono ámbar + nombre del modo y
- * X para salir, que pide confirmación mientras la alarma esté pendiente:
- * `armed`), contenido con scroll y, si no ha avisado aún, la nota de mantener
- * la app abierta.
+ * Columna de una pantalla de foco: cabecera (icono ámbar + nombre del modo,
+ * chevron para minimizar a la píldora mientras la alarma esté pendiente y X
+ * para salir, que entonces pide confirmación: `armed`), contenido con scroll
+ * y, si no ha avisado aún, la nota de mantener la app abierta.
  */
 export function FocusLayout({ icon: Icon, label, endLabel, armed = true, children }) {
-  const { requestEnd, armedRef } = useContext(FocusContext);
+  const { requestEnd, minimize, armedRef } = useContext(FocusContext);
   useEffect(() => {
     armedRef.current = armed;
   }, [armedRef, armed]);
@@ -178,7 +188,19 @@ export function FocusLayout({ icon: Icon, label, endLabel, armed = true, childre
           <Icon className="h-5 w-5 text-amber-300" strokeWidth={2.5} aria-hidden="true" />
           {label}
         </p>
-        <IconButton icon={X} label={endLabel} onClick={requestEnd} />
+        <div className="flex shrink-0 items-center gap-2">
+          {minimize && armed && (
+            <IconButton
+              icon={ChevronDown}
+              label="Minimizar: el aviso sigue activo"
+              onClick={() => {
+                haptics.tap();
+                minimize();
+              }}
+            />
+          )}
+          <IconButton icon={X} label={endLabel} onClick={requestEnd} />
+        </div>
       </header>
 
       <div className="scroll-fade mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-8 pt-4" aria-live="polite">
