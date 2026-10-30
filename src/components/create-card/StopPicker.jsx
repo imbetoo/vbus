@@ -1,6 +1,6 @@
 import { ScanQrCode } from 'lucide-react';
 import { useState } from 'react';
-import { addRecentStop, clearRecentStops, useRecentStops } from '../../data/recentStops';
+import { addRecentStop, removeRecentStop, useRecentStops } from '../../data/recentStops';
 import { useStopSearch } from '../../hooks/useStopSearch';
 import ScannerSheet from '../scanner/ScannerSheet';
 import { PRESSABLE } from '../ui/pressable';
@@ -51,7 +51,7 @@ export default function StopPicker({
         onSelect={select}
         suggestions={showRecents ? recentOptions : suggestions}
         recent={showRecents}
-        onClearRecents={clearRecentStops}
+        onRemoveRecent={(stop) => removeRecentStop(stop.id)}
         loading={loading}
         describedBy={describedBy}
         inputRef={inputRef}

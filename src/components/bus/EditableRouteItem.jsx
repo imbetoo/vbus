@@ -2,6 +2,7 @@ import { Reorder, useDragControls } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useLongPress } from '../../hooks/useLongPress';
+import { haptics } from '../../lib/haptics';
 import RouteCard from './RouteCard';
 
 /**
@@ -52,8 +53,15 @@ function EditableRouteItem({
       dragControls={controls}
       // Solo posición: al reordenar no hace falta corregir tamaños (más barato).
       layout="position"
-      onDragStart={() => setDragging(true)}
-      onDragEnd={() => setDragging(false)}
+      // Levantar y soltar la tarjeta se notan en la mano (toque háptico).
+      onDragStart={() => {
+        haptics.impact();
+        setDragging(true);
+      }}
+      onDragEnd={() => {
+        haptics.tap();
+        setDragging(false);
+      }}
       // Levantada mientras se arrastra, por encima de las demás.
       whileDrag={{ scale: 1.03, zIndex: 10 }}
       inert={leaving}

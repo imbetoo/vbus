@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { addRecentStop, clearRecentStops, useRecentStops } from '../../data/recentStops';
+import { addRecentStop, removeRecentStop, useRecentStops } from '../../data/recentStops';
 import { findStop, loadStopsList, stopsNear } from '../../data/stops';
 import { useNearestStop } from '../../hooks/useNearestStop';
 import { useRouteIndex } from '../../hooks/useRouteIndex';
@@ -248,10 +248,20 @@ export default function RoutePlanner({
       } else if (event.key === 'Enter') {
         event.preventDefault();
         choose(options[highlighted]);
+      } else if (
+        recentFrom >= 0 &&
+        highlighted >= recentFrom &&
+        (event.key === 'Delete' || (event.key === 'Backspace' && !typing))
+      ) {
+        // Teclado: borra la reciente marcada (lo mismo que deslizarla).
+        event.preventDefault();
+        removeRecentStop(options[highlighted].id);
       }
     },
-    [showSuggestions, options, highlighted, choose],
+    [showSuggestions, options, highlighted, choose, recentFrom, typing],
   );
+
+  const removeRecent = useCallback((stop) => removeRecentStop(stop.id), []);
 
   const handleClear = useCallback((field) => {
     if (field === 'origin') setOriginChoice(NO_ORIGIN);
@@ -340,7 +350,7 @@ export default function RoutePlanner({
             activeIndex={highlighted}
             hint={hint}
             recentFrom={recentFrom}
-            onClearRecents={clearRecentStops}
+            onRemoveRecent={removeRecent}
             onChoose={choose}
             onActivate={setActiveIndex}
           />

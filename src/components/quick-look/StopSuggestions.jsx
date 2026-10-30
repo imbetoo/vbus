@@ -2,6 +2,7 @@ import { Navigation } from 'lucide-react';
 import { Fragment, useEffect } from 'react';
 import RecentHeader from '../create-card/RecentHeader';
 import StopRow from '../create-card/StopRow';
+import SwipeableOption from '../create-card/SwipeableOption';
 
 /** `id` de la opción "Mi ubicación actual" de la lista del origen (vuelve al GPS). */
 export const CURRENT_LOCATION_ID = 'current-location';
@@ -13,7 +14,8 @@ export const CURRENT_LOCATION_ID = 'current-location';
  * el campo, que apunta aquí con `aria-activedescendant`).
  *
  * Con el campo vacío, las paradas recientes llevan encima el encabezado
- * "Recientes" (desde `recentFrom`) con "Borrar" (`onClearRecents`).
+ * "Recientes" (desde `recentFrom`) y se borran deslizándolas a la izquierda
+ * (`onRemoveRecent(stop)`; con teclado, Suprimir o Retroceso en el campo).
  *
  * `onMouseDown` evita que el campo pierda el foco antes del clic.
  */
@@ -24,7 +26,7 @@ export default function StopSuggestions({
   activeIndex,
   hint,
   recentFrom = -1,
-  onClearRecents,
+  onRemoveRecent,
   onChoose,
   onActivate,
 }) {
@@ -44,32 +46,44 @@ export default function StopSuggestions({
         >
           {options.map((option, index) => (
             <Fragment key={option.id}>
-              {index === recentFrom && <RecentHeader onClear={onClearRecents} />}
-              <li
-                id={`${id}-${index}`}
-                role="option"
-                aria-selected={index === activeIndex}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => onChoose(option)}
-                onMouseEnter={() => onActivate(index)}
-                className={`flex cursor-pointer items-center gap-3 px-3.5 py-3 transition-colors duration-150 ${
-                  index === activeIndex ? 'bg-white/10' : ''
-                }`}
-              >
-                {option.id === CURRENT_LOCATION_ID ? (
-                  <>
-                    <Navigation className="h-5 w-5 shrink-0 fill-accent text-accent" strokeWidth={2} aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-base/snug font-medium text-[#409CFF]">Mi ubicación actual</span>
-                      <span className="mt-0.5 block truncate text-sm font-medium text-white/60">
-                        Sale de la parada más cercana a ti
-                      </span>
-                    </span>
-                  </>
-                ) : (
+              {index === recentFrom && <RecentHeader />}
+              {recentFrom >= 0 && index >= recentFrom ? (
+                <SwipeableOption
+                  id={`${id}-${index}`}
+                  selected={index === activeIndex}
+                  onChoose={() => onChoose(option)}
+                  onActivate={() => onActivate(index)}
+                  onRemove={() => onRemoveRecent(option)}
+                >
                   <StopRow stop={option} />
-                )}
-              </li>
+                </SwipeableOption>
+              ) : (
+                <li
+                  id={`${id}-${index}`}
+                  role="option"
+                  aria-selected={index === activeIndex}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => onChoose(option)}
+                  onMouseEnter={() => onActivate(index)}
+                  className={`flex cursor-pointer items-center gap-3 px-3.5 py-3 transition-colors duration-150 ${
+                    index === activeIndex ? 'bg-white/10' : ''
+                  }`}
+                >
+                  {option.id === CURRENT_LOCATION_ID ? (
+                    <>
+                      <Navigation className="h-5 w-5 shrink-0 fill-accent text-accent" strokeWidth={2} aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-base/snug font-medium text-[#409CFF]">Mi ubicación actual</span>
+                        <span className="mt-0.5 block truncate text-sm font-medium text-white/60">
+                          Sale de la parada más cercana a ti
+                        </span>
+                      </span>
+                    </>
+                  ) : (
+                    <StopRow stop={option} />
+                  )}
+                </li>
+              )}
             </Fragment>
           ))}
         </ul>

@@ -2,6 +2,7 @@ import { LoaderCircle, Search } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import RecentHeader from './RecentHeader';
 import StopRow from './StopRow';
+import SwipeableOption from './SwipeableOption';
 
 // Valor por defecto estable (un `[]` nuevo en cada render rompería la igualdad).
 const NO_SUGGESTIONS = [];
@@ -14,7 +15,8 @@ const NO_SUGGESTIONS = [];
  * flechas y Enter; Escape las cierra. Al elegir una, `onSelect(stop)`.
  * Con `loading` muestra un indicador giratorio a la derecha. Con `recent`, la
  * lista son las paradas recientes (campo vacío) bajo el encabezado
- * "Recientes", con "Borrar" (`onClearRecents`).
+ * "Recientes"; cada una se borra deslizándola a la izquierda
+ * (`onRemoveRecent(stop)`; con teclado, Suprimir o Retroceso).
  */
 export default function StopSearchField({
   value,
@@ -22,7 +24,7 @@ export default function StopSearchField({
   onSelect,
   suggestions = NO_SUGGESTIONS,
   recent = false,
-  onClearRecents,
+  onRemoveRecent,
   loading = false,
   describedBy,
   inputRef,
@@ -57,6 +59,10 @@ export default function StopSearchField({
     } else if (event.key === 'Enter') {
       event.preventDefault();
       choose(suggestions[activeIndex]);
+    } else if (recent && (event.key === 'Delete' || (event.key === 'Backspace' && !value))) {
+      // Teclado: borra la reciente marcada (lo mismo que deslizarla).
+      event.preventDefault();
+      onRemoveRecent?.(suggestions[activeIndex]);
     } else if (event.key === 'Escape') {
       // Cierra la lista sin cerrar la hoja.
       event.preventDefault();
@@ -124,23 +130,36 @@ export default function StopSearchField({
           aria-label={recent ? 'Paradas recientes' : 'Paradas sugeridas'}
           className="mt-2 animate-fade-in divide-y divide-white/10 max-h-80 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-white/[0.06] motion-reduce:animate-none"
         >
-          {recent && <RecentHeader onClear={onClearRecents} />}
-          {suggestions.map((stop, index) => (
-            <li
-              key={stop.id}
-              id={`${listId}-${index}`}
-              role="option"
-              aria-selected={index === activeIndex}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => choose(stop)}
-              onMouseEnter={() => setActive(index)}
-              className={`flex cursor-pointer items-center gap-3 px-3.5 py-3 transition-colors duration-150 ${
-                index === activeIndex ? 'bg-white/10' : ''
-              }`}
-            >
-              <StopRow stop={stop} />
-            </li>
-          ))}
+          {recent && <RecentHeader />}
+          {suggestions.map((stop, index) =>
+            recent ? (
+              <SwipeableOption
+                key={stop.id}
+                id={`${listId}-${index}`}
+                selected={index === activeIndex}
+                onChoose={() => choose(stop)}
+                onActivate={() => setActive(index)}
+                onRemove={() => onRemoveRecent?.(stop)}
+              >
+                <StopRow stop={stop} />
+              </SwipeableOption>
+            ) : (
+              <li
+                key={stop.id}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={index === activeIndex}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => choose(stop)}
+                onMouseEnter={() => setActive(index)}
+                className={`flex cursor-pointer items-center gap-3 px-3.5 py-3 transition-colors duration-150 ${
+                  index === activeIndex ? 'bg-white/10' : ''
+                }`}
+              >
+                <StopRow stop={stop} />
+              </li>
+            ),
+          )}
         </ul>
       )}
     </div>

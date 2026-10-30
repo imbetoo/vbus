@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { haptics } from '../lib/haptics';
 
 const DELAY_MS = 500;
 // Si el dedo se mueve más que esto, es scroll y no una pulsación larga.
@@ -32,7 +33,7 @@ export function useLongPress(onLongPress, { enabled = true } = {}) {
       timer.current = setTimeout(() => {
         fired.current = true;
         timer.current = null;
-        navigator.vibrate?.(10);
+        haptics.tap();
         onLongPress();
       }, DELAY_MS);
     },

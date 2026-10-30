@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { useRadioGroup } from '../../hooks/useRadioGroup';
+import { haptics } from '../../lib/haptics';
 
 /**
  * Control segmentado estilo iOS: una píldora de cristal con un "pulgar"
@@ -12,7 +13,13 @@ export default function SegmentedControl({ label, options, value, onChange }) {
     0,
     options.findIndex((option) => option.value === value),
   );
-  const itemProps = useRadioGroup(options.length, index, (i) => onChange(options[i].value));
+  // Cambiar de opción da un toque háptico sutil (como los de iOS).
+  const select = (next) => {
+    if (next === value) return;
+    haptics.select();
+    onChange(next);
+  };
+  const itemProps = useRadioGroup(options.length, index, (i) => select(options[i].value));
 
   return (
     <div>
@@ -38,7 +45,7 @@ export default function SegmentedControl({ label, options, value, onChange }) {
             key={option.value}
             type="button"
             {...itemProps(i)}
-            onClick={() => onChange(option.value)}
+            onClick={() => select(option.value)}
             className={`relative z-10 h-9 truncate rounded-full px-3 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               i === index ? 'text-black' : 'text-white/70 active:text-white'
             }`}

@@ -1,4 +1,5 @@
 import { Bell } from 'lucide-react';
+import { haptics } from '../../lib/haptics';
 import IconButton from '../ui/IconButton';
 
 /**
@@ -12,7 +13,10 @@ export default function DepartureBell({ bus, onClick }) {
       size="sm"
       label={`Avisarme para salir: ${bus.line}, ${bus.time < 1 ? 'llegando' : `${bus.time} min`}`}
       aria-haspopup="dialog"
-      onClick={onClick}
+      onClick={(event) => {
+        haptics.impact();
+        onClick(event);
+      }}
     />
   );
 }

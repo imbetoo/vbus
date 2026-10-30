@@ -1,4 +1,5 @@
 import { PRESSABLE } from './pressable';
+import { haptics } from '../../lib/haptics';
 
 /**
  * Interruptor de iOS (`role="switch"`): pista verde encendida, gris apagada, y
@@ -12,7 +13,10 @@ export default function Switch({ checked, onChange, label, describedBy }) {
       aria-checked={checked}
       aria-label={label}
       aria-describedby={describedBy}
-      onClick={() => onChange(!checked)}
+      onClick={() => {
+        haptics.select();
+        onChange(!checked);
+      }}
       className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-300 ease-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-graphite motion-reduce:transition-none ${PRESSABLE} ${
         checked ? 'bg-[#34C759]' : 'bg-white/20'
       }`}
