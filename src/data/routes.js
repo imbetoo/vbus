@@ -12,7 +12,7 @@
  */
 import routesUrl from './routes.json?url';
 import { buildRouteIndex } from '../lib/directRoute';
-import { guardAgainstLieFi } from '../lib/network';
+import { fetchJsonAsset } from '../lib/network';
 
 // Sin respuesta en este tiempo, se sigue sin recorridos (mejor un aviso que
 // una espera infinita con mala cobertura).
@@ -28,7 +28,7 @@ export function getLoadedRouteIndex() {
 
 /** Carga `routes.json` y construye su índice (una vez; si falla, se reintenta en la siguiente llamada). */
 export function loadRouteIndex() {
-  indexPromise ??= fetchRoutes()
+  indexPromise ??= fetchJsonAsset(routesUrl, { timeoutMs: TIMEOUT_MS })
     .then((routes) => {
       const index = buildRouteIndex(routes);
       if (!index.routes.length) throw new Error('routes.json no tiene recorridos');
@@ -40,20 +40,4 @@ export function loadRouteIndex() {
       throw error;
     });
   return indexPromise;
-}
-
-// Normalmente sale del precache al instante. Si no (aún sin service worker),
-// va a la red: límite de 10 s y, con Lie-Fi, aborto en ≤4 s.
-async function fetchRoutes() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(new DOMException('routes.json', 'TimeoutError')), TIMEOUT_MS);
-  const stopGuard = guardAgainstLieFi(controller, new DOMException('Sin conexión', 'AbortError'));
-  try {
-    const response = await fetch(routesUrl, { signal: controller.signal });
-    if (!response.ok) throw new Error(`routes.json: HTTP ${response.status}`);
-    return await response.json();
-  } finally {
-    clearTimeout(timeout);
-    stopGuard();
-  }
 }

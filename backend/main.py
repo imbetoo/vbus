@@ -1,5 +1,5 @@
 """
-Backend de VigoBus: API mínima con los mismos endpoints y el mismo JSON que
+Backend de vBus: API mínima con los mismos endpoints y el mismo JSON que
 VigoBusAPI (https://github.com/David-Lor/VigoBusAPI), para que el frontend no
 cambie, pero sin base de datos ni scraping: lee directamente la API de datos
 abiertos del Concello de Vigo (la misma que usa VigoBusAPI para los tiempos).
@@ -173,7 +173,7 @@ def create_app(transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
             app.state.client = client
             yield
 
-    app = FastAPI(title="VigoBus API", lifespan=lifespan)
+    app = FastAPI(title="vBus API", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=CORS_ORIGINS,
@@ -218,7 +218,7 @@ def create_app(transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     @app.get("/", response_class=PlainTextResponse)
     async def root():
         # Para quien abra la URL del servicio en el navegador.
-        return "VigoBus API funcionando. Prueba /status o /buses/8480."
+        return "vBus API funcionando. Prueba /status o /buses/8480."
 
     @app.get("/status", response_class=PlainTextResponse)
     async def status():

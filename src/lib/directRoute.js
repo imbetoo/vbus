@@ -21,11 +21,9 @@ const STOP_SPACING_M = 350;
 const DETOUR_FACTOR = 2;
 const DETOUR_MARGIN_M = 1000;
 
-/**
- * Clave para comparar líneas escritas de forma distinta en los datos abiertos
- * y en la API de tiempos ("PSA 1" / "PSA1", "C3d" / "C3D").
- */
-export const lineKey = (line) => String(line).replace(/\s+/g, '').toUpperCase();
+import { busesOfLines, lineKey } from './lines';
+
+export { lineKey };
 
 /**
  * Líneas que pasan por el origen y por el destino (sin transbordo), en el
@@ -46,8 +44,7 @@ export function findDirectLines(originLines = [], destinationLines = []) {
 
 /** Solo las llegadas de las líneas indicadas (las directas). */
 export function filterBusesByLines(buses, lines) {
-  const keys = new Set(lines.map(lineKey));
-  return buses.filter((bus) => keys.has(lineKey(bus.line)));
+  return lines.length ? busesOfLines(buses, lines) : [];
 }
 
 // Punto para la URL de Google Maps: coordenadas exactas o, si no se conocen

@@ -61,7 +61,7 @@ node scripts/generate-routes.mjs gtfs_vigo.zip  # o desde un ZIP ya descargado
 
 ## PWA
 
-La app se instala como "VigoBus" (`vite-plugin-pwa`, configurado en
+La app se instala como "vBus" (`vite-plugin-pwa`, configurado en
 `vite.config.js`). El service worker solo existe en el build: para probar la
 instalación, `npm run build && npm run preview` y abrir `http://localhost:4173`.
 En el móvil hace falta HTTPS (por IP de la red local el navegador no registra el

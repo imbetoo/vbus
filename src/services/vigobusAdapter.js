@@ -1,4 +1,5 @@
 import { isUrgent } from '../components/bus/urgency';
+import { busesOfLines, lineKey } from '../lib/lines';
 
 /**
  * Adaptadores: transforman las respuestas crudas de VigoBusAPI al formato que
@@ -91,7 +92,7 @@ export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, c
     lines,
     busesToShow,
     color,
-    buses: buses.filter((bus) => lines.includes(bus.line)),
+    buses: busesOfLines(buses, lines),
     // Cuándo se pidieron los tiempos: base de la hora de llegada absoluta.
     updatedAt: Date.now(),
   };
@@ -104,7 +105,7 @@ export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, c
  */
 export function withFreshBuses(route, response) {
   const { buses } = toBusArrivals(response);
-  return { ...route, buses: buses.filter((bus) => route.lines.includes(bus.line)), updatedAt: Date.now() };
+  return { ...route, buses: busesOfLines(buses, route.lines), updatedAt: Date.now() };
 }
 
 /**
@@ -117,6 +118,6 @@ export function withFreshBuses(route, response) {
 export function sortBuses(buses, lines = [], sortBy = 'time') {
   const byTime = [...buses].sort((a, b) => a.time - b.time);
   if (sortBy !== 'preference') return byTime;
-  const next = lines.map((line) => byTime.find((bus) => bus.line === line)).filter(Boolean);
+  const next = lines.map((line) => byTime.find((bus) => lineKey(bus.line) === lineKey(line))).filter(Boolean);
   return [...next, ...byTime.filter((bus) => !next.includes(bus))];
 }

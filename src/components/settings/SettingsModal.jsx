@@ -7,7 +7,7 @@ import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
 import { PRESSABLE } from '../ui/pressable';
 
-// "VigoBus v1.19 • Build: 29/10/2026, 22:45 · 4c8e5b7" (versión de
+// "vBus v1.20 • Build: 29/10/2026, 22:45 · 4c8e5b7" (versión de
 // package.json sin el parche, hora de Vigo y commit).
 const BUILD_LABEL = (() => {
   const { version, time, commit } = __BUILD_INFO__;
@@ -20,7 +20,7 @@ const BUILD_LABEL = (() => {
     hour: '2-digit',
     minute: '2-digit',
   });
-  return `VigoBus v${major}.${minor} • Build: ${date}${commit ? ` · ${commit}` : ''}`;
+  return `vBus v${major}.${minor} • Build: ${date}${commit ? ` · ${commit}` : ''}`;
 })();
 
 const SORT_OPTIONS = [
@@ -155,7 +155,7 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
               className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 text-base font-semibold active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
             >
               <Download className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden="true" />
-              Instalar VigoBus
+              Instalar vBus
             </button>
           </SettingRow>
         )}

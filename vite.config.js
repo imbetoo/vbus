@@ -21,8 +21,8 @@ const pwa = VitePWA({
   registerType: 'autoUpdate',
   includeAssets: ['icon.svg', 'apple-touch-icon.png'],
   manifest: {
-    name: 'VigoBus',
-    short_name: 'VigoBus',
+    name: 'vBus',
+    short_name: 'vBus',
     description: 'Tus rutinas de Vitrasa con los tiempos de llegada de un vistazo.',
     lang: 'es',
     start_url: '/',

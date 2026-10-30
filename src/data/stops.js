@@ -9,26 +9,35 @@
  *    paradas nuevas que aún no estén en la lista.
  */
 import { haversineMeters } from '../lib/geo';
+import { fetchJsonAsset } from '../lib/network';
+import stopsListUrl from './stopsList.json?url';
 
 const STORAGE_KEY = 'vbus:stops';
 
-// La lista completa (~125 KB) va en su propio fichero: se precarga en un
-// momento libre después de arrancar (`App.jsx`) y, si aún no está, al abrir
-// un buscador.
+// La lista completa (~125 KB) va en su propio fichero JSON (`?url`, en el
+// precache del service worker): se precarga en un momento libre después de
+// arrancar (`App.jsx`) y, si aún no está, al abrir un buscador.
 let stopsList = [];
 let stopsListPromise = null;
 export function loadStopsList() {
-  stopsListPromise ??= import('./stopsList.json').then((module) => {
-    stopsList = module.default;
-    buildListIndex();
-    return stopsList;
-  });
+  stopsListPromise ??= fetchJsonAsset(stopsListUrl)
+    .then((list) => {
+      stopsList = Array.isArray(list) ? list : [];
+      buildListIndex();
+      return stopsList;
+    })
+    .catch((error) => {
+      // Sin red y aún sin service worker: la siguiente llamada lo reintenta
+      // (si no, el buscador se quedaría sin lista hasta recargar la app).
+      stopsListPromise = null;
+      throw error;
+    });
   return stopsListPromise;
 }
 
 /** Parada de los datos abiertos por su número, o `null` (no está o aún no se ha cargado la lista). */
 export function stopById(stopId) {
-  return stopsList.find((stop) => stop.id === Number(stopId)) ?? null;
+  return stopsById.get(Number(stopId)) ?? null;
 }
 
 /**
@@ -38,13 +47,13 @@ export function stopById(stopId) {
  */
 export function findStop(stopId) {
   const id = Number(stopId);
-  const stop = stopsList.find((item) => item.id === id);
+  const stop = stopsById.get(id);
   return stop ? { ...stop } : { id, name: `Parada ${id}`, lines: [] };
 }
 
 /** Líneas que pasan por una parada según los datos abiertos (`[]` si no está o aún no se ha cargado la lista). */
 export function stopLines(stopId) {
-  return stopsList.find((stop) => stop.id === Number(stopId))?.lines ?? [];
+  return stopsById.get(Number(stopId))?.lines ?? [];
 }
 
 /**
@@ -55,15 +64,18 @@ export function stopLines(stopId) {
  * fuera de Vigo).
  */
 export function nearestStops(position, { limit = 5, maxMeters = 800 } = {}) {
-  const sorted = stopsList
-    .filter((stop) => Number.isFinite(stop.lat) && Number.isFinite(stop.lon))
-    .map((stop) => ({ ...stop, distance: haversineMeters(position, stop) }))
-    .sort((a, b) => a.distance - b.distance);
-  const near = sorted.filter((stop) => stop.distance <= maxMeters).slice(0, limit);
+  // Distancias sin copiar las 1157 paradas; solo las elegidas se copian.
+  const sorted = [];
+  for (const stop of stopsList) {
+    if (Number.isFinite(stop.lat) && Number.isFinite(stop.lon)) sorted.push([stop, haversineMeters(position, stop)]);
+  }
+  sorted.sort((a, b) => a[1] - b[1]);
+  const near = sorted.filter(([, distance]) => distance <= maxMeters).slice(0, limit);
+  const chosen = near.length ? near : sorted.slice(0, limit);
   return {
-    stops: near.length ? near : sorted.slice(0, limit),
+    stops: chosen.map(([stop, distance]) => ({ ...stop, distance })),
     withinRadius: near.length > 0,
-    nearestMeters: sorted[0]?.distance ?? Infinity,
+    nearestMeters: sorted[0]?.[1] ?? Infinity,
   };
 }
 
@@ -224,9 +236,17 @@ function extraEntries(knownIds) {
 }
 
 let listIds = new Set();
+// Paradas por número: `stopLines`, `stopById` y `findStop` en O(1).
+let stopsById = new Map();
 function buildListIndex() {
   listIndex = stopsList.map((stop) => indexEntry(stop.id, stop.name, stop.lines, stop.lat, stop.lon));
   listIds = new Set(stopsList.map((stop) => stop.id));
+  stopsById = new Map(stopsList.map((stop) => [stop.id, stop]));
+}
+
+function* iterateEntries() {
+  yield* listIndex;
+  yield* extraEntries(listIds);
 }
 
 const collator = new Intl.Collator('es');
@@ -275,7 +295,8 @@ export function searchStops(query) {
     );
 
   const matches = [];
-  for (const entry of [...listIndex, ...extraEntries(listIds)]) {
+  // Sin copiar el índice (1157 entradas) en cada búsqueda.
+  for (const entry of iterateEntries()) {
     if (isNumber) {
       if (entry.idText.startsWith(text)) matches.push({ entry, score: entry.idText === text ? 0 : 1 });
       continue;
