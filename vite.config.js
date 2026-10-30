@@ -72,6 +72,8 @@ const pwa = VitePWA({
     globPatterns: ['**/*.{js,css,html,svg,png,json}'],
     // Las peticiones a la API no son páginas de la app.
     navigateFallbackDenylist: [/^\/vigobus/],
+    // Tocar la notificación del modo viaje vuelve a la app (`public/`).
+    importScripts: ['sw-notifications.js'],
     runtimeCaching: [
       {
         // Inter (Google Fonts): hoja de estilos y ficheros de fuente.

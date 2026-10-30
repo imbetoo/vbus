@@ -16,7 +16,9 @@ fricción, sin mapas interactivos ni navegación compleja.
 - **Actual:** Vite + React + Tailwind CSS (SWC plugin). PWA instalable
   ("vBus") con `vite-plugin-pwa`: manifest standalone, service worker de
   Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
-  tiempos de la API nunca se cachean) y metaetiquetas de iOS (barra de estado
+  tiempos de la API nunca se cachean; `importScripts` añade
+  `public/sw-notifications.js`: tocar la notificación del modo viaje vuelve
+  a la app) y metaetiquetas de iOS (barra de estado
   `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
   `public/icon.svg` (favicon y manifest), "símbolo de tránsito" al estilo de
   Cartera o App Store: un único símbolo focal grande, legible de 16 a 512 px.
@@ -239,6 +241,50 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     (`clipboard.writeText` o, si no, `<textarea>` + `execCommand`) y un aviso
     "Ruta copiada al portapapeles" (2,2 s, `role="status"`). Un doble toque no
     abre dos menús.
+  - **Modo viaje · alarma de destino (`TripAlarm`, `TripSheet`, `useTrip`,
+    `src/lib/tripTracker.js`):** botón de cristal "Avisarme" (campana ámbar)
+    bajo las llegadas de una ruta directa. Decisión: **Wake Lock + polling en
+    primer plano**, no temporizador en el service worker. El navegador mata
+    un service worker inactivo en segundos (no puede llevar un `setTimeout`
+    de 20 min), no hay notificaciones locales programadas en la web
+    (Notification Triggers se abandonó) y una push de verdad necesita un
+    servidor despierto (Render gratis se duerme); además el temporizador no
+    se reajustaría con un atasco. El toque de "Avisarme" hace, en el mismo
+    gesto (Safari lo exige), `keepScreenOn()` (`src/lib/wakeLock.js`: Screen
+    Wake Lock, se recupera solo al volver a la pestaña), desbloquea el sonido
+    (Web Audio) y pide `Notification.requestPermission()` sin esperarlo (con
+    la versión de callback del Safari antiguo). Abre a pantalla completa un
+    `<dialog>` negro puro (OLED, ahorro de batería) con "Bájate en [parada]"
+    y tres fases:
+    - **Esperando:** "Tu autobús" (el primero que llega a la subida o el que
+      se elija entre las pastillas "¿Vas a coger otro?"), "Llegarías a tu
+      parada en unos N min" y "Ya voy en el autobús". Pasa a "En camino" con
+      ese botón, cuando el GPS ve que avanzas 150 m por el recorrido o, sin
+      GPS, cuando ese autobús pasa por la parada de subida.
+    - **En camino:** "Llegas a tu parada en N min" (enorme), la línea y, con
+      GPS, "Quedan 4 paradas · 1,3 km".
+    - **Aviso:** a ≤3 min según Vitrasa **o** a ≤700 m de recorrido según el
+      GPS (gana la primera): vibración (Android), tres tonos, notificación
+      "Prepárate para bajar" desde el service worker (`tag` `vbus-trip`) y
+      el panel ámbar con "Entendido". Se apaga solo a los 5 min.
+    - **Señales:** (1) tiempo real de la parada de **bajada**
+      (`useStopArrivals` con `background`: cada 60 s, cada 20 s a ≤8 min;
+      incluye el tráfico y se reajusta en cada lectura); la API no dice qué
+      autobús es el tuyo, así que se sigue por continuidad (`pickBus`: el más
+      cercano a lo esperado; al empezar, su llegada a la subida + metros del
+      GTFS a 15 km/h; en la duda, el que llega antes: mejor pronto que
+      tarde). (2) GPS en continuo (`useWatchPosition`, fijos de ≤150 m de
+      precisión) proyectado sobre el tramo del GTFS (`tripPath` +
+      `routeProgress`, solo avanza), que funciona sin red; sin recorrido
+      verificado, línea recta a la parada.
+    - **Sin APIs:** sin Wake Lock, "tócala de vez en cuando"; notificaciones
+      denegadas o sin soporte, aviso solo en pantalla con sonido y
+      vibración; iPhone en Safari, "añade vBus a la pantalla de inicio"
+      (iOS solo notifica a apps instaladas, 16.4+); sin GPS, solo Vitrasa;
+      sin red, solo GPS; sin ninguno, se dice. Siempre: "Mantén vBus
+      abierta: si cambias de app o bloqueas el móvil, el aviso puede no
+      llegar". Terminar (X, Escape o "Entendido") suelta la pantalla y quita
+      la notificación. No se guarda nada.
   - **Mapas (`MapsLink`):** enlace universal
     `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
     (desde el GPS, la posición exacta del usuario; si una parada no tiene
@@ -379,9 +425,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.20 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.21 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.20 = PR #20), hora de compilación
+  PR: `npm version minor`; v1.21 = PR #21), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -433,10 +479,11 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Fallback de errores: si la API/Vitrasa falla, mostrar "Error Vitrasa" y
   enseñar la hora teórica en gris en lugar del tiempo real.
 
-### Fase 3 · UX avanzada — *Pendiente*
+### Fase 3 · UX avanzada — *En curso*
 
 - Orden inteligente: reordenar las tarjetas según la hora del día (p. ej.
   mañanas: "Ir al instituto" primero; tardes: "Volver a casa" primero).
+- Hecho: alarma de destino ("Avisarme", modo viaje en la consulta rápida).
 - Sistema de notificaciones: alarmas configurables por el usuario (p. ej.
   "Avisar cuando queden 5 min para el C3").
 
