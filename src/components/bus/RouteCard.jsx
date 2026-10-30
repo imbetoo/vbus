@@ -1,6 +1,8 @@
 import { BusFront, GraduationCap, House, Pencil, X } from 'lucide-react';
 import { memo, useId, useState } from 'react';
+import { useNightMode } from '../../hooks/useNightMode';
 import { busesOfLines } from '../../lib/lines';
+import { arrangeForNight } from '../../lib/nightMode';
 import DepartureBell from '../departure/DepartureBell';
 import Collapse from '../ui/Collapse';
 import DisclosureButton from '../ui/DisclosureButton';
@@ -9,6 +11,7 @@ import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
 import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from './BusLineItem';
+import DayServiceEnded from './DayServiceEnded';
 import { cardColor } from './cardColors';
 
 // Las rutinas guardan el icono por nombre para poder serializarse.
@@ -28,6 +31,9 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * X de eliminar.
  * Fuera del modo edición, cada autobús lleva su campana (modo salida):
  * `onDepartureAlarm({ stop, bus, fetchedAt })`, también estable.
+ * De noche (Smart Night Mode), las nocturnas con tiempo real van primero y
+ * las diurnas ya terminadas, plegadas al final ("Servicio diurno
+ * finalizado").
  */
 function RouteCard({
   id,
@@ -60,9 +66,14 @@ function RouteCard({
   const subtitle = name || !stopId ? `Desde ${stopName}` : `Parada ${stopId}`;
   // Solo las líneas visibles de la tarjeta (`lines`, editables con el lápiz).
   const shown = busesOfLines(buses, lines);
+  const night = useNightMode();
+  // Solo se anima el cambio de día a noche con la app abierta: al abrirla,
+  // las tarjetas guardadas aparecen directamente.
+  const [nightAtMount] = useState(night);
   const sorted = sortBuses(shown, lines, sortBy);
-  const visible = sorted.slice(0, busesToShow);
-  const more = sorted.slice(busesToShow);
+  const { buses: arranged, ended } = night ? arrangeForNight(sorted, lines) : { buses: sorted, ended: null };
+  const visible = arranged.slice(0, busesToShow);
+  const more = arranged.slice(busesToShow);
   const stop = { id: stopId, name: stopName || `Parada ${stopId}` };
   const renderBus = (bus) => (
     <BusLineItem
@@ -109,7 +120,11 @@ function RouteCard({
 
       <div className="mx-1 mb-1 mt-3 border-t border-white/10" />
 
-      <ul className="px-1">
+      {/* `key`: al pasar de día a noche (o al revés), la lista entra con un fundido. */}
+      <ul
+        key={night ? 'night' : 'day'}
+        className={`px-1 ${night !== nightAtMount ? 'animate-fade-in motion-reduce:animate-none' : ''}`}
+      >
         {visible.map(renderBus)}
       </ul>
 
@@ -131,6 +146,12 @@ function RouteCard({
             </DisclosureButton>
           </div>
         </>
+      )}
+
+      {ended && (
+        <div className="px-1">
+          <DayServiceEnded ended={ended} fetchedAt={updatedAt} />
+        </div>
       )}
     </GlassCard>
   );

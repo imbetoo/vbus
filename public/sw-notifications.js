@@ -12,3 +12,21 @@ self.addEventListener('notificationclick', (event) => {
     }),
   );
 });
+
+/*
+ * Al activarse una versión nueva (tras "Actualizar"): fuera cualquier caché
+ * que no sea la del build actual (precache de Workbox, que ya se poda solo)
+ * o la de las fuentes. Así no queda nada de versiones antiguas.
+ */
+const KEEP_CACHES = [/^workbox-precache/, /^google-fonts$/];
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((names) =>
+        Promise.all(
+          names.filter((name) => !KEEP_CACHES.some((keep) => keep.test(name))).map((name) => caches.delete(name)),
+        ),
+      ),
+  );
+});

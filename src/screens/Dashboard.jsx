@@ -1,5 +1,5 @@
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
-import { BusFront, Check, Pencil, Search, Settings } from 'lucide-react';
+import { BusFront, Check, Moon, Pencil, Search, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 import EditCardModal from '../components/bus/EditCardModal';
@@ -13,6 +13,7 @@ import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
 import PullIndicator from '../components/ui/PullIndicator';
+import { useNightMode } from '../hooks/useNightMode';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
 import { useTheme } from '../hooks/useTheme';
@@ -124,12 +125,30 @@ export default function Dashboard({ settings, onSettingChange }) {
     }, REMOVE_MS);
   }, [removeRoute]);
   const startEditing = useCallback(() => setIsEditing(true), []);
+  // Smart Night Mode (23:00–06:00): saludo de noche y una luna discreta.
+  const night = useNightMode();
+  // Solo se anima el cambio con la app abierta, no al abrirla.
+  const [nightAtStart] = useState(night);
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
       <header className="flex shrink-0 items-end justify-between gap-3 text-black dark:text-white">
         <div className="min-w-0">
-          <p className="text-xl font-semibold tracking-tight sm:text-2xl">Buenos días</p>
+          {/* `key`: el saludo cambia con un fundido si dan las 23:00 o las 06:00. */}
+          <p
+            key={night ? 'night' : 'day'}
+            className={`flex items-center gap-1.5 text-xl font-semibold tracking-tight sm:text-2xl ${
+              night !== nightAtStart ? 'animate-fade-in motion-reduce:animate-none' : ''
+            }`}
+          >
+            {night ? 'Buenas noches' : 'Buenos días'}
+            {night && (
+              <span title="Modo nocturno: líneas N primero">
+                <Moon className="h-4 w-4 fill-current opacity-60" strokeWidth={2.25} aria-hidden="true" />
+                <span className="sr-only">· Modo nocturno: líneas N primero</span>
+              </span>
+            )}
+          </p>
           <h1 className="whitespace-nowrap text-[1.625rem] font-bold tracking-[-0.03em] min-[360px]:text-[1.875rem] min-[380px]:text-4xl sm:text-5xl">
             Mis rutas
           </h1>

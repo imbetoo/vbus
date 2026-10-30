@@ -1,6 +1,7 @@
 import { motion, useDragControls, useReducedMotion } from 'framer-motion';
-import { ScanQrCode, Search, X } from 'lucide-react';
+import { Moon, ScanQrCode, Search, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { useNightMode } from '../../hooks/useNightMode';
 import ScannerSheet from '../scanner/ScannerSheet';
 import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
@@ -51,6 +52,8 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, 
   }, [startWith]);
 
   const transition = reduceMotion ? { duration: 0 } : SPRING;
+  // Smart Night Mode: el subtítulo lo dice, con una luna discreta.
+  const night = useNightMode();
 
   return (
     <dialog
@@ -103,7 +106,16 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, 
               icon={Search}
               iconStrokeWidth={2.5}
               title="Consulta rápida"
-              subtitle="Tiempos y líneas directas"
+              subtitle={
+                night ? (
+                  <span key="night" className="inline-flex animate-fade-in items-center gap-1.5 motion-reduce:animate-none">
+                    <Moon className="h-3.5 w-3.5 shrink-0 fill-current opacity-70" strokeWidth={2.25} aria-hidden="true" />
+                    Modo nocturno
+                  </span>
+                ) : (
+                  'Tiempos y líneas directas'
+                )
+              }
               titleAs="h2"
               titleId={titleId}
             />

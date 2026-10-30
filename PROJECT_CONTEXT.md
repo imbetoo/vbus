@@ -15,10 +15,11 @@ fricción, sin mapas interactivos ni navegación compleja.
 
 - **Actual:** Vite + React + Tailwind CSS (SWC plugin). PWA instalable
   ("vBus") con `vite-plugin-pwa`: manifest standalone, service worker de
-  Workbox con `autoUpdate` que precachea el build (abre sin conexión; los
-  tiempos de la API nunca se cachean; `importScripts` añade
-  `public/sw-notifications.js`: tocar la notificación del modo viaje vuelve
-  a la app) y metaetiquetas de iOS (barra de estado
+  Workbox que precachea el build (abre sin conexión; los tiempos de la API
+  nunca se cachean; `importScripts` añade `public/sw-notifications.js`:
+  tocar la notificación del modo viaje vuelve a la app, y al activarse una
+  versión nueva borra cualquier caché que no sea el precache actual o las
+  fuentes) y metaetiquetas de iOS (barra de estado
   `black-translucent`, `apple-touch-icon`). Icono maestro vectorial
   `public/icon.svg` (favicon y manifest), "símbolo de tránsito" al estilo de
   Cartera o App Store: un único símbolo focal grande, legible de 16 a 512 px.
@@ -34,7 +35,26 @@ fricción, sin mapas interactivos ni navegación compleja.
   → negro abajo). Sin imágenes incrustadas. Los PNG (192, 512, maskable y
   apple-touch-icon a sangre) se generan con `npm run icons`
   (`scripts/generate-icons.js`, `sharp`). Frontend en
-  Vercel (`https://vbus-flame.vercel.app`).
+  Vercel (`https://vbus-flame.vercel.app`; `vercel.json` sirve `/`,
+  `index.html`, `sw.js`, `sw-notifications.js` y el manifest con
+  `Cache-Control: no-cache`).
+- **Actualizaciones OTA (`useAppUpdate`, `UpdateToast`):** `registerType:
+  'prompt'` e `injectRegister: false`; la app registra el service worker con
+  `useRegisterSW` (`virtual:pwa-register/react`) y busca versiones nuevas al
+  abrir, al volver a la app (`visibilitychange`: una PWA de iOS que se
+  reanuda no navega) y cada hora (`registration.update()`, sin red no). La
+  versión nueva se instala en segundo plano y espera (`needRefresh`): aviso
+  flotante abajo, por encima de "Crear nueva tarjeta", sin bloquear nada
+  (grafito opaco, sin `backdrop-filter`; entra y sale con `transform` y
+  `opacity`): icono, "Nueva versión de vBus disponible.", "Actualizar"
+  (píldora blanca; "Actualizando…" con indicador) y una X discreta ("Ahora
+  no": vuelve a avisar en el próximo arranque o con la siguiente versión).
+  "Actualizar" manda `SKIP_WAITING` → `skipWaiting()`; el nuevo toma el
+  control (`clientsClaim`), Workbox poda el precache y
+  `cleanupOutdatedCaches` borra el de versiones antiguas, y la página se
+  recarga con el HTML, JS y CSS nuevos (si en 4 s no toma el control, se
+  recarga igual). Sin service worker (navegador antiguo), sin aviso y sin
+  errores.
 - **Backend:** API propia en `backend/` (FastAPI + uvicorn, Python 3.13, sin
   base de datos) con los mismos endpoints y JSON que VigoBusAPI (`/status`,
   `/stop/{id}`, `/buses/{id}`), leyendo `datos.vigo.org` con caché en memoria y, como infobus, 1 minuto
@@ -371,7 +391,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   cámara la tiene. La cámara se apaga al cerrar. `useAnimatedDialog` (y la
   consulta rápida) ignora `cancel`/`close` de diálogos anidados, que React
   propaga al padre.
-- **Cabecera:** a la izquierda "Buenos días" / "Mis rutas"; a la derecha, en
+- **Cabecera:** a la izquierda "Buenos días" (de noche, "Buenas noches" con
+  una luna) / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
   abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo cuatro
@@ -477,9 +498,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.23 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.24 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.23 = PR #23), hora de compilación
+  PR: `npm version minor`; v1.24 = PR #24), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -494,6 +515,26 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   icono, a sangre) generados por `npm run icons`.
 - **Urgencia:** tiempos < 3 min usan el rojo nativo de iOS y una animación
   sutil (`ping`).
+- **Smart Night Mode (`useNightMode`, `src/lib/nightMode.js`):** de 23:00 a
+  06:00 (hora del dispositivo). `useNightMode` es un store único
+  (`useSyncExternalStore`) con un temporizador programado justo para el
+  próximo cambio (y comprobación al volver a la pestaña): si dan las 23:00 o
+  las 06:00 con la app abierta, todo cambia solo, sin recargar. Indicadores
+  discretos: el saludo pasa a "Buenas noches" con una luna pequeña y el
+  subtítulo de la consulta rápida a "🌙 Modo nocturno". En la lista de
+  llegadas de la consulta rápida y dentro de las tarjetas,
+  `arrangeForNight`: las nocturnas (`isNightLine`: "N" + número, N1 y N4)
+  con tiempo real (≤2 h) suben arriba; luego las diurnas que aún pasan esta
+  noche, en su orden; las nocturnas lejanas, al final. Las diurnas
+  terminadas (solo con estimaciones de más de 2 h, que son las de mañana, o
+  sin ningún autobús entre las líneas de la parada o de la tarjeta) no se
+  borran: van al final, plegadas, en "Servicio diurno finalizado · N
+  líneas" (`DayServiceEnded`: `DisclosureButton` + `Collapse`), en gris
+  (`opacity-50 grayscale`), sin campana y con "Primero a las 07:50" o "Sin
+  autobuses hasta mañana". El autobús de mañana de una diurna que aún pasa
+  esta noche no se enseña. Al cambiar de día a noche con la app abierta,
+  las listas y el saludo entran con un fundido (al abrir la app, no). La
+  campana (modo salida) sigue en todas las filas de la lista principal.
 - **Códigos de línea:** siempre se comparan con `lineKey` (`src/lib/lines.js`:
   sin espacios ni mayúsculas, "PSA 1" = "PSA1", "C3d" = "C3D"), también al
   filtrar las llegadas de las tarjetas (`busesOfLines`), al guardarlas y al
@@ -516,6 +557,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Hecho: refresco automático cada 30 s (15/30/60 s en Ajustes, `useRoutes`), también al abrir la app y
   al volver a la pestaña; pausado con la pestaña oculta. Con datos simulados,
   los minutos descuentan con el reloj real.
+- Hecho: actualizaciones OTA de la PWA ("Nueva versión de vBus disponible",
+  `useAppUpdate`).
 - Hecho: "tirar para actualizar" (`usePullToRefresh` + `PullIndicator`). Solo
   empieza con la lista arriba del todo y el dedo bajando; banda elástica de
   iOS; el indicador de cristal baja, aparece y gira según lo que se tira.
@@ -539,6 +582,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Hecho: alarma de salida configurable ("Avisar cuando queden 5 min para el
   C3": campana de cada autobús en la consulta rápida y en Mis rutas, modo
   salida), con confirmación antes de cancelar.
+- Hecho: Smart Night Mode (23:00–06:00: líneas N primero y "Servicio diurno
+  finalizado" plegado).
 
 ### Fase 4 · Onboarding — *Pendiente*
 
