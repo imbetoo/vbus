@@ -1,5 +1,6 @@
 /**
- * Cómo avisa el modo viaje: notificación del sistema, vibración y un sonido.
+ * Cómo avisan los modos viaje y salida: notificación del sistema, vibración
+ * y un sonido.
  * Cada uno se usa si el navegador lo permite; ninguno lanza errores.
  *
  * - Notificaciones: Chrome Android y escritorio; en iPhone, solo con vBus
@@ -78,6 +79,25 @@ export async function closeNotification(tag) {
   } catch {
     // Nada que cerrar.
   }
+}
+
+const ALERT_VIBRATION = [400, 200, 400, 200, 800];
+
+/**
+ * El aviso completo de los modos viaje y salida: vibración, tres tonos y
+ * notificación del sistema (si hay permiso; `tag` la reemplaza en vez de
+ * apilarla y permite quitarla al terminar).
+ */
+export function fireAlert(title, { body, tag }) {
+  vibrate(ALERT_VIBRATION);
+  playChime();
+  return showNotification(title, {
+    body,
+    tag,
+    renotify: true,
+    requireInteraction: true,
+    vibrate: ALERT_VIBRATION,
+  });
 }
 
 /** Vibra con un patrón (ms). En iOS no hace nada. */

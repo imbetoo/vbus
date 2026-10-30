@@ -26,6 +26,32 @@
   }
 }
 
+@layer components {
+  /* Listas con scroll entre una cabecera y un pie fijos (consulta rápida,
+     hojas, modos viaje y salida): lo que pasa por debajo se desvanece en vez
+     de cortarse en seco (como en iOS). La máscara es de la caja visible, no
+     del contenido; el padding del contenedor debe ser al menos
+     `--fade-top`/`--fade-bottom` para que, en reposo, nada quede desvanecido. */
+  .scroll-fade {
+    --fade-top: 16px;
+    --fade-bottom: 32px;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--fade-top),
+      #000 calc(100% - var(--fade-bottom)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--fade-top),
+      #000 calc(100% - var(--fade-bottom)),
+      transparent
+    );
+  }
+}
+
 /*
  * Cambio de tema (ver `useTheme`): View Transitions captura la página antes y
  * después y funde el fotograma entero a la vez, así fondo, textos, bordes y

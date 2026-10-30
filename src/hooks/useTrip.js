@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { getLoadedRouteIndex } from '../data/routes';
 import { stopById } from '../data/stops';
-import { playChime, showNotification, vibrate } from '../lib/alerts';
 import { formatDistance, haversineMeters } from '../lib/geo';
 import { lineKey } from '../lib/lines';
 import {
@@ -11,10 +10,13 @@ import {
   alertReason,
   etaNow,
   pickBus,
+  plural,
   rideMinutes,
   routeProgress,
   tripPath,
 } from '../lib/tripTracker';
+import { useAlarmEffect } from './useFocusSession';
+import { useNow } from './useNow';
 import { useStopArrivals } from './useStopArrivals';
 import { useWatchPosition } from './useWatchPosition';
 
@@ -28,11 +30,6 @@ const NEAR_MINUTES = 8;
 // punto de llegar, es que ha llegado (cuenta como aviso).
 const ARRIVED_SLACK_MIN = 5;
 export const TRIP_NOTIFICATION_TAG = 'vbus-trip';
-// Tras avisar, el modo viaje se apaga solo (pantalla, GPS y peticiones).
-export const AUTO_END_MS = 5 * 60_000;
-const VIBRATION = [400, 200, 400, 200, 800];
-
-const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 function alarmText({ reason, eta, remainingMetres, alight }) {
   if (reason === 'gps') return `Estás a ${formatDistance(remainingMetres)} de ${alight.name}.`;
@@ -58,7 +55,7 @@ function alarmText({ reason, eta, remainingMetres, alight }) {
  */
 export function useTrip(trip, { originBuses, originUpdatedAt, onEnd }) {
   const { boarding, destination, options, lines } = trip;
-  const [now, setNow] = useState(() => Date.now());
+  const now = useNow(TICK_MS);
   // Línea elegida en la espera (`null`: la del primer autobús que llega).
   const [selectedKey, setSelectedKey] = useState(null);
   const [boarded, setBoarded] = useState(null);
@@ -71,20 +68,6 @@ export function useTrip(trip, { originBuses, originUpdatedAt, onEnd }) {
   // GPS: posición inicial sobre el recorrido y tramo mínimo (solo se avanza).
   const [gpsBase, setGpsBase] = useState(null);
   const [segmentFloor, setSegmentFloor] = useState(0);
-  const onEndRef = useRef(onEnd);
-  useEffect(() => {
-    onEndRef.current = onEnd;
-  });
-
-  useEffect(() => {
-    const tick = () => setNow(Date.now());
-    const timer = setInterval(tick, TICK_MS);
-    document.addEventListener('visibilitychange', tick);
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', tick);
-    };
-  }, []);
 
   // --- Autobús y tramo --------------------------------------------------
   const busA = useMemo(
@@ -185,20 +168,7 @@ export function useTrip(trip, { originBuses, originUpdatedAt, onEnd }) {
     }
   }
 
-  useEffect(() => {
-    if (!alarm) return undefined;
-    vibrate(VIBRATION);
-    playChime();
-    showNotification('Prepárate para bajar', {
-      body: alarm.text,
-      tag: TRIP_NOTIFICATION_TAG,
-      renotify: true,
-      requireInteraction: true,
-      vibrate: VIBRATION,
-    });
-    const timer = setTimeout(() => onEndRef.current?.(), AUTO_END_MS);
-    return () => clearTimeout(timer);
-  }, [alarm]);
+  useAlarmEffect(alarm, { title: 'Prepárate para bajar', tag: TRIP_NOTIFICATION_TAG, onEnd });
 
   const aEta = busA && originUpdatedAt ? Math.max(0, etaNow(busA, originUpdatedAt, now)) : null;
 

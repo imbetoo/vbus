@@ -1,9 +1,11 @@
-import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert, WifiOff } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { Bell, CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert, WifiOff } from 'lucide-react';
+import { memo, useMemo, useState } from 'react';
 import { filterBusesByLines, filterReachingBuses } from '../../lib/directRoute';
 import { formatDistance } from '../../lib/geo';
 import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from '../bus/BusLineItem';
+import DepartureAlarm from '../departure/DepartureAlarm';
+import IconButton from '../ui/IconButton';
 import IconTile from '../ui/IconTile';
 import DirectLines from './DirectLines';
 import MapsLink from './MapsLink';
@@ -93,10 +95,14 @@ function StopSummary({ stop, distance, action, children }) {
 /**
  * Llegadas de la parada de origen (ya filtradas si es una ruta directa), con
  * los mismos estados que las tarjetas: cargando, error, vacía y lista. Si un
- * refresco falla se conservan los últimos tiempos con un aviso.
+ * refresco falla se conservan los últimos tiempos con un aviso. Cada autobús
+ * lleva su campana: "avísame cuando le falten X min" (modo salida,
+ * `DepartureAlarm`).
  */
-function Arrivals({ arrivals, buses, emptyText, offlineText, timeFormat }) {
+function Arrivals({ stop, arrivals, buses, emptyText, offlineText, timeFormat }) {
   const offline = arrivals.error?.kind === 'offline';
+  // Autobús cuya campana se ha tocado: `{ bus, fetchedAt }`.
+  const [request, setRequest] = useState(null);
   return (
     <>
       <div className={`${BENTO} px-4 py-2`}>
@@ -117,7 +123,21 @@ function Arrivals({ arrivals, buses, emptyText, offlineText, timeFormat }) {
           (buses.length ? (
             <ul className="animate-fade-in motion-reduce:animate-none">
               {buses.map((bus) => (
-                <BusLineItem key={bus.id} {...bus} timeFormat={timeFormat} fetchedAt={arrivals.updatedAt} />
+                <BusLineItem
+                  key={bus.id}
+                  {...bus}
+                  timeFormat={timeFormat}
+                  fetchedAt={arrivals.updatedAt}
+                  action={
+                    <IconButton
+                      icon={Bell}
+                      size="sm"
+                      label={`Avisarme para salir: ${bus.line}, ${bus.time < 1 ? 'llegando' : `${bus.time} min`}`}
+                      aria-haspopup="dialog"
+                      onClick={() => setRequest({ bus, fetchedAt: arrivals.updatedAt })}
+                    />
+                  }
+                />
               ))}
             </ul>
           ) : (
@@ -133,6 +153,7 @@ function Arrivals({ arrivals, buses, emptyText, offlineText, timeFormat }) {
             : 'No se pudieron actualizar: son los últimos tiempos recibidos.'}
         </p>
       )}
+      <DepartureAlarm stop={stop} request={request} onClose={() => setRequest(null)} />
     </>
   );
 }
@@ -206,6 +227,7 @@ function RouteResults({
       <>
         <StopSummary stop={origin} distance={boardingDistance} />
         <Arrivals
+          stop={origin}
           arrivals={arrivals}
           buses={buses}
           timeFormat={timeFormat}
@@ -255,6 +277,7 @@ function RouteResults({
           <DirectLines from={boarding} destination={destination} options={plan?.options ?? []} lines={directLines} />
         </StopSummary>
         <Arrivals
+          stop={boarding}
           arrivals={arrivals}
           buses={buses}
           timeFormat={timeFormat}

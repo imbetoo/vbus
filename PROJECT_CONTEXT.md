@@ -92,7 +92,15 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - **Relieve 3D:** `shadow-relief` (luz interior arriba, sombra interior abajo)
   en distintivos de línea, pastillas de icono y círculos del selector de color.
 - **Scroll:** ningún contenedor muestra barra de desplazamiento (regla global
-  en `index.css`); el scroll sigue funcionando.
+  en `index.css`); el scroll sigue funcionando. Las listas con scroll entre
+  una cabecera y un pie fijos (consulta rápida, hojas como "Nueva tarjeta",
+  modos viaje y salida) llevan `scroll-fade` (`index.css`): `mask-image` que
+  desvanece lo que pasa bajo la cabecera (16 px, `--fade-top`) y sobre el pie
+  (32 px, `--fade-bottom`) en vez de cortarlo en seco; el padding del
+  contenedor es al menos ese tamaño (consulta rápida `pt-5 pb-10`), así en
+  reposo el primer y el último elemento se ven enteros. En la consulta
+  rápida, cabecera de campos y pie de botones son opacos (`bg-graphite`,
+  `relative z-10`) y hermanos flex de la lista: nunca se solapan con ella.
 - **Estilo Bento / Soft Dark (referencia: extensión del usuario):** hojas y
   modales grafito opacos con asa, título + X circular; contenedores
   internos `rounded-3xl bg-white/[0.06] border border-white/10`; inputs
@@ -285,6 +293,36 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
       abierta: si cambias de app o bloqueas el móvil, el aviso puede no
       llegar". Terminar (X, Escape o "Entendido") suelta la pantalla y quita
       la notificación. No se guarda nada.
+  - **Modo salida · alarma de origen (`DepartureAlarm`, `LeadTimeModal`,
+    `DepartureSheet`, `useDeparture`, `src/lib/departure.js`):** cada
+    autobús de la lista de llegadas de la consulta rápida (solo origen o ruta
+    directa) lleva una campana (`IconButton` `sm`, acción opcional de
+    `BusLineItem`; las tarjetas del Dashboard no la tienen). Abre una ventana
+    (`Modal`) "Avisarme para salir": "¿Con cuántos minutos de antelación
+    quieres que te avisemos?", atajos 2, 3 y 5 min (`aria-pressed`) y un campo
+    de minutos enteros (`inputMode="numeric"`, solo dígitos, 1–90); propone el
+    mayor atajo que aún cabe. Caso límite (`leadProblem`): si el autobús ya
+    está a esos minutos o menos, "El bus ya está más cerca de ese tiempo:
+    llega en 4 min. Elige menos minutos." y no deja confirmar (también vacío,
+    fuera de rango y "El bus ya está llegando: si quieres cogerlo, sal ya").
+    Al confirmar (mismo toque), `useFocusSession` como el modo viaje y
+    pantalla negra: "Esperando al C3d", "Te avisaremos cuando falte(n) X
+    min" y "Tiempo actual estimado" enorme. Polling adaptativo
+    (`useStopArrivals` con `background`): cada 60 s y cada 15 s cuando faltan
+    ≤5 min para el aviso; entre lecturas, cuenta atrás con el reloj. El
+    autobús se sigue por continuidad (misma línea y letrero, `pickBus`): un
+    atasco retrasa el aviso; si desaparece de Vitrasa, se sigue con la última
+    estimación y se dice. Con ETA ≤ X: vibración, tres tonos, notificación
+    "¡Es hora de salir!" (`tag` `vbus-departure`) y panel ámbar con
+    "Entendido" (suelta la pantalla y vuelve a la consulta).
+  - **Infraestructura común de los modos que avisan:** `useFocusSession`
+    (pantalla encendida, sonido y permiso en el toque; `end()` lo suelta y
+    quita la notificación; al desmontarse a mitad, suelta la pantalla),
+    `useAlarmEffect` + `fireAlert` (`alerts.js`: vibración, tonos y
+    notificación; apagado solo a los 5 min), `useNow` (cuenta atrás),
+    `FocusScreen.jsx` (`FocusDialog` negro, `FocusLayout`, `AlarmPanel`,
+    filas de estado de pantalla y notificaciones) y `tripTracker.js`
+    (`etaNow`, `pickBus`, `minutesText`, `plural`).
   - **Mapas (`MapsLink`):** enlace universal
     `https://www.google.com/maps/dir/?api=1&origin=lat,lon&destination=lat,lon&travelmode=transit`
     (desde el GPS, la posición exacta del usuario; si una parada no tiene
@@ -425,9 +463,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   perla) para móviles con tirones. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.21 • Build: 29/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.22 • Build: 29/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.21 = PR #21), hora de compilación
+  PR: `npm version minor`; v1.22 = PR #22), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -484,8 +522,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 - Orden inteligente: reordenar las tarjetas según la hora del día (p. ej.
   mañanas: "Ir al instituto" primero; tardes: "Volver a casa" primero).
 - Hecho: alarma de destino ("Avisarme", modo viaje en la consulta rápida).
-- Sistema de notificaciones: alarmas configurables por el usuario (p. ej.
-  "Avisar cuando queden 5 min para el C3").
+- Hecho: alarma de salida configurable ("Avisar cuando queden 5 min para el
+  C3": campana de cada autobús, modo salida).
 
 ### Fase 4 · Onboarding — *Pendiente*
 
