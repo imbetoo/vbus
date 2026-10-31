@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { isStandalone, platform } from '../lib/platform';
 
 // Chrome/Edge/Android lanzan `beforeinstallprompt` una sola vez y muy pronto,
 // quizá antes de abrir Ajustes: se escucha al cargar el módulo y se guarda.
@@ -25,16 +26,6 @@ const subscribe = (listener) => {
 };
 const getSnapshot = () => deferredPrompt;
 
-const isStandalone = () =>
-  typeof window !== 'undefined' &&
-  (window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true);
-
-// Safari en iPhone/iPad no tiene `beforeinstallprompt`: se instala a mano desde
-// Compartir. (El iPad se identifica como Mac con pantalla táctil.)
-const isIOS = () =>
-  typeof navigator !== 'undefined' &&
-  (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-
 /**
  * Si la app se puede instalar: `canInstall` + `install()` en navegadores con
  * `beforeinstallprompt`; `iosHint` en iOS fuera de la app instalada.
@@ -42,14 +33,16 @@ const isIOS = () =>
 export function useInstallPrompt() {
   const prompt = useSyncExternalStore(subscribe, getSnapshot, () => null);
 
+  // Devuelve `accepted` o `dismissed` (o `null` si no había nada que instalar).
   const install = async () => {
-    if (!prompt) return;
+    if (!prompt) return null;
     prompt.prompt();
-    await prompt.userChoice;
+    const choice = await prompt.userChoice.catch(() => null);
     // El evento solo sirve una vez, se acepte o no.
     deferredPrompt = null;
     emit();
+    return choice?.outcome ?? null;
   };
 
-  return { canInstall: Boolean(prompt), install, iosHint: !prompt && isIOS() && !isStandalone() };
+  return { canInstall: Boolean(prompt), install, iosHint: !prompt && platform() === 'ios' && !isStandalone() };
 }

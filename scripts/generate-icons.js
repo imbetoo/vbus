@@ -8,11 +8,13 @@
 //   esquinas ni transparencia, porque Android e iOS recortan el icono con su
 //   propia forma (en iOS lo transparente saldría negro). El autobús ya cae en
 //   la zona segura del 80 % que pide el formato maskable.
+// - Variantes del icono (Medianoche y Neón): los mismos PNG con `-<id>` y
+//   su SVG `icon-<id>.svg` (ver `VARIANTS`).
 // - shortcut-*.png (192 px): iconos de los accesos directos del manifest
 //   (mantener pulsado el icono en Android): el glifo de lucide en blanco sobre
 //   el mismo azul profundo del icono, a sangre y dentro de la zona segura
 //   (el lanzador los recorta con su forma).
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
 const PUBLIC_DIR = new URL('../public/', import.meta.url);
@@ -27,12 +29,58 @@ for (const id of ['shape-rect', 'rim']) {
   fullBleed = squared;
 }
 
-const ICONS = [
-  { file: 'pwa-192x192.png', size: 192, svg: source },
-  { file: 'pwa-512x512.png', size: 512, svg: source },
-  { file: 'maskable-icon-512x512.png', size: 512, svg: fullBleed },
-  { file: 'apple-touch-icon.png', size: 180, svg: fullBleed },
-];
+// Variantes del icono que se eligen al instalar (bienvenida y Ajustes,
+// `src/lib/appIcon.js`): el mismo dibujo con otros colores. La clásica usa
+// los nombres de siempre; las demás llevan `-<id>` y su propio manifest
+// (`vite.config.js`). Colores: los del SVG maestro → los de la variante.
+const VARIANTS = {
+  classic: {},
+  // Medianoche: grafito y negro (combina con las paletas Sombra y OLED); el
+  // reflejo cian del cristal se queda como único acento.
+  dark: {
+    '#1F5BD8': '#3A3A3C',
+    '#0B1E4A': '#050505',
+    '#061233': '#000000',
+    '#030A1F': '#000000',
+    '#0E2A66': '#1C1C1E',
+    '#163C8C': '#2C2C2E',
+    '#DCE6F7': '#D1D1D6',
+    '#5A6E96': '#6E6E73',
+  },
+  // Neón: magenta y morado profundo con cristales cian neón (paleta Cyberpunk).
+  neon: {
+    '#1F5BD8': '#C026D3',
+    '#0B1E4A': '#1A0533',
+    '#061233': '#12062B',
+    '#030A1F': '#0A0216',
+    '#0E2A66': '#2A0B4F',
+    '#163C8C': '#3B0F6E',
+    '#5AC8FA': '#22F5FF',
+    '#DCE6F7': '#F3E8FF',
+    '#5A6E96': '#7A5A96',
+  },
+};
+const recolor = (svg, colors) =>
+  Object.entries(colors).reduce((out, [from, to]) => out.replaceAll(from, to), svg);
+const suffix = (id) => (id === 'classic' ? '' : `-${id}`);
+
+const ICONS = Object.entries(VARIANTS).flatMap(([id, colors]) => {
+  const any = recolor(source, colors);
+  const bleed = recolor(fullBleed, colors);
+  return [
+    { file: `pwa-192x192${suffix(id)}.png`, size: 192, svg: any },
+    { file: `pwa-512x512${suffix(id)}.png`, size: 512, svg: any },
+    { file: `maskable-icon-512x512${suffix(id)}.png`, size: 512, svg: bleed },
+    { file: `apple-touch-icon${suffix(id)}.png`, size: 180, svg: bleed },
+  ];
+});
+
+// SVG de cada variante (vista previa en la bienvenida y en Ajustes).
+for (const [id, colors] of Object.entries(VARIANTS)) {
+  if (id === 'classic') continue;
+  await writeFile(new URL(`icon-${id}.svg`, PUBLIC_DIR), recolor(source, colors));
+  console.log(`public/icon-${id}.svg`);
+}
 
 for (const { file, size, svg } of ICONS) {
   // Densidad suficiente para rasterizar el SVG (512 de lado) a más resolución

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { forcedScheme } from '../lib/appearance';
 import { useT } from '../i18n';
 import { haptics } from '../lib/haptics';
+import { isOnboarded, isStandalone, markOnboarded } from '../lib/platform';
 import { prefersReducedMotion } from '../lib/motion';
 import { withNearestFirst } from '../lib/proximity';
 import EditCardModal from '../components/bus/EditCardModal';
@@ -17,12 +18,14 @@ import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
 import PullIndicator from '../components/ui/PullIndicator';
+import OnboardingScreen from '../components/onboarding/OnboardingScreen';
 import ImportRoutesSheet from '../components/share/ImportRoutesSheet';
 import Toast from '../components/ui/Toast';
 import { useToast } from '../hooks/useToast';
 import { findStop, loadStopsList } from '../data/stops';
 import { ROUTES_PARAM, decodeRoutes, toImportedCard } from '../lib/routesShare';
 import { useNearestCard } from '../hooks/useNearestCard';
+import { useDayPart } from '../hooks/useDayPart';
 import { useNightMode } from '../hooks/useNightMode';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
@@ -155,6 +158,14 @@ export default function Dashboard({ settings, onSettingChange }) {
     setIncoming(null);
     clearImportParam();
   }, []);
+  // Bienvenida (instalar y elegir icono): la primera vez en el navegador, sin
+  // la app instalada. No si se abrió un enlace o un acceso directo (ya sabe a
+  // qué viene); una vez vista o saltada, no vuelve (`vbus:onboarded`).
+  const [onboarding, setOnboarding] = useState(() => !launch && !incoming && !isStandalone() && !isOnboarded());
+  const finishOnboarding = useCallback(() => {
+    markOnboarded();
+    setOnboarding(false);
+  }, []);
   const [isCreating, setIsCreating] = useState(launch?.action === 'nueva');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // Consulta rápida (lupa): panel efímero Origen → Destino con los tiempos.
@@ -187,10 +198,12 @@ export default function Dashboard({ settings, onSettingChange }) {
     }, REMOVE_MS);
   }, [removeRoute]);
   const startEditing = useCallback(() => setIsEditing(true), []);
-  // Smart Night Mode (23:00–06:00): saludo de noche y una luna discreta.
+  // Saludo según el momento del día (días, tardes desde las 14:00, noches
+  // desde las 21:00) y, en el Smart Night Mode (23:00–06:00), una luna discreta.
+  const part = useDayPart();
   const night = useNightMode();
   // Solo se anima el cambio con la app abierta, no al abrirla.
-  const [nightAtStart] = useState(night);
+  const [atStart] = useState(`${part}-${night}`);
   // Smart Sorting (Ajustes → "Ordenar tarjetas por cercanía"): la tarjeta de
   // la parada más cercana se enseña la primera. Es solo una vista: el orden
   // manual (`routes`, el del arrastre, en `vbus:routes`) no cambia nunca, y en
@@ -206,14 +219,15 @@ export default function Dashboard({ settings, onSettingChange }) {
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
       <header className="flex shrink-0 items-end justify-between gap-3 text-black dark:text-white">
         <div className="min-w-0">
-          {/* `key`: el saludo cambia con un fundido si dan las 23:00 o las 06:00. */}
+          {/* `key`: el saludo cambia con un fundido al dar las 06:00, las 14:00,
+              las 21:00 o las 23:00 (llega la luna). */}
           <p
-            key={night ? 'night' : 'day'}
+            key={`${part}-${night}`}
             className={`flex items-center gap-1.5 text-xl font-semibold tracking-tight sm:text-2xl ${
-              night !== nightAtStart ? 'animate-fade-in motion-reduce:animate-none' : ''
+              `${part}-${night}` !== atStart ? 'animate-fade-in motion-reduce:animate-none' : ''
             }`}
           >
-            {t(night ? 'dashboard.greeting.night' : 'dashboard.greeting.day')}
+            {t(`dashboard.greeting.${part}`)}
             {night && (
               <span title={t('dashboard.night.hint')}>
                 <Moon className="h-4 w-4 fill-current opacity-60" strokeWidth={2.25} aria-hidden="true" />
@@ -383,6 +397,12 @@ export default function Dashboard({ settings, onSettingChange }) {
         settings={settings}
         onChange={onSettingChange}
         routes={routes}
+      />
+      <OnboardingScreen
+        open={onboarding}
+        appIcon={settings.appIcon}
+        onAppIconChange={(icon) => onSettingChange('appIcon', icon)}
+        onDone={finishOnboarding}
       />
       <ImportRoutesSheet
         entries={incoming?.entries ?? null}

@@ -4,12 +4,14 @@ import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import { LANGUAGES, detectLanguage, useT } from '../../i18n';
 import { MOTIONS, applyAppearance, changeAppearance } from '../../lib/appearance';
 import { haptics } from '../../lib/haptics';
+import { isStandalone } from '../../lib/platform';
 import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
 import ChoiceList from '../ui/ChoiceList';
 import Switch from '../ui/Switch';
+import AppIconPicker from '../onboarding/AppIconPicker';
 import PalettePicker from './PalettePicker';
 import TonePicker from './TonePicker';
 import { PRESSABLE } from '../ui/pressable';
@@ -72,6 +74,7 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
   const t = useT();
   const titleId = useId();
   const { canInstall, install, iosHint } = useInstallPrompt();
+  const installed = isStandalone();
   const autoLanguage = LANGUAGES.find((lang) => lang.id === detectLanguage())?.name;
   // "Compartir mis rutas guardadas": se monta la primera vez que se abre y se
   // queda montado para que también salga animado.
@@ -214,6 +217,13 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
               value={settings.background}
               onChange={(value) => onChange('background', value)}
             />
+          </SettingRow>
+        )}
+
+        {/* Solo sin instalar: ya instalada, el sistema conserva su icono. */}
+        {!installed && (
+          <SettingRow title={t('appIcon.label')} description={t('appIcon.hint')}>
+            <AppIconPicker value={settings.appIcon} onChange={(icon) => onChange('appIcon', icon)} size={56} />
           </SettingRow>
         )}
 

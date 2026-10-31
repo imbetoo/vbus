@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>VigoBus</title>
+  <defs>
+    <!-- Forma: "squircle" de Apple aproximado (rx 115). scripts/generate-icons.js
+         pone a 0 el rx de #shape-rect y #rim para los iconos a sangre
+         (maskable y apple-touch-icon), que recorta el propio sistema. -->
+    <clipPath id="shape">
+      <rect id="shape-rect" width="512" height="512" rx="115" />
+    </clipPath>
+
+    <!-- Fondo: azul profundo con la luz arriba a la izquierda. -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C026D3" />
+      <stop offset="1" stop-color="#1A0533" />
+    </linearGradient>
+    <radialGradient id="bg-light" cx="0.18" cy="0.12" r="0.75">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Autobús: losa blanca de vidrio esmerilado. -->
+    <linearGradient id="bus-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#F3E8FF" />
+    </linearGradient>
+    <!-- Parabrisas: cristal azul noche con un reflejo cian (el único acento). -->
+    <linearGradient id="window" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A0B4F" />
+      <stop offset="1" stop-color="#3B0F6E" />
+    </linearGradient>
+    <linearGradient id="window-shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22F5FF" stop-opacity="0.35" />
+      <stop offset="0.5" stop-color="#22F5FF" stop-opacity="0.12" />
+      <stop offset="1" stop-color="#22F5FF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Relieve del autobús: luz interior arriba y sombra interior abajo. -->
+    <filter id="slab" x="-5%" y="-5%" width="110%" height="110%">
+      <feOffset in="SourceAlpha" dy="4" result="down" />
+      <feComposite in="SourceAlpha" in2="down" operator="out" result="topEdge" />
+      <feGaussianBlur in="topEdge" stdDeviation="1.5" result="topSoft" />
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.95" />
+      <feComposite in2="topSoft" operator="in" result="innerLight" />
+      <feOffset in="SourceAlpha" dy="-7" result="up" />
+      <feComposite in="SourceAlpha" in2="up" operator="out" result="bottomEdge" />
+      <feGaussianBlur in="bottomEdge" stdDeviation="3" result="bottomSoft" />
+      <feFlood flood-color="#7A5A96" flood-opacity="0.55" />
+      <feComposite in2="bottomSoft" operator="in" result="innerShadow" />
+      <feMerge>
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="innerShadow" />
+        <feMergeNode in="innerLight" />
+      </feMerge>
+    </filter>
+    <!-- Sombra larga y suave: el autobús flota sobre el fondo. -->
+    <filter id="float" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#12062B" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Rayo de luz diagonal, muy tenue (9 % de blanco), con los bordes
+         difuminados y desvanecido antes de la mitad del icono. -->
+    <linearGradient id="ray" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0.12" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0.09" />
+      <stop offset="0.48" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="ray-fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#000000" />
+    </linearGradient>
+    <mask id="top-half">
+      <rect width="512" height="256" fill="url(#ray-fade)" />
+    </mask>
+
+    <!-- Cristal del lienzo: reflejo, sombra interior y bisel. -->
+    <linearGradient id="glare" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="196">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.18" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <filter id="inner-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="blur" />
+      <feOffset in="blur" dy="6" result="shifted" />
+      <!-- Lo que hay dentro de la forma pero no en su copia desenfocada: el borde. -->
+      <feComposite in="SourceAlpha" in2="shifted" operator="arithmetic" k2="1" k3="-1" result="edge" />
+      <feFlood flood-color="#0A0216" flood-opacity="0.55" />
+      <feComposite in2="edge" operator="in" />
+    </filter>
+    <linearGradient id="rim-light" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55" />
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.1" />
+      <stop offset="0.7" stop-color="#000000" stop-opacity="0.08" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0.4" />
+    </linearGradient>
+  </defs>
+
+  <g clip-path="url(#shape)">
+    <rect width="512" height="512" fill="url(#bg)" />
+    <rect width="512" height="512" fill="url(#bg-light)" />
+    <rect width="512" height="512" fill="url(#ray)" mask="url(#top-half)" />
+
+    <!-- Autobús reducido un 7 % exacto sobre su centro: más espacio negativo. -->
+    <g transform="translate(256 258) scale(0.93) translate(-256 -258)">
+      <!-- Autobús de frente, símbolo focal (≈ 60 % del ancho): sin retrovisores
+           ni detalles finos, para que a 16 px se lea la silueta. -->
+      <g filter="url(#float)">
+        <g fill="url(#bus-fill)" filter="url(#slab)">
+          <!-- Ruedas (detrás de la carrocería). -->
+          <rect x="128" y="352" width="66" height="70" rx="22" />
+          <rect x="318" y="352" width="66" height="70" rx="22" />
+          <!-- Carrocería con el rótulo, el parabrisas y los faros calados. -->
+          <path
+            fill-rule="evenodd"
+            d="M155 94h202c35 0 64 29 64 64v164c0 35-29 64-64 64H155c-35 0-64-29-64-64V158c0-35 29-64 64-64Z
+               M206 116h100a10 10 0 0 1 0 20H206a10 10 0 0 1 0-20Z
+               M155 156h202c13 0 24 11 24 24v84c0 13-11 24-24 24H155c-13 0-24-11-24-24v-84c0-13 11-24 24-24Z
+               M160 318a22 22 0 1 0 0.01 0Z
+               M352 318a22 22 0 1 0 0.01 0Z"
+          />
+        </g>
+      </g>
+      <!-- Cristales: parabrisas, rótulo y faros en azul noche, con reflejo. -->
+      <rect x="131" y="156" width="250" height="132" rx="24" fill="url(#window)" />
+      <path d="M131 222V180c0-13 11-24 24-24h120L176 288h-21c-13 0-24-11-24-24Z" fill="url(#window-shine)" />
+      <rect x="196" y="116" width="120" height="20" rx="10" fill="url(#window)" />
+      <circle cx="160" cy="340" r="22" fill="url(#window)" />
+      <circle cx="352" cy="340" r="22" fill="url(#window)" />
+    </g>
+
+    <!-- Reflejo convexo en la mitad superior. -->
+    <path d="M0 0H512V196C436 246 346 262 256 262S76 246 0 196Z" fill="url(#glare)" />
+    <!-- Sombra interior global. -->
+    <rect width="512" height="512" fill="#000" filter="url(#inner-shadow)" />
+    <!-- Bisel de cristal: luz arriba, sombra abajo. -->
+    <rect id="rim" x="3" y="3" width="506" height="506" rx="112" fill="none" stroke="url(#rim-light)" stroke-width="5" />
+  </g>
+</svg>
