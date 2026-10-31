@@ -1,5 +1,5 @@
-import { Download, Share, X } from 'lucide-react';
-import { useId } from 'react';
+import { Download, QrCode, Share, X } from 'lucide-react';
+import { Suspense, lazy, useId, useState } from 'react';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import { MOTIONS, applyAppearance, changeAppearance } from '../../lib/appearance';
 import IconButton from '../ui/IconButton';
@@ -9,6 +9,9 @@ import SegmentedControl from '../ui/SegmentedControl';
 import Switch from '../ui/Switch';
 import PalettePicker from './PalettePicker';
 import { PRESSABLE } from '../ui/pressable';
+
+// El QR (y su generador) solo se descarga al abrirlo.
+const ShareRoutesModal = lazy(() => import('../share/ShareRoutesModal'));
 
 // "vBus v1.20 • Build: 29/10/2026, 22:45 · 4c8e5b7" (versión de
 // package.json sin el parche, hora de Vigo y commit).
@@ -88,9 +91,17 @@ function SwitchRow({ title, description, checked, onChange }) {
 }
 
 /** Menú flotante de ajustes: afecta a cómo se pintan todas las tarjetas. */
-export default function SettingsModal({ open, onClose, settings, onChange }) {
+export default function SettingsModal({ open, onClose, settings, onChange, routes = [] }) {
   const titleId = useId();
   const { canInstall, install, iosHint } = useInstallPrompt();
+  // "Compartir mis rutas guardadas": se monta la primera vez que se abre y se
+  // queda montado para que también salga animado.
+  const [sharing, setSharing] = useState(false);
+  const [shareLoaded, setShareLoaded] = useState(false);
+  const openShare = () => {
+    setShareLoaded(true);
+    setSharing(true);
+  };
 
   return (
     <Modal open={open} onClose={onClose} labelledBy={titleId} className="w-[min(92vw,24rem)]">
@@ -245,6 +256,27 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
           </SettingRow>
         )}
 
+        <SettingRow
+          title="Compartir mis rutas guardadas"
+          description={
+            routes.length
+              ? 'Pásalas a otro móvil con un código QR o un enlace, sin cuentas ni servidores.'
+              : 'Crea alguna ruta para poder compartirla.'
+          }
+        >
+          {routes.length > 0 && (
+            <button
+              type="button"
+              onClick={openShare}
+              aria-haspopup="dialog"
+              className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 text-base font-semibold active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
+            >
+              <QrCode className="h-[18px] w-[18px] text-accent" strokeWidth={2.5} aria-hidden="true" />
+              {`Compartir ${routes.length === 1 ? '1 ruta' : `${routes.length} rutas`}`}
+            </button>
+          )}
+        </SettingRow>
+
         {/* Solo aparece si el navegador permite instalarla (o en iOS, cómo hacerlo). */}
         {canInstall && (
           <SettingRow title="Instalar app" description="Ábrela a pantalla completa desde tu pantalla de inicio.">
@@ -278,6 +310,11 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
             usando un build antiguo del caché (basta con cerrar y abrir la app). */}
         <p className="text-center text-xs font-medium tabular-nums text-white/40">{BUILD_LABEL}</p>
       </div>
+      {shareLoaded && (
+        <Suspense fallback={null}>
+          <ShareRoutesModal open={open && sharing} onClose={() => setSharing(false)} routes={routes} />
+        </Suspense>
+      )}
     </Modal>
   );
 }

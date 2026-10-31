@@ -26,9 +26,12 @@ export function routeShareText({ origin, destination, lines = [], url }) {
   return `🚌 Ruta vBus: De ${origin.name} a ${destination.name}.${linesText} Consulta tiempos en ${url}`;
 }
 
-// Copia con la API moderna y, si no está o falla (contexto no seguro, permiso),
-// con el método clásico de un `<textarea>` seleccionado.
-async function copyText(text) {
+/**
+ * Copia con la API moderna y, si no está o falla (contexto no seguro,
+ * permiso), con el método clásico de un `<textarea>` seleccionado. Devuelve
+ * si se pudo (nunca rechaza).
+ */
+export async function copyText(text) {
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
