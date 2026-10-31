@@ -302,6 +302,34 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     (`clipboard.writeText` o, si no, `<textarea>` + `execCommand`) y un aviso
     "Ruta copiada al portapapeles" (2,2 s, `role="status"`). Un doble toque no
     abre dos menús.
+  - **Compartir Mis rutas (sin backend, `src/lib/routesShare.js`):** todas las
+    tarjetas viajan en el propio enlace, `/?tarjetas=…`, un parámetro aparte
+    del de un trayecto (`origen`/`destino`, que no cambia). Formato `{ v: 1,
+    t: [[stopId, alias, lines, color, busesToShow], …] }` en JSON → UTF-8
+    (alias con tildes y emoji) → base64url sin relleno; sin tiempos ni ids (se
+    regeneran al importar). `decodeRoutes` nunca lanza: base64 o JSON rotos,
+    versión desconocida, más de 50 tarjetas o ninguna válida → `null`; campo a
+    campo (parada entera, alias ≤60, líneas de texto, color de `CARD_COLORS`,
+    2 o 3 visibles). **Exportar:** en Ajustes, fila "Compartir mis rutas
+    guardadas" (con al menos una tarjeta) → `ShareRoutesModal` (cargado con
+    `lazy` la primera vez: el generador de QR no pesa en el arranque): QR del
+    enlace generado en el cliente (`uqr`, corrección M, un único `<path>` SVG
+    negro sobre blanco), la lista de lo que se comparte (`RoutesPreview`),
+    "Compartir enlace" (menú nativo, si existe) y "Copiar enlace" (`copyText`
+    de `share.js`, toque `select` y aviso "Enlace copiado" dentro del modal).
+    **Importar:** el Dashboard lee `tarjetas` antes del primer render
+    (`readImport`; `readLaunch` ignora esa URL) y abre `ImportRoutesSheet`, hoja
+    de acciones al estilo de iOS: "Colección de rutas recibida", la lista,
+    "Añadir a mis rutas" (sin duplicados exactos: misma parada, alias, líneas
+    en orden, color y visibles; desactivado si ya las tienes todas),
+    "Reemplazar mis rutas" (solo si ya tienes alguna; "Se borrarán tus N rutas
+    actuales") y "Cancelar" en rojo (también Escape, tocar fuera o deslizar).
+    `useRoutes.importRoutes(cards, 'merge' | 'replace')` las guarda y pide sus
+    tiempos; los nombres de parada salen de `stopsList`. Avisos "2 rutas
+    añadidas" / "Rutas reemplazadas" (`Toast` + `useToast`, `impact`). Tras
+    elegir (también Cancelar) se quita `tarjetas` de la URL
+    (`history.replaceState`): recargar no vuelve a preguntar. Enlace roto: sin
+    hoja, aviso "Enlace inválido: no se pudieron leer las rutas" y URL limpia.
   - **Modo viaje · alarma de destino (`TripAlarm`, `TripSheet`, `useTrip`,
     `src/lib/tripTracker.js`):** botón de cristal "Avisarme" (campana ámbar)
     bajo las llegadas de una ruta directa. Decisión: **Wake Lock + polling en
@@ -624,12 +652,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   cercanía" (`sortByProximity`, activado por defecto). Interruptor "Vibración"
   (`vibration`, activado por defecto): apagado, `haptics.js` no vibra nada
   (`setHapticsEnabled`, sincronizado en `App.jsx`), tampoco las alarmas ni
-  su notificación; los avisos siguen sonando y notificando. Si el navegador permite instalar la app (`beforeinstallprompt`,
+  su notificación; los avisos siguen sonando y notificando. "Compartir mis
+  rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.31 • Build: 31/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.32 • Build: 31/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.31 = PR #31), hora de compilación
+  PR: `npm version minor`; v1.32 = PR #32), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -738,6 +767,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   salida se minimizan sin cancelar y siguen a la vista arriba.
 - Hecho: motor de temas y dinamismo (9 paletas del fondo y los acentos,
   OLED sin fondo, y velocidad Fluido / Relajado / Estático).
+- Hecho: compartir Mis rutas sin backend (QR y enlace `?tarjetas=` desde
+  Ajustes; al abrirlo, añadir, reemplazar o cancelar).
 
 ### Fase 4 · Onboarding — *Pendiente*
 

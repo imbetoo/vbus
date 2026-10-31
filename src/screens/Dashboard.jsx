@@ -2,6 +2,7 @@ import { AnimatePresence, Reorder, motion } from 'framer-motion';
 import { BusFront, Check, Moon, Pencil, Search, Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { forcedScheme, paletteOf } from '../lib/appearance';
+import { haptics } from '../lib/haptics';
 import { prefersReducedMotion } from '../lib/motion';
 import { withNearestFirst } from '../lib/proximity';
 import EditCardModal from '../components/bus/EditCardModal';
@@ -15,6 +16,11 @@ import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
 import PullIndicator from '../components/ui/PullIndicator';
+import ImportRoutesSheet from '../components/share/ImportRoutesSheet';
+import Toast from '../components/ui/Toast';
+import { useToast } from '../hooks/useToast';
+import { findStop, loadStopsList } from '../data/stops';
+import { ROUTES_PARAM, decodeRoutes, toImportedCard } from '../lib/routesShare';
 import { useNearestCard } from '../hooks/useNearestCard';
 import { useNightMode } from '../hooks/useNightMode';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -44,11 +50,30 @@ const LAUNCH_PARAMS = ['accion', 'origen', 'destino'];
 const stopParam = (value) => (/^\d{1,6}$/.test(value ?? '') && Number(value) > 0 ? Number(value) : null);
 function readLaunch() {
   const params = new URLSearchParams(window.location.search);
+  // Un enlace con tarjetas (`?tarjetas=`) es otra cosa: lo lee `readImport`.
+  if (params.has(ROUTES_PARAM)) return null;
   const origin = stopParam(params.get('origen'));
   const destination = stopParam(params.get('destino'));
   if (origin && destination) return { action: 'ruta', route: { origin, destination } };
   const action = params.get('accion');
   return LAUNCH_ACTIONS.includes(action) ? { action } : null;
+}
+
+// Colección de tarjetas recibida (`/?tarjetas=…`, `src/lib/routesShare.js`):
+// `{ entries }`, `{ invalid: true }` si el enlace no vale, o `null`.
+function readImport() {
+  const value = new URLSearchParams(window.location.search).get(ROUTES_PARAM);
+  if (value === null) return null;
+  const entries = decodeRoutes(value);
+  return entries ? { entries } : { invalid: true };
+}
+
+// Quita `tarjetas` de la URL sin recargar ni tocar lo demás (recargar no
+// vuelve a preguntar).
+function clearImportParam() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(ROUTES_PARAM);
+  window.history.replaceState(window.history.state, '', url);
 }
 
 /** Mensaje de la lista vacía (la app empieza sin tarjetas). */
@@ -69,7 +94,7 @@ function EmptyState() {
  * con scroll propio en medio y "Crear nueva tarjeta" fijo abajo.
  */
 export default function Dashboard({ settings, onSettingChange }) {
-  const { routes, addRoute, removeRoute, reorderRoutes, updateRoute, refresh } = useRoutes({
+  const { routes, addRoute, removeRoute, reorderRoutes, updateRoute, importRoutes, refresh } = useRoutes({
     refreshMs: settings.refreshSeconds * 1000,
   });
   // Tarjeta que se está editando (modal del lápiz: alias y líneas).
@@ -101,6 +126,33 @@ export default function Dashboard({ settings, onSettingChange }) {
     LAUNCH_PARAMS.forEach((param) => url.searchParams.delete(param));
     window.history.replaceState(window.history.state, '', url);
   }, [launch]);
+  // Colección de rutas recibida: se lee antes del primer render y la hoja
+  // pregunta qué hacer. Un enlace roto solo avisa.
+  const [incoming, setIncoming] = useState(readImport);
+  const [toast, showToast] = useToast(incoming?.invalid ? 'Enlace inválido: no se pudieron leer las rutas' : null);
+  const invalidImport = Boolean(incoming?.invalid);
+  useEffect(() => {
+    if (invalidImport) clearImportParam();
+  }, [invalidImport]);
+  const handleImport = useCallback(
+    async (mode) => {
+      const { entries } = incoming;
+      setIncoming(null);
+      clearImportParam();
+      // Los nombres de las paradas salen de `stopsList` (en el precache).
+      await loadStopsList().catch(() => {});
+      const cards = entries.map((entry) => toImportedCard(entry, findStop(entry.stopId)));
+      const added = importRoutes(cards, mode);
+      haptics.impact();
+      if (mode === 'replace') showToast('Rutas reemplazadas');
+      else showToast(added === 1 ? '1 ruta añadida' : `${added} rutas añadidas`);
+    },
+    [incoming, importRoutes, showToast],
+  );
+  const cancelImport = useCallback(() => {
+    setIncoming(null);
+    clearImportParam();
+  }, []);
   const [isCreating, setIsCreating] = useState(launch?.action === 'nueva');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // Consulta rápida (lupa): panel efímero Origen → Destino con los tiempos.
@@ -328,7 +380,18 @@ export default function Dashboard({ settings, onSettingChange }) {
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onChange={onSettingChange}
+        routes={routes}
       />
+      <ImportRoutesSheet
+        entries={incoming?.entries ?? null}
+        routes={routes}
+        onChoose={handleImport}
+        onCancel={cancelImport}
+      />
+      {/* Avisos de la importación ("3 rutas añadidas", "Enlace inválido"). */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(1.25rem,env(safe-area-inset-bottom,0px))+6.75rem)] z-40 flex justify-center px-5">
+        <Toast message={toast} />
+      </div>
     </div>
   );
 }

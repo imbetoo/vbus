@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getBuses } from '../services/vigobus';
 import { busesOfLines } from '../lib/lines';
+import { newCards } from '../lib/routesShare';
 import { withFreshBuses } from '../services/vigobusAdapter';
 
 const STORAGE_KEY = 'vbus:routes';
@@ -156,5 +157,20 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
   // Nuevo orden tras arrastrar en modo edición (se guarda con el efecto de arriba).
   const reorderRoutes = useCallback((ordered) => setRoutes(ordered), []);
   const removeRoute = useCallback((id) => setRoutes((current) => current.filter((route) => route.id !== id)), []);
-  return { routes, addRoute, removeRoute, reorderRoutes, updateRoute, refresh };
+  // Tarjetas recibidas por enlace (`routesShare.js`): `merge` añade al final
+  // las que no estén ya (sin duplicados exactos); `replace` sustituye todas.
+  // Llegan sin tiempos: se piden al momento. Devuelve cuántas se añadieron.
+  const importRoutes = useCallback(
+    (cards, mode) => {
+      const current = routesRef.current;
+      const added = mode === 'replace' ? cards : newCards(current, cards);
+      const next = mode === 'replace' ? cards : [...current, ...added];
+      routesRef.current = next;
+      setRoutes(next);
+      refresh();
+      return added.length;
+    },
+    [refresh],
+  );
+  return { routes, addRoute, removeRoute, reorderRoutes, updateRoute, importRoutes, refresh };
 }
