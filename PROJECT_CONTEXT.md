@@ -305,9 +305,10 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   - **Compartir Mis rutas (sin backend, `src/lib/routesShare.js`):** todas las
     tarjetas viajan en el propio enlace, `/?tarjetas=…`, un parámetro aparte
     del de un trayecto (`origen`/`destino`, que no cambia). Formato `{ v: 1,
-    t: [[stopId, alias, lines, color, busesToShow], …] }` en JSON → UTF-8
+    t: [[stopId, alias, lines, color, busesToShow, note?], …] }` en JSON → UTF-8
     (alias con tildes y emoji) → base64url sin relleno; sin tiempos ni ids (se
-    regeneran al importar). `decodeRoutes` nunca lanza: base64 o JSON rotos,
+    regeneran al importar; la nota, 6.º elemento opcional: los enlaces sin ella
+    siguen valiendo). `decodeRoutes` nunca lanza: base64 o JSON rotos,
     versión desconocida, más de 50 tarjetas o ninguna válida → `null`; campo a
     campo (parada entera, alias ≤60, líneas de texto, color de `CARD_COLORS`,
     2 o 3 visibles). **Exportar:** en Ajustes, fila "Compartir mis rutas
@@ -321,7 +322,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     (`readImport`; `readLaunch` ignora esa URL) y abre `ImportRoutesSheet`, hoja
     de acciones al estilo de iOS: "Colección de rutas recibida", la lista,
     "Añadir a mis rutas" (sin duplicados exactos: misma parada, alias, líneas
-    en orden, color y visibles; desactivado si ya las tienes todas),
+    en orden, color y visibles, sin contar la nota; desactivado si ya las
+    tienes todas),
     "Reemplazar mis rutas" (solo si ya tienes alguna; "Se borrarán tus N rutas
     actuales") y "Cancelar" en rojo (también Escape, tocar fuera o deslizar).
     `useRoutes.importRoutes(cards, 'merge' | 'replace')` las guarda y pide sus
@@ -608,6 +610,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   "Parada N". Se pone al crearla ("Nombre de la tarjeta") o con el lápiz del
   modo edición (`updateRoute`). Las tarjetas guardadas antes de existir
   `alias` lo reciben al cargar (su título si no era el de la parada).
+- **Notas:** cada tarjeta puede guardar `note` (opcional, hasta 60
+  caracteres, `NOTE_MAX` en `vigobusAdapter.js`): "Coger el de las 8:10". Se
+  pone al crearla (campo "Nota" bajo el nombre) o con el lápiz del modo
+  edición; se enseña en una sola línea gris (`text-sm`, truncada) bajo el
+  título. Las tarjetas sin `note` (anteriores) se tratan como `""`. Viaja en
+  el enlace de "Compartir Mis rutas" como 6.º elemento opcional (solo si hay)
+  y no cuenta para los duplicados al importar.
 - **Líneas visibles por tarjeta:** `lines` es el array de líneas visibles en
   orden de prioridad (las demás están ocultas). En "Editar tarjeta" (lápiz del
   modo edición: alias + "Líneas") salen todas las que pasan por la parada
@@ -656,9 +665,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.32 • Build: 31/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.33 • Build: 31/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.32 = PR #32), hora de compilación
+  PR: `npm version minor`; v1.33 = PR #33), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -769,6 +778,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   OLED sin fondo, y velocidad Fluido / Relajado / Estático).
 - Hecho: compartir Mis rutas sin backend (QR y enlace `?tarjetas=` desde
   Ajustes; al abrirlo, añadir, reemplazar o cancelar).
+- Hecho: notas personalizadas en las tarjetas (60 caracteres, también en el
+  enlace compartido).
 
 ### Fase 4 · Onboarding — *Pendiente*
 

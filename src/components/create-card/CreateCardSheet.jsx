@@ -2,7 +2,7 @@ import { BusFront, CircleAlert, CircleCheck, Plus, Route, SlidersHorizontal, X }
 import { useEffect, useId, useState } from 'react';
 import { loadStopsList, stopLines } from '../../data/stops';
 import { useStopLookup } from '../../hooks/useStopLookup';
-import { lineColor, toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
+import { NOTE_MAX, lineColor, toRouteCard, uniqueLines } from '../../services/vigobusAdapter';
 import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
 import PillButton from '../ui/PillButton';
@@ -124,6 +124,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
   // Personalización de esta tarjeta: nombre (vacío = nombre de la parada) y
   // cuántos autobuses enseña sin desplegar.
   const [name, setName] = useState('');
+  const [note, setNote] = useState('');
   const [busesToShow, setBusesToShow] = useState(3);
   const [color, setColor] = useState(DEFAULT_CARD_COLOR);
   // Al elegir la primera línea se despliega "Personaliza la tarjeta" una vez.
@@ -233,6 +234,15 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
           <p id={nameHintId} className="mt-2 text-sm font-medium text-white/60">
             Si lo dejas vacío, se usará el nombre de la parada.
           </p>
+          <div className="mt-4">
+            <CardNameField
+              label="Nota"
+              value={note}
+              onChange={setNote}
+              placeholder="Opcional · Ej. Coger el de las 8:10"
+              maxLength={NOTE_MAX}
+            />
+          </div>
 
           <p className="mb-2 mt-4 text-sm font-semibold text-white/80" aria-hidden="true">
             Autobuses visibles
@@ -254,7 +264,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
         <PillButton
           disabled={!canCreate}
           onClick={() =>
-            onCreate(toRouteCard({ stop, buses: lookup.buses, lines: selectedLines, title: name, busesToShow, color }))
+            onCreate(toRouteCard({ stop, buses: lookup.buses, lines: selectedLines, title: name, note, busesToShow, color }))
           }
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />

@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { loadStopsList, stopLines } from '../../data/stops';
-import { lineColor } from '../../services/vigobusAdapter';
+import { NOTE_MAX, lineColor } from '../../services/vigobusAdapter';
 import CardNameField from '../create-card/CardNameField';
 import LineChips from '../create-card/LineChips';
 import IconButton from '../ui/IconButton';
@@ -17,7 +17,8 @@ import PillButton from '../ui/PillButton';
  *   la tarjeta, en el orden en que se tocaron (su prioridad); apagadas, la
  *   tarjeta no las enseña. Al menos una.
  * `route` es la tarjeta que se edita (o `null` con el modal cerrado).
- * `onSave(id, { alias, lines })`.
+ * - Nota: opcional, hasta 60 caracteres ("Coger el de las 8:10").
+ * `onSave(id, { alias, note, lines })`.
  */
 export default function EditCardModal({ route, onClose, onSave }) {
   const titleId = useId();
@@ -32,6 +33,7 @@ export default function EditCardModal({ route, onClose, onSave }) {
 
 function EditCardForm({ route, titleId, onClose, onSave }) {
   const [alias, setAlias] = useState(route.alias ?? '');
+  const [note, setNote] = useState(route.note ?? '');
   const [visible, setVisible] = useState(route.lines ?? []);
   const hintId = useId();
   const linesHintId = useId();
@@ -68,7 +70,7 @@ function EditCardForm({ route, titleId, onClose, onSave }) {
       className="flex max-h-[calc(100dvh-2rem)] transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain p-5"
       onSubmit={(event) => {
         event.preventDefault();
-        if (visible.length) onSave(route.id, { alias, lines: visible });
+        if (visible.length) onSave(route.id, { alias, note, lines: visible });
       }}
     >
       <header className="flex items-center justify-between gap-3">
@@ -91,6 +93,15 @@ function EditCardForm({ route, titleId, onClose, onSave }) {
           {route.stopName ? `Parada ${route.stopId} · ${route.stopName}. ` : ''}Déjalo vacío para usar el nombre de
           la parada.
         </p>
+        <div className="mt-4">
+          <CardNameField
+            label="Nota"
+            value={note}
+            onChange={setNote}
+            placeholder="Opcional · Ej. Coger el de las 8:10"
+            maxLength={NOTE_MAX}
+          />
+        </div>
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-4" aria-describedby={linesHintId}>
