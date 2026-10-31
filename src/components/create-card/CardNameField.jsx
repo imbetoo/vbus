@@ -3,7 +3,8 @@ import { useId } from 'react';
 /**
  * Campo de texto para el nombre de la tarjeta, con el estilo de los inputs
  * Bento (gris suave, borde fino y anillo azul al enfocar). El `placeholder`
- * muestra el nombre que se usará si se deja vacío.
+ * muestra el nombre que se usará si se deja vacío. También sirve para la nota
+ * (`label`, `maxLength`).
  */
 export default function CardNameField({
   value,
@@ -12,6 +13,7 @@ export default function CardNameField({
   describedBy,
   label = 'Nombre de la tarjeta',
   inputRef,
+  maxLength = 32,
 }) {
   const id = useId();
 
@@ -24,7 +26,7 @@ export default function CardNameField({
         id={id}
         type="text"
         ref={inputRef}
-        maxLength={32}
+        maxLength={maxLength}
         enterKeyHint="done"
         autoComplete="off"
         autoCapitalize="sentences"

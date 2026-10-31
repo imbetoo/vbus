@@ -43,6 +43,7 @@ function RouteCard({
   id,
   title,
   alias,
+  note = '',
   stopId,
   stopName,
   icon,
@@ -120,6 +121,13 @@ function RouteCard({
           </div>
         )}
       </div>
+
+      {/* Nota propia: una sola línea gris bajo el título (no mueve nada más). */}
+      {note && (
+        <p className="ml-[3.75rem] mt-1 truncate text-sm font-medium text-white/55" title={note}>
+          {note}
+        </p>
+      )}
 
       {nearMeters != null && !editing && (
         <p className="ml-[3.75rem] mt-1 flex animate-fade-in items-center gap-1 text-sm font-semibold tabular-nums text-[#409CFF] motion-reduce:animate-none">

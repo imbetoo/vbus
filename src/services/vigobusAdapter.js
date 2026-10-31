@@ -1,6 +1,9 @@
 import { isUrgent } from '../components/bus/urgency';
 import { busesOfLines, lineKey } from '../lib/lines';
 
+/** Largo máximo de la nota de una tarjeta. */
+export const NOTE_MAX = 60;
+
 /**
  * Adaptadores: transforman las respuestas crudas de VigoBusAPI al formato que
  * usa la UI (`RouteCard` y `BusLineItem`).
@@ -78,7 +81,7 @@ export function uniqueLines(buses) {
  * - `busesToShow`: autobuses visibles en esta tarjeta sin desplegar (2 o 3).
  * - `color`: id del color de su icono (`cardColors.js`).
  */
-export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, color = 'graphite' }) {
+export function toRouteCard({ stop, buses, lines, title = '', note = '', busesToShow = 3, color = 'graphite' }) {
   const alias = title.trim();
   return {
     id: crypto.randomUUID(),
@@ -88,6 +91,8 @@ export function toRouteCard({ stop, buses, lines, title = '', busesToShow = 3, c
     alias,
     title: alias || stop.name,
     stopName: stop.name,
+    // `note`: nota propia, opcional ("Coger el de las 8:10"), hasta 60 caracteres.
+    note: note.trim().slice(0, NOTE_MAX),
     icon: 'Bus',
     lines,
     busesToShow,
