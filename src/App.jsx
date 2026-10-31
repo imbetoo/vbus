@@ -3,6 +3,7 @@ import FocusHost from './components/focus/FocusHost';
 import MeshBackground from './components/ui/MeshBackground';
 import UpdateToast from './components/ui/UpdateToast';
 import { useAppUpdate } from './hooks/useAppUpdate';
+import { applyAppearance } from './lib/appearance';
 import { setHapticsEnabled } from './lib/haptics';
 import { useSettings } from './hooks/useSettings';
 import { loadStopsList } from './data/stops';
@@ -19,6 +20,13 @@ export default function App() {
   useEffect(() => {
     setHapticsEnabled(settings.vibration);
   }, [settings.vibration]);
+
+  // Paleta y dinamismo del fondo: solo atributos de <html> (el CSS hace el
+  // resto). Ajustes ya los aplica con su fundido; esto cubre la carga y que
+  // cambien desde otro sitio.
+  useEffect(() => {
+    applyAppearance({ palette: settings.palette, motion: settings.motion });
+  }, [settings.palette, settings.motion]);
 
   // El backend puede estar dormido: se le avisa nada más abrir la app.
   useEffect(() => {
@@ -42,7 +50,7 @@ export default function App() {
 
   return (
     <>
-      <MeshBackground lite={settings.background === 'lite'} />
+      <MeshBackground lite={settings.background === 'lite'} oled={settings.palette === 'oled'} />
       <Dashboard settings={settings} onSettingChange={updateSetting} />
       {/* Modo viaje o salida activo (pantalla negra o píldora): fuera del
           Dashboard, sigue aunque se cierre la consulta rápida. */}
