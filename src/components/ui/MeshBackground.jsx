@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 // Cada mancha es una elipse de ≥ 90vmax centrada en (X, Y) con
 // `calc(X - mitad)`, sin `-translate-*`, que chocaría con la animación.
 // La blanca va al final: es la banda luminosa protagonista. `lite`: las que
@@ -16,17 +18,25 @@ const BLOBS = [
 ];
 
 /**
- * Fondo "mesh gradient" perla iridiscente (inspirado en Apple Music). Las
- * manchas solo animan `transform`, así la GPU las mueve sin repintar. Encima
- * van dos capas estáticas: un velo ligero que suaviza los tonos y un grano
- * fino que da el acabado de luz helada sin el coste de un `backdrop-blur`.
- * Con `lite` solo se pintan 3 manchas: menos capas que la GPU mueve en cada
- * fotograma (ajuste "Fondo" para móviles con tirones).
+ * Fondo "mesh gradient" (perla iridiscente en la paleta Vigo, inspirado en
+ * Apple Music). Las manchas solo animan `transform`, así la GPU las mueve sin
+ * repintar. Encima van dos capas estáticas: un velo ligero que suaviza los
+ * tonos y un grano fino que da el acabado de luz helada sin el coste de un
+ * `backdrop-blur`. Con `lite` solo se pintan 3 manchas: menos capas que la
+ * GPU mueve en cada fotograma (ajuste "Fondo" para móviles con tirones).
+ *
+ * Colores (paleta) y velocidad (dinamismo) no pasan por aquí: son variables
+ * CSS de `<html>` (`src/lib/appearance.js`, `index.css`), así que cambiar de
+ * tema no vuelve a renderizar nada. Memorizado: solo se repinta si cambian
+ * `lite` u `oled`. Con `oled` (negro puro) no se monta nada: sin capas que
+ * componer, la GPU descansa y los píxeles OLED se apagan.
  */
-export default function MeshBackground({ lite = false }) {
+function MeshBackground({ lite = false, oled = false }) {
+  if (oled) return null;
+
   return (
     <div
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-pearl"
+      className="mesh-layer pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-pearl"
       aria-hidden="true"
     >
       {BLOBS.filter((blob) => !lite || blob.lite).map((blob) => (
@@ -35,8 +45,10 @@ export default function MeshBackground({ lite = false }) {
           className={`absolute will-change-transform motion-reduce:animate-none ${blob.className}`}
         />
       ))}
-      <div className="absolute inset-0 bg-white/15 dark:bg-navy-900/45" />
+      <div className="mesh-veil absolute inset-0" />
       <div className="absolute inset-0 bg-grain bg-[length:160px_160px] opacity-[0.06] dark:opacity-[0.04]" />
     </div>
   );
 }
+
+export default memo(MeshBackground);

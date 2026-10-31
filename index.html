@@ -24,14 +24,23 @@
     <meta name="apple-mobile-web-app-title" content="vBus" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>vBus</title>
-    <!-- Aplica el tema antes del primer pintado para evitar un destello. -->
+    <!-- Aplica el tema, la paleta y el dinamismo antes del primer pintado
+         para evitar un destello (misma regla que `src/lib/appearance.js`). -->
     <script>
       try {
+        var root = document.documentElement;
         var theme = localStorage.getItem('vbus:theme');
         if (theme !== 'light' && theme !== 'dark') {
           theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
-        document.documentElement.classList.toggle('dark', theme === 'dark');
+        var settings = JSON.parse(localStorage.getItem('vbus:settings') || '{}') || {};
+        var palettes = { vigo: 0, nature: 0, sunset: 0, ocean: 0, cyberpunk: 'dark', lavender: 0, cloud: 'light', shadow: 'dark', oled: 'dark' };
+        if (Object.prototype.hasOwnProperty.call(palettes, settings.palette)) {
+          root.dataset.palette = settings.palette;
+          theme = palettes[settings.palette] || theme;
+        }
+        if (['fluid', 'relaxed', 'static'].indexOf(settings.motion) >= 0) root.dataset.motion = settings.motion;
+        root.classList.toggle('dark', theme === 'dark');
       } catch (e) {
         // Sin almacenamiento disponible: se queda en modo claro.
       }

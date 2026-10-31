@@ -1,6 +1,7 @@
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
 import { BusFront, Check, Moon, Pencil, Search, Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forcedScheme, paletteOf } from '../lib/appearance';
 import { prefersReducedMotion } from '../lib/motion';
 import { withNearestFirst } from '../lib/proximity';
 import EditCardModal from '../components/bus/EditCardModal';
@@ -87,7 +88,8 @@ export default function Dashboard({ settings, onSettingChange }) {
   const contentRef = useRef(null);
   const indicatorRef = useRef(null);
   const refreshing = usePullToRefresh({ scrollRef, contentRef, indicatorRef, onRefresh: refresh, enabled: !isEditing });
-  const { theme, toggleTheme } = useTheme();
+  // La paleta puede fijar el modo (Sombra, Cyberpunk y OLED: oscuro; Nube: claro).
+  const { theme, forced: forcedTheme, toggleTheme } = useTheme(forcedScheme(settings.palette));
   // Abierta desde un acceso directo: "Escanear QR" y "Buscar parada" abren la
   // consulta rápida (con el escáner o el destino enfocado); "Nueva tarjeta",
   // su hoja. Se lee una vez y se quita de la URL (recargar no lo repite).
@@ -194,7 +196,12 @@ export default function Dashboard({ settings, onSettingChange }) {
                 className={HEADER_BUTTON}
               />
             )}
-            <ThemeToggle theme={theme} onToggle={toggleTheme} className={HEADER_BUTTON} />
+            <ThemeToggle
+              theme={theme}
+              onToggle={toggleTheme}
+              lockedBy={forcedTheme ? paletteOf(settings.palette).name : null}
+              className={HEADER_BUTTON}
+            />
             <IconButton
               tone="adaptive"
               icon={Settings}

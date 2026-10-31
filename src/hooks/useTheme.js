@@ -1,30 +1,29 @@
 import { useCallback, useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { chosenTheme } from '../lib/appearance';
 import { prefersReducedMotion } from '../lib/motion';
 
 const STORAGE_KEY = 'vbus:theme';
 
-// Misma regla que el script de `index.html`: la elección guardada manda y, si
-// no la hay, se sigue al sistema.
-function getInitialTheme() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'light' || saved === 'dark') return saved;
-  } catch {
-    // Sin almacenamiento disponible: se sigue al sistema.
-  }
-  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-/** Tema claro/oscuro: aplica la clase `dark` en <html> y recuerda la elección. */
-export function useTheme() {
-  const [theme, setTheme] = useState(getInitialTheme);
+/**
+ * Tema claro/oscuro: aplica la clase `dark` en <html> y recuerda la elección.
+ *
+ * `forced` (`light`/`dark`): lo fija la paleta (Sombra, Cyberpunk y OLED son
+ * oscuras; Nube, clara). Mientras tanto manda ella, el Sol/Luna no hace nada
+ * y la elección guardada no se toca: vuelve al elegir otra paleta.
+ *
+ * Devuelve `{ theme, forced, toggleTheme }` (`theme`: el que se ve).
+ */
+export function useTheme(forced = null) {
+  const [chosen, setTheme] = useState(chosenTheme);
+  const theme = forced ?? chosen;
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
+    if (forced) return;
     const next = theme === 'dark' ? 'light' : 'dark';
     const root = document.documentElement;
     try {
@@ -48,7 +47,7 @@ export function useTheme() {
     document
       .startViewTransition(apply)
       .finished.finally(() => root.classList.remove('theme-switching'));
-  }, [theme]);
+  }, [theme, forced]);
 
-  return { theme, toggleTheme };
+  return { theme, forced, toggleTheme };
 }

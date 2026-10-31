@@ -90,11 +90,33 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 ### Elementos visuales
 
-- **Fondo:** mesh gradient animado "perla iridiscente" (inspirado en Apple
-  Music): azul `#A2C2FC`, lavanda `#E2B7FC`, blanco perla, índigo y azul
-  rosáceo sobre lienzo `#F8F6FC`. `radial-gradient` en CSS puro y `@keyframes`
-  lentos que solo animan `transform`, con velo blanco al 15 % (navy al 45 % en
-  oscuro) y grano fino estático. Sin lag (60 fps).
+- **Fondo:** mesh gradient animado (inspirado en Apple Music); en la paleta
+  Vigo, "perla iridiscente": azul `#A2C2FC`, lavanda `#E2B7FC`, blanco perla,
+  índigo y azul rosáceo sobre lienzo `#F8F6FC`. `radial-gradient` en CSS puro
+  y `@keyframes` lentos que solo animan `transform`, con velo blanco al 15 %
+  (navy al 45 % en oscuro) y grano fino estático. Sin lag (60 fps).
+  `MeshBackground` va en `React.memo` (solo `lite` y `oled`).
+- **Motor de temas (`src/lib/appearance.js`, ajustes "Tema" y
+  "Dinamismo"):** CSS primero, sin React por fotograma. Cada paleta es un
+  bloque `[data-palette='…']` de variables RGB en `index.css` (lienzo
+  `--mesh-canvas`, manchas `--mesh-1…5`, velo `--mesh-veil`/`--mesh-veil-dark`
+  y `--accent`), que leen las manchas (`bg-mesh-*`), el lienzo (`pearl`) y el
+  acento de toda la interfaz (`accent` de Tailwind,
+  `rgb(var(--accent) / <alpha-value>)`: foco, iconos azules, aviso de
+  versión). Elegir solo escribe `data-palette`/`data-motion` en `<html>`
+  (`applyAppearance`) dentro del mismo fundido de View Transitions que el
+  Sol/Luna (`changeAppearance`); el script de `index.html` los pone antes del
+  primer pintado (sin destello). Las muestras de Ajustes llevan su propio
+  `data-palette`: el CSS es la única fuente de colores. Nueve paletas: Vigo
+  (por defecto), Naturaleza, Atardecer, Océano, Cyberpunk (oscura), Lavanda,
+  Nube (clara), Sombra (oscura) y OLED (negro puro: `MeshBackground` devuelve
+  `null`, sin capas que componer, y `body` en `#000`). Las que fijan el modo
+  (`scheme`) mandan sobre el Sol/Luna, que queda desactivado ("El tema Sombra
+  siempre es oscuro"; `useTheme(forced)`) sin tocar la elección guardada,
+  que vuelve al cambiar de paleta. Dinamismo: `--mesh-speed` escala duración
+  y desfase de los `@keyframes` (Fluido 0,5: el doble de rápido; Relajado 1,
+  por defecto) y Estático pausa las manchas (`animation-play-state:
+  paused`, 0 % de CPU).
 - **Tarjetas del Dashboard:** grafito casi opaco `bg-[#272727]/80` con
   degradado interior sutil y **sin `backdrop-filter`** (el desenfoque en
   movimiento dejaba rastro negro en Chromium/WebKit), borde de 2px
@@ -488,7 +510,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `cubic-bezier(0.25, 1, 0.5, 1)` (`ease-spring`), definido una sola vez en
   `src/components/ui/pressable.js`.
 - **Tema:** claro/oscuro con el botón Sol/Luna de la cabecera (se recuerda en
-  LocalStorage; si no se ha elegido, sigue al sistema). El cambio usa View
+  LocalStorage; si no se ha elegido, sigue al sistema; las paletas Sombra,
+  Cyberpunk, OLED y Nube lo fijan y lo desactivan). El cambio usa View
   Transitions: la página entera funde en 500 ms `ease-in-out`, así todo cambia
   exactamente a la vez (nada de transiciones de color por elemento).
 - **Hojas y modales:** entran **y salen** animados (`useAnimatedDialog`): la
@@ -587,22 +610,26 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
   (pulgar blanco que se desliza; accesibles como grupo de radios), con scroll
-  si no cabe. Seis ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  si no cabe. Ocho ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  "Tema" (`palette`: cuadrícula de 9 muestras circulares con un mini fondo
+  de su paleta y su nombre, la elegida con anillo blanco y check, grupo de
+  radios con flechas y toque háptico `select`; ver "Motor de temas"),
+  "Dinamismo" (`motion`: Fluido, Relajado o Estático, control segmentado),
   "Ordenar autobuses por"; "Formato de tiempo": Relativo ("5 min") o Absoluto
   ("12:45", minutos sumados a `updatedAt`, la hora en que llegaron los
   tiempos, así no se desvía entre refrescos); "Actualizar datos": 15, 30
   (por defecto) o 60 s (el intervalo de `useRoutes` se rehace al cambiarlo); y
   "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
-  perla) para móviles con tirones; y el interruptor "Ordenar tarjetas por
+  perla) para móviles con tirones (oculto con OLED); y el interruptor "Ordenar tarjetas por
   cercanía" (`sortByProximity`, activado por defecto). Interruptor "Vibración"
   (`vibration`, activado por defecto): apagado, `haptics.js` no vibra nada
   (`setHapticsEnabled`, sincronizado en `App.jsx`), tampoco las alarmas ni
   su notificación; los avisos siguen sonando y notificando. Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.30 • Build: 30/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.31 • Build: 31/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.30 = PR #30), hora de compilación
+  PR: `npm version minor`; v1.31 = PR #31), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -709,6 +736,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   todo volumen).
 - Hecho: píldora flotante ("Dynamic Island" interna): los modos viaje y
   salida se minimizan sin cancelar y siguen a la vista arriba.
+- Hecho: motor de temas y dinamismo (9 paletas del fondo y los acentos,
+  OLED sin fondo, y velocidad Fluido / Relajado / Estático).
 
 ### Fase 4 · Onboarding — *Pendiente*
 

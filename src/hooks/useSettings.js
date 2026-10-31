@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { MOTIONS, PALETTES } from '../lib/appearance';
 
 const STORAGE_KEY = 'vbus:settings';
 
@@ -12,6 +13,8 @@ const STORAGE_KEY = 'vbus:settings';
  * - `sortByProximity`: la tarjeta de la parada más cercana, la primera
  *   (Smart Sorting; solo cambia la vista, nunca el orden guardado).
  * - `vibration`: vibración y toques hápticos (también los de las alarmas).
+ * - `palette`: colores del fondo y de los acentos (`PALETTES`, `appearance.js`).
+ * - `motion`: velocidad de las manchas del fondo (fluido, relajado o estático).
  */
 export const DEFAULT_SETTINGS = {
   sortBy: 'time',
@@ -20,6 +23,8 @@ export const DEFAULT_SETTINGS = {
   refreshSeconds: 30,
   sortByProximity: true,
   vibration: true,
+  palette: 'vigo',
+  motion: 'relaxed',
 };
 
 const VALID = {
@@ -29,6 +34,8 @@ const VALID = {
   refreshSeconds: [15, 30, 60],
   sortByProximity: [true, false],
   vibration: [true, false],
+  palette: PALETTES.map((palette) => palette.id),
+  motion: MOTIONS.map((motion) => motion.value),
 };
 
 function loadSettings() {

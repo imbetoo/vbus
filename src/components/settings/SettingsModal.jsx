@@ -1,11 +1,13 @@
 import { Download, Share, X } from 'lucide-react';
 import { useId } from 'react';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
+import { MOTIONS, applyAppearance, changeAppearance } from '../../lib/appearance';
 import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
 import Switch from '../ui/Switch';
+import PalettePicker from './PalettePicker';
 import { PRESSABLE } from '../ui/pressable';
 
 // "vBus v1.20 • Build: 29/10/2026, 22:45 · 4c8e5b7" (versión de
@@ -44,6 +46,19 @@ const BACKGROUND_OPTIONS = [
   { value: 'full', label: 'Completo' },
   { value: 'lite', label: 'Ligero' },
 ];
+
+// Explicación de la paleta elegida (las que fijan el modo lo dicen).
+const PALETTE_HINTS = {
+  vigo: 'Azules y morados: el de siempre.',
+  nature: 'Esmeralda, menta y bosque.',
+  sunset: 'Naranjas, rojos y amarillos cálidos.',
+  ocean: 'Azul marino, turquesa y cian.',
+  cyberpunk: 'Magenta y cian neón. Siempre en modo oscuro.',
+  lavender: 'Lilas y rosas pastel, relajante.',
+  cloud: 'Blancos y grises, sin color. Siempre en modo claro.',
+  shadow: 'Grises muy oscuros y carbón. Siempre en modo oscuro.',
+  oled: 'Negro puro y sin animación: ahorra batería. Siempre en modo oscuro.',
+};
 
 /** Una fila de ajuste en un contenedor Bento: título, explicación y control. */
 function SettingRow({ title, description, children }) {
@@ -172,22 +187,63 @@ export default function SettingsModal({ open, onClose, settings, onChange }) {
         </SettingRow>
 
         <SettingRow
-          title="Fondo"
+          title="Tema"
           description={
-            <span key={settings.background} className="block animate-fade-in motion-reduce:animate-none">
-              {settings.background === 'full'
-                ? 'Cinco manchas de color en movimiento.'
-                : 'Solo tres manchas: más fluido si notas tirones.'}
+            <span key={settings.palette} className="block animate-fade-in motion-reduce:animate-none">
+              {PALETTE_HINTS[settings.palette] ?? 'Colores del fondo y de los acentos.'}
+            </span>
+          }
+        >
+          <PalettePicker
+            value={settings.palette}
+            // Fondo, acentos y modo cambian a la vez con un fundido (solo atributos de <html>).
+            onChange={(palette) => changeAppearance({ palette }, () => onChange('palette', palette))}
+          />
+        </SettingRow>
+
+        <SettingRow
+          title="Dinamismo"
+          description={
+            <span key={settings.motion} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.motion === 'fluid'
+                ? 'Movimiento vivo, el doble de rápido.'
+                : settings.motion === 'relaxed'
+                  ? 'Movimiento lento y sutil (recomendado).'
+                  : 'Fondo congelado: 0 % de CPU y de batería.'}
             </span>
           }
         >
           <SegmentedControl
-            label="Fondo"
-            options={BACKGROUND_OPTIONS}
-            value={settings.background}
-            onChange={(value) => onChange('background', value)}
+            label="Dinamismo"
+            options={MOTIONS}
+            value={settings.motion}
+            onChange={(motion) => {
+              applyAppearance({ motion });
+              onChange('motion', motion);
+            }}
           />
         </SettingRow>
+
+        {/* Con OLED no hay manchas que aligerar. */}
+        {settings.palette !== 'oled' && (
+          <SettingRow
+            title="Fondo"
+            description={
+              <span key={settings.background} className="block animate-fade-in motion-reduce:animate-none">
+                {settings.background === 'full'
+                  ? 'Cinco manchas de color en movimiento.'
+                  : 'Solo tres manchas: más fluido si notas tirones.'}
+              </span>
+            }
+          >
+            <SegmentedControl
+              label="Fondo"
+              options={BACKGROUND_OPTIONS}
+              value={settings.background}
+              onChange={(value) => onChange('background', value)}
+            />
+          </SettingRow>
+        )}
 
         {/* Solo aparece si el navegador permite instalarla (o en iOS, cómo hacerlo). */}
         {canInstall && (

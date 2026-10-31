@@ -41,21 +41,25 @@ export default {
         },
         // Tarjetas (fondo al 50 %) y pastillas de icono.
         graphite: '#272727',
-        // Lienzo del fondo: blanco perla con un punto lavanda.
-        pearl: '#F8F6FC',
+        // Lienzo del fondo (blanco perla con un punto lavanda en Vigo): lo
+        // fija la paleta (`--mesh-canvas`, `index.css`).
+        pearl: 'rgb(var(--mesh-canvas) / <alpha-value>)',
         // Estado de urgencia (llegada en < 3 min), rojo de sistema de iOS.
         urgent: '#FF3B30',
-        // Azul de sistema de iOS: foco de inputs y elementos seleccionados.
-        accent: '#0A84FF',
+        // Acento: foco de inputs y elementos seleccionados. Azul de sistema de
+        // iOS en Vigo; lo fija la paleta (`--accent`, `index.css`).
+        accent: 'rgb(var(--accent) / <alpha-value>)',
       },
-      // Fondo "perla iridiscente". Cada mancha se desvanece a su propio color
-      // con alfa 0 para que no aparezcan halos grises en los bordes.
+      // Fondo "mesh gradient". Cada mancha se desvanece a su propio color con
+      // alfa 0 para que no aparezcan halos grises en los bordes. Los colores
+      // los pone la paleta (`--mesh-1…5`, `index.css`): azul, lavanda, perla,
+      // índigo y rosa en Vigo.
       backgroundImage: {
-        'mesh-blue': 'radial-gradient(closest-side, #A2C2FC 25%, rgb(162 194 252 / 0))',
-        'mesh-lavender': 'radial-gradient(closest-side, #E2B7FC 25%, rgb(226 183 252 / 0))',
-        'mesh-pearl': 'radial-gradient(closest-side, #FFFFFF 15%, rgb(255 255 255 / 0))',
-        'mesh-indigo': 'radial-gradient(closest-side, #8E96E8 15%, rgb(142 150 232 / 0))',
-        'mesh-rose': 'radial-gradient(closest-side, #F2C4E8 20%, rgb(242 196 232 / 0))',
+        'mesh-blue': 'radial-gradient(closest-side, rgb(var(--mesh-1)) 25%, rgb(var(--mesh-1) / 0))',
+        'mesh-lavender': 'radial-gradient(closest-side, rgb(var(--mesh-2)) 25%, rgb(var(--mesh-2) / 0))',
+        'mesh-pearl': 'radial-gradient(closest-side, rgb(var(--mesh-5)) 15%, rgb(var(--mesh-5) / 0))',
+        'mesh-indigo': 'radial-gradient(closest-side, rgb(var(--mesh-3)) 15%, rgb(var(--mesh-3) / 0))',
+        'mesh-rose': 'radial-gradient(closest-side, rgb(var(--mesh-4)) 20%, rgb(var(--mesh-4) / 0))',
         // Grano fino (ruido SVG desaturado): se rasteriza una vez y solo se compone.
         grain:
           "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
@@ -80,12 +84,13 @@ export default {
         jiggle: { from: { transform: 'rotate(-1deg)' }, to: { transform: 'rotate(1deg)' } },
       },
       // Duraciones desiguales y desfasadas para que nunca se muevan al compás.
+      // `--mesh-speed` (ajuste "Dinamismo") escala duración y desfase a la vez.
       animation: {
-        'mesh-1': 'mesh-1 35s ease-in-out infinite alternate',
-        'mesh-2': 'mesh-2 42s ease-in-out -8s infinite alternate',
-        'mesh-3': 'mesh-3 50s ease-in-out -17s infinite alternate',
-        'mesh-4': 'mesh-4 57s ease-in-out -23s infinite alternate',
-        'mesh-5': 'mesh-5 64s ease-in-out -31s infinite alternate',
+        'mesh-1': 'mesh-1 calc(35s * var(--mesh-speed, 1)) ease-in-out infinite alternate',
+        'mesh-2': 'mesh-2 calc(42s * var(--mesh-speed, 1)) ease-in-out calc(-8s * var(--mesh-speed, 1)) infinite alternate',
+        'mesh-3': 'mesh-3 calc(50s * var(--mesh-speed, 1)) ease-in-out calc(-17s * var(--mesh-speed, 1)) infinite alternate',
+        'mesh-4': 'mesh-4 calc(57s * var(--mesh-speed, 1)) ease-in-out calc(-23s * var(--mesh-speed, 1)) infinite alternate',
+        'mesh-5': 'mesh-5 calc(64s * var(--mesh-speed, 1)) ease-in-out calc(-31s * var(--mesh-speed, 1)) infinite alternate',
         'fade-in': 'fade-in 250ms ease-out',
         'clock-out': 'clock-out 600ms cubic-bezier(0.32, 0.72, 0, 1) forwards',
         'clock-in': 'clock-in 600ms cubic-bezier(0.32, 0.72, 0, 1)',
