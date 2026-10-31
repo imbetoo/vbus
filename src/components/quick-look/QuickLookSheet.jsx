@@ -6,6 +6,7 @@ import ScannerSheet from '../scanner/ScannerSheet';
 import IconButton from '../ui/IconButton';
 import IconHeading from '../ui/IconHeading';
 import RoutePlanner from './RoutePlanner';
+import { useT } from '../../i18n';
 
 // Arrastrar hacia abajo más que esto (o soltar rápido) cierra el panel.
 const CLOSE_OFFSET = 120;
@@ -29,6 +30,7 @@ const SPRING = { type: 'spring', damping: 32, stiffness: 320, mass: 0.9 };
  * dentro sin que el panel cambie de tamaño.
  */
 export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, startWith = null }) {
+  const t = useT();
   const dialogRef = useRef(null);
   const titleId = useId();
   const dragControls = useDragControls();
@@ -108,15 +110,15 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, 
             <IconHeading
               icon={Search}
               iconStrokeWidth={2.5}
-              title="Consulta rápida"
+              title={t('dashboard.quickLook')}
               subtitle={
                 night ? (
                   <span key="night" className="inline-flex animate-fade-in items-center gap-1.5 motion-reduce:animate-none">
                     <Moon className="h-3.5 w-3.5 shrink-0 fill-current opacity-70" strokeWidth={2.25} aria-hidden="true" />
-                    Modo nocturno
+                    {t('quick.night')}
                   </span>
                 ) : (
-                  'Tiempos y líneas directas'
+                  t('quick.subtitle')
                 )
               }
               titleAs="h2"
@@ -125,14 +127,14 @@ export default function QuickLookSheet({ onClose, onAdd, timeFormat, refreshMs, 
             <div className="ml-auto flex shrink-0 items-center gap-2">
               <IconButton
                 icon={ScanQrCode}
-                label="Escanear el QR de la parada"
+                label={t('quick.scan')}
                 aria-haspopup="dialog"
                 onClick={() => setScanning(true)}
                 onPointerDown={(event) => event.stopPropagation()}
               />
               <IconButton
                 icon={X}
-                label="Cerrar"
+                label={t('common.close')}
                 onClick={onClose}
                 onPointerDown={(event) => event.stopPropagation()}
               />

@@ -1,5 +1,6 @@
 import { MapPin } from 'lucide-react';
 import { splitStopName } from '../../data/stops';
+import { useT } from '../../i18n';
 
 /**
  * Contenido de una fila de parada (sugerencias del buscador y paradas
@@ -8,7 +9,8 @@ import { splitStopName } from '../../data/stops';
  * o enfrentadas en la misma calle.
  */
 export default function StopRow({ stop, distance }) {
-  const meta = [`Parada ${stop.id}`, distance, stop.lines?.length ? stop.lines.join(', ') : null].filter(Boolean);
+  const t = useT();
+  const meta = [t('stop.fallback', { id: stop.id }), distance, stop.lines?.length ? stop.lines.join(', ') : null].filter(Boolean);
   return (
     <>
       <MapPin className="h-5 w-5 shrink-0 text-white/60" strokeWidth={2.25} aria-hidden="true" />

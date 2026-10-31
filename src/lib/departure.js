@@ -2,6 +2,7 @@
  * Modo salida (alarma de origen): "avísame cuando al C3d le falten 5 min
  * para llegar a mi parada". Validación de los minutos, sin React.
  */
+import { t } from '../i18n';
 
 /** Atajos de la hoja de configuración. */
 export const QUICK_LEADS = [2, 3, 5];
@@ -38,4 +39,4 @@ export function defaultLead(eta) {
 }
 
 /** "cuando falte 1 min" / "cuando falten 5 min". */
-export const whenLeft = (lead) => `cuando ${lead === 1 ? 'falte' : 'falten'} ${lead} min`;
+export const whenLeft = (lead) => t('departure.whenLeft', { n: lead });

@@ -1,6 +1,7 @@
 import { BusFront, GraduationCap, House, MapPin, Pencil, X } from 'lucide-react';
 import { memo, useId, useState } from 'react';
 import { useNightMode } from '../../hooks/useNightMode';
+import { useT } from '../../i18n';
 import { busesOfLines } from '../../lib/lines';
 import { formatDistance } from '../../lib/geo';
 import { arrangeForNight } from '../../lib/nightMode';
@@ -60,6 +61,7 @@ function RouteCard({
   onDepartureAlarm,
   nearMeters = null,
 }) {
+  const t = useT();
   const [showMore, setShowMore] = useState(false);
   const moreId = useId();
   const Icon = ROUTE_ICONS[icon] ?? House;
@@ -69,7 +71,7 @@ function RouteCard({
   // subtítulo dice su número. (Tarjetas antiguas sin `alias`: su `title`.)
   const name = alias ?? (title !== stopName ? title : '');
   const displayTitle = name || stopName || title;
-  const subtitle = name || !stopId ? `Desde ${stopName}` : `Parada ${stopId}`;
+  const subtitle = name || !stopId ? t('card.from', { stop: stopName }) : t('stop.fallback', { id: stopId });
   // Solo las líneas visibles de la tarjeta (`lines`, editables con el lápiz).
   const shown = busesOfLines(buses, lines);
   const night = useNightMode();
@@ -80,7 +82,7 @@ function RouteCard({
   const { buses: arranged, ended } = night ? arrangeForNight(sorted, lines) : { buses: sorted, ended: null };
   const visible = arranged.slice(0, busesToShow);
   const more = arranged.slice(busesToShow);
-  const stop = { id: stopId, name: stopName || `Parada ${stopId}` };
+  const stop = { id: stopId, name: stopName || t('stop.fallback', { id: stopId }) };
   const renderBus = (bus) => (
     <BusLineItem
       key={busKey(bus)}
@@ -106,7 +108,7 @@ function RouteCard({
             icon={Pencil}
             size="sm"
             tone="dark"
-            label={`Editar tarjeta ${displayTitle}`}
+            label={t('card.edit', { name: displayTitle })}
             aria-haspopup="dialog"
             onClick={() => onEditCard?.(id)}
             className="-mr-1 -mt-1 ml-auto"
@@ -114,9 +116,9 @@ function RouteCard({
         ) : (
           // Cómo llegar andando a la parada y, a su lado, eliminar.
           <div className="-mr-1 -mt-1 ml-auto flex shrink-0 items-center gap-2">
-            {stopId && <WalkToStopButton stop={{ id: stopId, name: stopName || `Parada ${stopId}` }} />}
+            {stopId && <WalkToStopButton stop={{ id: stopId, name: stopName || t('stop.fallback', { id: stopId }) }} />}
             {onRemove && (
-              <IconButton icon={X} size="sm" label={`Eliminar tarjeta ${displayTitle}`} onClick={() => onRemove(id)} />
+              <IconButton icon={X} size="sm" label={t('card.remove', { name: displayTitle })} onClick={() => onRemove(id)} />
             )}
           </div>
         )}
@@ -132,7 +134,7 @@ function RouteCard({
       {nearMeters != null && !editing && (
         <p className="ml-[3.75rem] mt-1 flex animate-fade-in items-center gap-1 text-sm font-semibold tabular-nums text-[#409CFF] motion-reduce:animate-none">
           <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
-          {`A ${formatDistance(nearMeters)} · La más cercana`}
+          {t('card.nearest', { distance: formatDistance(nearMeters) })}
         </p>
       )}
 
@@ -160,7 +162,7 @@ function RouteCard({
               onToggle={() => setShowMore((value) => !value)}
               controls={moreId}
             >
-              {showMore ? 'Ver menos autobuses' : 'Ver más autobuses'}
+              {t(showMore ? 'card.showLess' : 'card.showMore')}
             </DisclosureButton>
           </div>
         </>

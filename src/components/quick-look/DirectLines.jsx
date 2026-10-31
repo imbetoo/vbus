@@ -1,13 +1,14 @@
 import { formatDistance, haversineMeters } from '../../lib/geo';
 import { lineColor } from '../../services/vigobusAdapter';
 import LineBadge from '../bus/LineBadge';
+import { t, useT } from '../../i18n';
 
 // "6 paradas" / "5–6 paradas".
 function stopsRange(values) {
   const min = Math.min(...values);
   const max = Math.max(...values);
-  if (min === max) return `${min} ${min === 1 ? 'parada' : 'paradas'}`;
-  return `${min}–${max} paradas`;
+  if (min === max) return t('direct.stops', { n: min });
+  return t('direct.stopsRange', { min, max });
 }
 
 // "1,7 km" / "1,7–2 km" / "850 m – 1,2 km" (con unidades distintas, enteras).
@@ -35,6 +36,7 @@ const DETOUR_EXTRA_M = 1500;
  * solo se enseñan los distintivos de `lines`.
  */
 export default function DirectLines({ from, destination, options, lines }) {
+  const t = useT();
   const groups = [];
   if (options.length) {
     const byStop = new Map();
@@ -62,16 +64,16 @@ export default function DirectLines({ from, destination, options, lines }) {
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
       <p className="text-sm font-medium text-white/60">
-        {`${count === 1 ? 'Línea directa' : 'Líneas directas'} a ${destination.name}`}
+        {t('direct.title', { n: count, destination: destination.name })}
       </p>
       {groups.map((group) => (
         <div key={group.alight.id} className="mt-2">
           {group.alight.id !== destination.id && (
             <p className="mb-2 text-sm font-medium text-[#409CFF]">
-              {`Bájate en ${group.alight.name} · a ${formatDistance(group.walk)} de tu destino`}
+              {t('direct.getOff', { stop: group.alight.name, distance: formatDistance(group.walk) })}
             </p>
           )}
-          <ul className="flex flex-wrap gap-2" aria-label="Líneas, de menos a más recorrido">
+          <ul className="flex flex-wrap gap-2" aria-label={t('direct.order')}>
             {group.options.map((option) => (
               <LineBadge as="li" key={option.key} line={option.line} color={lineColor(option.line)} />
             ))}
@@ -87,9 +89,7 @@ export default function DirectLines({ from, destination, options, lines }) {
       ))}
       {detour && (
         <p className="mt-2 text-sm font-medium text-amber-300">
-          {`Da un rodeo: ${formatDistance(best.metres)} en autobús para ${formatDistance(
-            straight,
-          )} en línea recta. Mira también la ruta en Mapas.`}
+          {t('direct.detour', { bus: formatDistance(best.metres), straight: formatDistance(straight) })}
         </p>
       )}
     </div>

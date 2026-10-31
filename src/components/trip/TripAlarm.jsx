@@ -2,6 +2,7 @@ import { Bell } from 'lucide-react';
 import { startFocus } from '../../lib/focusSession';
 import { haptics } from '../../lib/haptics';
 import { PRESSABLE } from '../ui/pressable';
+import { useT } from '../../i18n';
 
 /**
  * "Avisarme" de una ruta directa: empieza el modo viaje (`TripSession`, que
@@ -18,6 +19,7 @@ import { PRESSABLE } from '../ui/pressable';
  * las que empieza (luego las pide el propio modo viaje).
  */
 export default function TripAlarm({ trip, buses, updatedAt }) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -30,7 +32,7 @@ export default function TripAlarm({ trip, buses, updatedAt }) {
       className={`flex h-14 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-lg font-semibold text-white shadow-relief active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
     >
       <Bell className="h-5 w-5 text-amber-300" strokeWidth={2.5} aria-hidden="true" />
-      Avisarme
+      {t('trip.alertMe')}
     </button>
   );
 }

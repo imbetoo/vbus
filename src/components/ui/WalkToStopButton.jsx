@@ -2,6 +2,7 @@ import { Footprints } from 'lucide-react';
 import { findStop } from '../../data/stops';
 import { walkingDirectionsUrl } from '../../lib/walking';
 import { PRESSABLE } from './pressable';
+import { useT } from '../../i18n';
 
 /**
  * Botón sutil de "cómo llegar andando" a una parada (icono de pisadas, círculo
@@ -14,6 +15,7 @@ import { PRESSABLE } from './pressable';
  * precarga al arrancar la app, así casi siempre ya están.
  */
 export default function WalkToStopButton({ stop }) {
+  const t = useT();
   const url = () => walkingDirectionsUrl(withCoordinates(stop));
 
   return (
@@ -21,7 +23,7 @@ export default function WalkToStopButton({ stop }) {
       href={url()}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`Cómo llegar andando a ${stop.name ?? `la parada ${stop.id}`} (se abre en Mapas)`}
+      aria-label={t('walk.label', { stop: stop.name ?? t('stop.fallback', { id: stop.id }) })}
       // Al tocar, con las coordenadas más recientes (la lista pudo cargar después).
       onClick={(event) => {
         event.currentTarget.href = url();

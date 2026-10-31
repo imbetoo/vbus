@@ -15,28 +15,29 @@ import MapsLink from './MapsLink';
 import ShareRouteButton from './ShareRouteButton';
 import WalkToStopButton from '../ui/WalkToStopButton';
 import TripAlarm from '../trip/TripAlarm';
+import { t, useT } from '../../i18n';
 
 const BENTO = 'rounded-3xl border border-white/10 bg-white/[0.06]';
 
 function errorMessage(error) {
-  if (error?.kind === 'offline') return 'Sin conexión. No se pueden cargar los tiempos en directo.';
-  if (error?.kind === 'timeout') return 'El servidor está arrancando. Los tiempos llegarán en unos segundos.';
-  if (error?.kind === 'network') return 'No se puede conectar con el servidor de vBus.';
-  if (error?.kind === 'not_found') return 'Vitrasa no reconoce esta parada.';
-  return 'Vitrasa no responde ahora mismo. Inténtalo en un momento.';
+  if (error?.kind === 'offline') return t('quick.error.offline');
+  if (error?.kind === 'timeout') return t('quick.error.timeout');
+  if (error?.kind === 'network') return t('error.network');
+  if (error?.kind === 'not_found') return t('quick.error.notFound');
+  return t('error.upstream');
 }
 
 // Por qué no hay origen cuando se quería usar el GPS.
 function locationMessage(status, nearestMeters) {
   switch (status) {
     case 'denied':
-      return 'Sin permiso para usar tu ubicación. Busca la parada de origen arriba (o actívalo en los ajustes del navegador).';
+      return t('quick.location.denied');
     case 'unavailable':
-      return 'No se pudo saber dónde estás (sin señal o tardó demasiado). Busca la parada de origen arriba o vuelve a elegir "Mi ubicación actual".';
+      return t('quick.location.unavailable');
     case 'unsupported':
-      return 'Este navegador no puede darte tu ubicación. Busca la parada de origen arriba.';
+      return t('quick.location.unsupported');
     case 'outside':
-      return `Pareces estar fuera de Vigo: la parada de Vitrasa más cercana está a ${formatDistance(nearestMeters)}. Busca la parada de origen arriba.`;
+      return t('quick.location.outside', { distance: formatDistance(nearestMeters) });
     default:
       return null;
   }
@@ -87,16 +88,19 @@ function EmptyState({ icon, title, children }) {
  * `action` (compartir la ruta).
  */
 function StopSummary({ stop, distance, action, children }) {
+  const t = useT();
   return (
-    <section aria-label="Parada de salida" className={`relative ${BENTO} px-4 py-3 ${action ? 'pr-24' : 'pr-14'}`}>
+    <section aria-label={t('quick.departsFrom.label')} className={`relative ${BENTO} px-4 py-3 ${action ? 'pr-24' : 'pr-14'}`}>
       <div className="absolute right-3 top-3 flex items-center gap-2">
         <WalkToStopButton stop={stop} />
         {action}
       </div>
-      <p className="text-sm font-medium text-white/60">Sale de</p>
+      <p className="text-sm font-medium text-white/60">{t('quick.departsFrom')}</p>
       <p className="text-pretty text-lg/snug font-semibold">{stop.name}</p>
       <p className="mt-0.5 text-sm font-medium tabular-nums text-white/60">
-        {`Parada ${stop.id}${distance != null ? ` · a ${formatDistance(distance)} de ti` : ''}`}
+        {`${t('stop.fallback', { id: stop.id })}${
+          distance != null ? ` · ${t('quick.fromYou', { distance: formatDistance(distance) })}` : ''
+        }`}
       </p>
       {children}
     </section>
@@ -117,6 +121,7 @@ function StopSummary({ stop, distance, action, children }) {
  * fundido.
  */
 function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFormat }) {
+  const t = useT();
   const offline = arrivals.error?.kind === 'offline';
   const night = useNightMode();
   const arranged = useMemo(
@@ -130,7 +135,7 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
   return (
     <>
       <div className={`${BENTO} px-4 py-2`}>
-        {arrivals.status === 'loading' && <Loading>Cargando tiempos…</Loading>}
+        {arrivals.status === 'loading' && <Loading>{t('quick.loadingTimes')}</Loading>}
         {arrivals.status === 'error' && offline && (
           <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-white/80 motion-reduce:animate-none">
             <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-white/60" strokeWidth={2.5} aria-hidden="true" />
@@ -161,7 +166,7 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
             </ul>
           ) : (
             <p className="animate-fade-in py-3 text-base font-medium text-white/70 motion-reduce:animate-none">
-              {endedCount ? 'Esta noche ya no pasan más autobuses. Abajo, cuándo sale el primero de mañana.' : emptyText}
+              {endedCount ? t('quick.nightOver') : emptyText}
             </p>
           ))}
         {arrivals.status === 'success' && arranged.ended && (
@@ -171,8 +176,8 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
       {arrivals.status === 'success' && arrivals.error && (
         <p className="animate-fade-in px-1 text-sm font-medium text-white/50 motion-reduce:animate-none">
           {offline
-            ? 'Sin conexión: son los últimos tiempos recibidos.'
-            : 'No se pudieron actualizar: son los últimos tiempos recibidos.'}
+            ? t('quick.stale.offline')
+            : t('quick.stale.error')}
         </p>
       )}
       <DepartureAlarm request={request} onClose={() => setRequest(null)} />
@@ -213,6 +218,7 @@ function RouteResults({
   timeFormat,
   online = true,
 }) {
+  const t = useT();
   const { buses, hidden } = useMemo(() => {
     if (!arrivals) return { buses: [], hidden: 0 };
     const sorted = sortBuses(arrivals.buses, [], 'time');
@@ -235,16 +241,16 @@ function RouteResults({
       <>
         {usingLocation && !message && (
           <div className={`${BENTO} px-4 py-1`}>
-            <Loading>Buscando tu ubicación…</Loading>
+            <Loading>{t('nearby.locating')}</Loading>
           </div>
         )}
         {message && <Notice>{message}</Notice>}
         {!usingLocation && (
           <p className="px-1 text-base font-medium text-white/70">
-            Elige la parada de origen: escribe una calle o el número de la marquesina.
+            {t('quick.pickOrigin')}
           </p>
         )}
-        {mapsUrl && <MapsLink href={mapsUrl}>Ver ruta en Mapas</MapsLink>}
+        {mapsUrl && <MapsLink href={mapsUrl}>{t('quick.maps')}</MapsLink>}
       </>
     );
   } else if (mode === 'stop') {
@@ -257,37 +263,37 @@ function RouteResults({
           arrivals={arrivals}
           buses={buses}
           timeFormat={timeFormat}
-          emptyText="No hay autobuses previstos ahora mismo."
-          offlineText="Sin conexión. No se pueden cargar los tiempos en directo."
+          emptyText={t('quick.noBuses')}
+          offlineText={t('quick.error.offline')}
         />
       </>
     );
   } else if (mode === 'same') {
     content = (
-      <EmptyState icon={MapPinCheck} title="Ya te encuentras en esta parada">
-        {`${origin.name} (parada ${origin.id}) es a la vez el origen y el destino.`}
+      <EmptyState icon={MapPinCheck} title={t('quick.same.title')}>
+        {t('quick.same.text', { stop: origin.name, id: origin.id })}
       </EmptyState>
     );
   } else if (mode === 'checking') {
     content = (
       <div className={`${BENTO} px-4 py-1`}>
-        <Loading>Comprobando el sentido de la marcha…</Loading>
+        <Loading>{t('quick.checking')}</Loading>
       </div>
     );
   } else if (mode === 'no-direct') {
     const unknown = plan ? null : !origin.lines?.length ? origin : !destination.lines?.length ? destination : null;
     content = (
-      <EmptyState icon={RouteOff} title="Sin línea directa">
+      <EmptyState icon={RouteOff} title={t('quick.noDirect.title')}>
         {unknown
-          ? `No tenemos las líneas de ${unknown.name}: mira la ruta en Mapas.`
-          : `Ninguna línea de Vitrasa va de ${origin.name} a ${destination.name} en ese sentido sin transbordo.`}
+          ? t('quick.noDirect.unknown', { stop: unknown.name })
+          : t('quick.noDirect.text', { origin: origin.name, destination: destination.name })}
       </EmptyState>
     );
   } else {
     const switched = boarding.id !== origin.id;
     content = (
       <>
-        {!plan && <Notice icon={TriangleAlert}>No se pudo verificar el sentido. Confirma en Mapas.</Notice>}
+        {!plan && <Notice icon={TriangleAlert}>{t('quick.unverified')}</Notice>}
         <StopSummary
           stop={boarding}
           distance={boardingDistance}
@@ -295,9 +301,7 @@ function RouteResults({
         >
           {switched && (
             <p className="mt-2 text-sm font-medium text-[#409CFF]">
-              {`En ${origin.name} no pasa ninguna directa en tu sentido: sube en esta, a ${formatDistance(
-                plan.boardingWalk,
-              )}.`}
+              {t('quick.switched', { origin: origin.name, distance: formatDistance(plan.boardingWalk) })}
             </p>
           )}
           <DirectLines from={boarding} destination={destination} options={plan?.options ?? []} lines={directLines} />
@@ -308,18 +312,16 @@ function RouteResults({
           arrivals={arrivals}
           buses={buses}
           timeFormat={timeFormat}
-          emptyText="No hay autobuses próximos que lleguen hasta tu destino."
-          offlineText="Líneas directas estáticas (Sin conexión a los tiempos de Vitrasa)."
+          emptyText={t('quick.noBuses.direct')}
+          offlineText={t('quick.offline.direct')}
         />
         {hidden > 0 && (
           <p className="animate-fade-in px-1 text-sm font-medium text-white/50 motion-reduce:animate-none">
-            {hidden === 1
-              ? 'Se oculta 1 autobús de estas líneas que no llega a tu destino (acaba antes o va en el otro sentido).'
-              : `Se ocultan ${hidden} autobuses de estas líneas que no llegan a tu destino (acaban antes o van en el otro sentido).`}
+            {t('quick.hidden', { n: hidden })}
           </p>
         )}
         <TripAlarm trip={trip} buses={buses} updatedAt={arrivals.updatedAt} />
-        <MapsLink href={mapsUrl}>Ver ruta en Mapas</MapsLink>
+        <MapsLink href={mapsUrl}>{t('quick.maps')}</MapsLink>
       </>
     );
   }
@@ -330,7 +332,7 @@ function RouteResults({
       {/* Modo avión: aviso fijo arriba. Las rutas directas siguen funcionando
           (recorridos del GTFS en el móvil); los tiempos no. */}
       {!online && (
-        <Notice icon={WifiOff}>Sin conexión. Las líneas directas se calculan igual; los tiempos, al volver la red.</Notice>
+        <Notice icon={WifiOff}>{t('quick.offlineBanner')}</Notice>
       )}
       {content}
     </div>

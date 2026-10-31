@@ -9,25 +9,26 @@ import { prefersReducedMotion } from './motion';
  * resto: ningún re-render de React mientras el fondo se mueve.
  *
  * `scheme`: las paletas oscuras (o casi blancas) fijan el modo; si no, manda
- * el botón Sol/Luna.
+ * el botón Sol/Luna. Sus nombres están en `src/i18n` (`palette.<id>`; la
+ * velocidad, `motion.<id>`).
  */
 export const PALETTES = [
-  { id: 'vigo', name: 'Vigo', scheme: null },
-  { id: 'nature', name: 'Naturaleza', scheme: null },
-  { id: 'sunset', name: 'Atardecer', scheme: null },
-  { id: 'ocean', name: 'Océano', scheme: null },
-  { id: 'cyberpunk', name: 'Cyberpunk', scheme: 'dark' },
-  { id: 'lavender', name: 'Lavanda', scheme: null },
-  { id: 'cloud', name: 'Nube', scheme: 'light' },
-  { id: 'shadow', name: 'Sombra', scheme: 'dark' },
-  { id: 'oled', name: 'OLED', scheme: 'dark' },
+  { id: 'vigo', scheme: null },
+  { id: 'nature', scheme: null },
+  { id: 'sunset', scheme: null },
+  { id: 'ocean', scheme: null },
+  { id: 'cyberpunk', scheme: 'dark' },
+  { id: 'lavender', scheme: null },
+  { id: 'cloud', scheme: 'light' },
+  { id: 'shadow', scheme: 'dark' },
+  { id: 'oled', scheme: 'dark' },
 ];
 
 /** Velocidad de las manchas (`--mesh-speed` en `index.css`). */
 export const MOTIONS = [
-  { value: 'fluid', label: 'Fluido' },
-  { value: 'relaxed', label: 'Relajado' },
-  { value: 'static', label: 'Estático' },
+  { value: 'fluid' },
+  { value: 'relaxed' },
+  { value: 'static' },
 ];
 
 const byId = new Map(PALETTES.map((palette) => [palette.id, palette]));

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getLoadedRouteIndex } from '../data/routes';
+import { t } from '../i18n';
 import { stopById } from '../data/stops';
 import { FOCUS_TAGS } from '../lib/focusSession';
 import { formatDistance, haversineMeters } from '../lib/geo';
@@ -11,7 +12,6 @@ import {
   alertReason,
   etaNow,
   pickBus,
-  plural,
   rideMinutes,
   routeProgress,
   tripPath,
@@ -33,9 +33,9 @@ const ARRIVED_SLACK_MIN = 5;
 export const TRIP_NOTIFICATION_TAG = FOCUS_TAGS.trip;
 
 function alarmText({ reason, eta, remainingMetres, alight }) {
-  if (reason === 'gps') return `Estás a ${formatDistance(remainingMetres)} de ${alight.name}.`;
-  if (eta < 1) return `Tu autobús está llegando a ${alight.name}.`;
-  return `Llegas a ${alight.name} en unos ${plural(Math.round(eta), 'minuto', 'minutos')}.`;
+  if (reason === 'gps') return t('trip.alert.gps', { distance: formatDistance(remainingMetres), stop: alight.name });
+  if (eta < 1) return t('trip.alert.arriving', { stop: alight.name });
+  return t('trip.alert.eta', { stop: alight.name, n: Math.round(eta) });
 }
 
 /**
@@ -172,7 +172,7 @@ export function useTrip(trip, { originBuses, originUpdatedAt, onEnd, live = true
     }
   }
 
-  useAlarmEffect(live ? alarm : null, { title: 'Prepárate para bajar', tag: TRIP_NOTIFICATION_TAG, onEnd });
+  useAlarmEffect(live ? alarm : null, { title: t('trip.alert.title'), tag: TRIP_NOTIFICATION_TAG, onEnd });
 
   const aEta = busA && originUpdatedAt ? Math.max(0, etaNow(busA, originUpdatedAt, now)) : null;
 

@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { useId } from 'react';
 import { useRadioGroup } from '../../hooks/useRadioGroup';
+import { useT } from '../../i18n';
 import { PALETTES } from '../../lib/appearance';
 import { haptics } from '../../lib/haptics';
 import { PRESSABLE } from '../ui/pressable';
@@ -27,6 +28,7 @@ const SWATCH_STYLE = {
  * cada cambio da un toque háptico ligero.
  */
 export default function PalettePicker({ value, onChange }) {
+  const t = useT();
   const labelId = useId();
   const index = Math.max(
     0,
@@ -43,7 +45,7 @@ export default function PalettePicker({ value, onChange }) {
   return (
     <div>
       <span id={labelId} className="sr-only">
-        Tema
+        {t('settings.theme')}
       </span>
       <div role="radiogroup" aria-labelledby={labelId} className="grid grid-cols-3 gap-x-2 gap-y-3">
         {PALETTES.map((palette, i) => {
@@ -52,7 +54,11 @@ export default function PalettePicker({ value, onChange }) {
             <button
               key={palette.id}
               type="button"
-              aria-label={palette.scheme ? `${palette.name} (siempre ${palette.scheme === 'dark' ? 'oscuro' : 'claro'})` : palette.name}
+              aria-label={
+                palette.scheme
+                  ? t(palette.scheme === 'dark' ? 'palette.alwaysDark' : 'palette.alwaysLight', { name: t(`palette.${palette.id}`) })
+                  : t(`palette.${palette.id}`)
+              }
               {...itemProps(i)}
               onClick={() => select(i)}
               className={`group flex flex-col items-center gap-1.5 rounded-2xl py-1 focus-visible:outline-none ${PRESSABLE}`}
@@ -73,7 +79,7 @@ export default function PalettePicker({ value, onChange }) {
                   <Check className="h-3.5 w-3.5" strokeWidth={3} />
                 </span>
               </span>
-              <span className={`text-xs font-medium ${selected ? 'text-white' : 'text-white/60'}`}>{palette.name}</span>
+              <span className={`text-xs font-medium ${selected ? 'text-white' : 'text-white/60'}`}>{t(`palette.${palette.id}`)}</span>
             </button>
           );
         })}

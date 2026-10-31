@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { loadStopsList, stopLines } from '../../data/stops';
+import { useT } from '../../i18n';
 import { NOTE_MAX, lineColor } from '../../services/vigobusAdapter';
 import CardNameField from '../create-card/CardNameField';
 import LineChips from '../create-card/LineChips';
@@ -32,6 +33,7 @@ export default function EditCardModal({ route, onClose, onSave }) {
 }
 
 function EditCardForm({ route, titleId, onClose, onSave }) {
+  const t = useT();
   const [alias, setAlias] = useState(route.alias ?? '');
   const [note, setNote] = useState(route.note ?? '');
   const [visible, setVisible] = useState(route.lines ?? []);
@@ -75,37 +77,37 @@ function EditCardForm({ route, titleId, onClose, onSave }) {
     >
       <header className="flex items-center justify-between gap-3">
         <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
-          Editar tarjeta
+          {t('edit.title')}
         </h2>
-        <IconButton icon={X} label="Cerrar" onClick={onClose} />
+        <IconButton icon={X} label={t('common.close')} onClick={onClose} />
       </header>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
         <CardNameField
-          label="Alias"
+          label={t('edit.alias')}
           value={alias}
           onChange={setAlias}
-          placeholder={route.stopName || 'Ej. Trabajo 💻'}
+          placeholder={route.stopName || t('edit.alias.placeholder')}
           describedBy={hintId}
           inputRef={inputRef}
         />
         <p id={hintId} className="mt-2 text-sm font-medium text-white/60">
-          {route.stopName ? `Parada ${route.stopId} · ${route.stopName}. ` : ''}Déjalo vacío para usar el nombre de
-          la parada.
+          {route.stopName ? `${t('stop.fallback', { id: route.stopId })} · ${route.stopName}. ` : ''}
+          {t('edit.alias.hint')}
         </p>
         <div className="mt-4">
           <CardNameField
-            label="Nota"
+            label={t('edit.note')}
             value={note}
             onChange={setNote}
-            placeholder="Opcional · Ej. Coger el de las 8:10"
+            placeholder={t('edit.note.placeholder')}
             maxLength={NOTE_MAX}
           />
         </div>
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-4" aria-describedby={linesHintId}>
-        <h3 className="mb-3 text-sm font-semibold text-white/80">Líneas</h3>
+        <h3 className="mb-3 text-sm font-semibold text-white/80">{t('edit.lines')}</h3>
         <LineChips
           lines={allLines.map((line) => ({ line, color: lineColor(line) }))}
           selected={visible}
@@ -119,13 +121,13 @@ function EditCardForm({ route, titleId, onClose, onSave }) {
           }`}
         >
           {visible.length
-            ? 'Solo se ven las líneas marcadas, en el orden en que las tocaste.'
-            : 'Marca al menos una línea.'}
+            ? t('edit.lines.hint')
+            : t('edit.lines.empty')}
         </p>
       </section>
 
       <PillButton type="submit" disabled={!visible.length} className="mt-1">
-        Guardar
+        {t('common.save')}
       </PillButton>
     </form>
   );

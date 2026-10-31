@@ -2,6 +2,7 @@ import { Reorder, useDragControls } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useLongPress } from '../../hooks/useLongPress';
+import { useT } from '../../i18n';
 import { haptics } from '../../lib/haptics';
 import RouteCard from './RouteCard';
 
@@ -43,6 +44,7 @@ function EditableRouteItem({
   const controls = useDragControls();
   const [dragging, setDragging] = useState(false);
   const longPress = useLongPress(onStartEditing, { enabled: !editing });
+  const t = useT();
   const name = route.alias || route.stopName || route.title;
 
   return (
@@ -104,7 +106,7 @@ function EditableRouteItem({
                 {/* Eliminar (modo edición): círculo rojo de iOS con aspa. */}
                 <button
                   type="button"
-                  aria-label={`Eliminar tarjeta ${name}`}
+                  aria-label={t('card.remove', { name })}
                   onClick={() => onRemove(route.id)}
                   tabIndex={editing ? 0 : -1}
                   aria-hidden={!editing}
@@ -121,7 +123,7 @@ function EditableRouteItem({
                 fondo de la app: oscuro en claro, blanco en oscuro. */}
             <button
               type="button"
-              aria-label={`Mover tarjeta ${name}`}
+              aria-label={t('card.move', { name })}
               tabIndex={editing ? 0 : -1}
               aria-hidden={!editing}
               onPointerDown={(event) => {

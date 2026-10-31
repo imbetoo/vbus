@@ -530,11 +530,24 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `[500, 200, 500, 200, 500]` en el aviso de los modos viaje y salida (y en
   su notificación), repetido 3 veces más cada 4 s mientras sigue en
   pantalla (`useAlarmEffect`; "Entendido" o cerrar lo corta con
-  `haptics.stop()`). Timbre del aviso: un `Audio` real (WAV de los tres
-  tonos, dos veces, generado en memoria como `Blob`) con `volume = 1.0`,
-  desbloqueado en el toque de confirmar (se reproduce silenciado un
-  instante): en iPhone suena aunque esté puesto el modo silencio, a
-  diferencia de Web Audio, que queda como plan B (ganancia 1.0).
+  `haptics.stop()`). Timbre del aviso: un `Audio` real (WAV sintetizado en
+  memoria como `Blob`, normalizado al 95 %) con `volume = 1.0`, desbloqueado
+  en el toque de confirmar (se reproduce silenciado un instante): en iPhone
+  suena aunque esté puesto el modo silencio, a diferencia de Web Audio, que
+  queda como plan B (los mismos tonos con osciladores).
+- **Tonos de alarma (`src/lib/alerts.js`, ajuste "Tono de alarma"):** tres,
+  generados con matemáticas (notas `{ at, freq, dur, decay, partials }`,
+  ataque de 8 ms y salida de 20 ms sin chasquidos), dos veces en el aviso y
+  una en la previsualización: **Clásico** (por defecto: 880 → 1109 → 1319 Hz,
+  como un timbre de autobús), **Campanilla** (Mi6 → Si5 con armónicos
+  inarmónicos de campana ×1/×2,76/×5,4 y caída larga, suave) y **Urgente**
+  (cuatro pitidos de 1,8 kHz de 90 ms con armónico impar, para la calle).
+  Un `Audio` por tono, creado al usarse y cacheado; `setAlarmTone` lo
+  sincroniza `App.jsx` (`alarmTone` en `vbus:settings`). En Ajustes, lista
+  al estilo de los sonidos de iOS (`TonePicker` sobre `ChoiceList`: filas
+  con descripción y ✓): tocar una la elige (`haptics.select`) y la hace
+  sonar una vez al 70 % en el mismo gesto (`previewTone`); tocar la elegida
+  la repite; un altavoz late mientras suena.
 - **Físicas:** al pulsar, tarjetas, botones, "Ver más autobuses" y pasos de la
   hoja rebotan con `active:scale-[0.97]` en 400 ms y curva
   `cubic-bezier(0.25, 1, 0.5, 1)` (`ease-spring`), definido una sola vez en
@@ -647,7 +660,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
   (pulgar blanco que se desliza; accesibles como grupo de radios), con scroll
-  si no cabe. Ocho ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  si no cabe. Diez ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  "Idioma" (`language`: auto, gl, es, en) y "Tono de alarma" (`alarmTone`:
+  classic, chime, urgent), ver sus secciones;
   "Tema" (`palette`: cuadrícula de 9 muestras circulares con un mini fondo
   de su paleta y su nombre, la elegida con anillo blanco y check, grupo de
   radios con flechas y toque háptico `select`; ver "Motor de temas"),
@@ -665,9 +680,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.33 • Build: 31/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.34 • Build: 31/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.33 = PR #33), hora de compilación
+  PR: `npm version minor`; v1.34 = PR #34), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -710,6 +725,25 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `<title>`, iOS, Ajustes, mensajes). Los identificadores técnicos
   (`VigoBusAPI`, `VigoBusError`, `/vigobus`, `vigobus-api.onrender.com`) no
   cambian.
+- **Idiomas (`src/i18n`, ajuste "Idioma"):** gallego, castellano e inglés,
+  sin librerías. Tres diccionarios de objetos JS con las mismas claves
+  (`es.js` es la fuente; ~355 claves por zona: `settings.*`, `card.*`,
+  `quick.*`, `trip.*`…): texto con `{var}` o una función `(vars) => texto`
+  para plurales y concordancias; si falta una clave, castellano. Store de
+  módulo con `useSyncExternalStore`: `t(clave, vars)` sirve dentro y fuera de
+  React (avisos, notificaciones, `lib`); `useT()` repinta el componente al
+  cambiar de idioma (también los de `React.memo`, que se suscriben solos).
+  `language: 'auto'` (por defecto) sigue al navegador: `gl*` → gallego;
+  `es*`, `ca*`, `eu*` → castellano; `en*` → inglés; cualquier otro,
+  castellano. El idioma elegido se lee al arrancar (primer render ya
+  traducido) y el script de `index.html` fija `<html lang>` antes de
+  pintar. Distancias con `locale()` ("1,3 km" / "1.3 km"); las horas, en
+  24 h igual en los tres. Ajustes: lista con ✓ (`ChoiceList`) "Automático"
+  (con el idioma detectado), Galego, Castellano, English. No se traducen
+  los nombres de parada ni los letreros (vienen del GTFS y de la API), los
+  mensajes técnicos de `VigoBusError` (la interfaz enseña textos por
+  `kind`) ni el manifest (los accesos directos del icono siguen en
+  castellano).
 
 ## 3. Hoja de ruta
 
@@ -780,6 +814,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   Ajustes; al abrirlo, añadir, reemplazar o cancelar).
 - Hecho: notas personalizadas en las tarjetas (60 caracteres, también en el
   enlace compartido).
+- Hecho: la app en gallego, castellano e inglés (detecta el idioma del
+  móvil) y tres tonos de alarma a elegir con previsualización.
 
 ### Fase 4 · Onboarding — *Pendiente*
 

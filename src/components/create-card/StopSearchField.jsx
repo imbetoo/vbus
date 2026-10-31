@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from 'react';
 import RecentHeader from './RecentHeader';
 import StopRow from './StopRow';
 import SwipeableOption from './SwipeableOption';
+import { useT } from '../../i18n';
 
 // Valor por defecto estable (un `[]` nuevo en cada render rompería la igualdad).
 const NO_SUGGESTIONS = [];
@@ -29,6 +30,7 @@ export default function StopSearchField({
   describedBy,
   inputRef,
 }) {
+  const t = useT();
   const id = useId();
   const listId = useId();
   const [focused, setFocused] = useState(false);
@@ -74,7 +76,7 @@ export default function StopSearchField({
   return (
     <div className="relative">
       <label htmlFor={id} className="sr-only">
-        Dirección o número de parada
+        {t('search.label')}
       </label>
       <Search
         className="pointer-events-none absolute left-3.5 top-6 h-5 w-5 -translate-y-1/2 text-white/60"
@@ -94,7 +96,7 @@ export default function StopSearchField({
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
-        placeholder="Calle o número de parada"
+        placeholder={t('search.placeholder')}
         value={value}
         onChange={(event) => {
           setDismissed(false);
@@ -127,7 +129,7 @@ export default function StopSearchField({
         <ul
           id={listId}
           role="listbox"
-          aria-label={recent ? 'Paradas recientes' : 'Paradas sugeridas'}
+          aria-label={t(recent ? 'search.recent' : 'search.suggested')}
           className="mt-2 animate-fade-in divide-y divide-white/10 max-h-80 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-white/[0.06] motion-reduce:animate-none"
         >
           {recent && <RecentHeader />}

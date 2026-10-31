@@ -18,6 +18,7 @@ import MapsLink from './MapsLink';
 import RouteFields from './RouteFields';
 import RouteResults from './RouteResults';
 import StopSuggestions, { CURRENT_LOCATION_ID } from './StopSuggestions';
+import { useT } from '../../i18n';
 
 // Origen por defecto: "Mi ubicación actual" (parada más cercana por GPS).
 const LOCATION_ORIGIN = { source: 'location' };
@@ -67,6 +68,7 @@ export default function RoutePlanner({
   focusDestination = false,
   initialRoute = null,
 }) {
+  const t = useT();
   const listId = useId();
   const originInputRef = useRef(null);
   const destinationInputRef = useRef(null);
@@ -296,11 +298,11 @@ export default function RoutePlanner({
   const locating = usingLocation && (locationStatus === 'idle' || locationStatus === 'locating');
   const originView = useMemo(
     () => ({
-      text: usingLocation ? (locating || locationStop ? 'Mi ubicación actual' : '') : (originChoice.stop?.name ?? ''),
+      text: usingLocation ? (locating || locationStop ? t('quick.myLocation') : '') : (originChoice.stop?.name ?? ''),
       isLocation: usingLocation && (locating || Boolean(locationStop)),
       locating,
     }),
-    [usingLocation, locating, locationStop, originChoice],
+    [usingLocation, locating, locationStop, originChoice, t],
   );
   const destinationView = useMemo(() => ({ text: destination?.name ?? '' }), [destination]);
 
@@ -324,8 +326,8 @@ export default function RoutePlanner({
 
   let hint = null;
   if (showSuggestions) {
-    if (!typing) hint = showRecents ? null : 'Escribe una calle o el número de la marquesina.';
-    else if (!pending && !suggestions.length) hint = 'No encuentro esa parada. Prueba con otra calle o con el número de la marquesina.';
+    if (!typing) hint = showRecents ? null : t('quick.suggest.hint');
+    else if (!pending && !suggestions.length) hint = t('quick.suggest.none');
   }
 
   return (
@@ -367,7 +369,7 @@ export default function RoutePlanner({
         {showSuggestions ? (
           <StopSuggestions
             id={listId}
-            label={activeField === 'origin' ? 'Paradas de origen sugeridas' : 'Paradas de destino sugeridas'}
+            label={t(activeField === 'origin' ? 'quick.suggest.origin' : 'quick.suggest.destination')}
             options={options}
             activeIndex={highlighted}
             hint={hint}
@@ -402,7 +404,7 @@ export default function RoutePlanner({
         <div className="relative z-10 shrink-0 bg-graphite px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-2">
           {mode === 'no-direct' ? (
             <MapsLink href={mapsUrl} primary>
-              Ver ruta con transbordos
+              {t('quick.maps.transfers')}
             </MapsLink>
           ) : (
             // Botón secundario (cristal): guardar es opcional aquí. En una ruta
@@ -414,7 +416,7 @@ export default function RoutePlanner({
               className={`flex h-14 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-lg font-semibold text-white shadow-relief active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40 ${PRESSABLE}`}
             >
               <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-              Añadir a Mis Rutas
+              {t('quick.add')}
             </button>
           )}
         </div>

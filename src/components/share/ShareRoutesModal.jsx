@@ -11,13 +11,12 @@ import Toast from '../ui/Toast';
 import { PRESSABLE } from '../ui/pressable';
 import QrCode from './QrCode';
 import RoutesPreview from './RoutesPreview';
+import { useT } from '../../i18n';
 
 const CAN_SHARE = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 // Icono de compartir del sistema: el de iOS/macOS en Apple y el de Android en el resto.
 const SHARE_ICON =
   typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? Share : Share2;
-
-const plural = (n) => `${n} ${n === 1 ? 'ruta' : 'rutas'}`;
 
 /**
  * "Compartir mis rutas": un QR con el enlace que lleva todas las tarjetas
@@ -26,6 +25,7 @@ const plural = (n) => `${n} ${n === 1 ? 'ruta' : 'rutas'}`;
  * compartir (si existe) y "Copiar enlace" (toque háptico ligero y aviso).
  */
 export default function ShareRoutesModal({ open, onClose, routes }) {
+  const t = useT();
   const titleId = useId();
   const [toast, showToast] = useToast();
   const url = useMemo(() => (routes.length ? routesShareUrl(routes) : ''), [routes]);
@@ -36,16 +36,16 @@ export default function ShareRoutesModal({ open, onClose, routes }) {
 
   const copy = async () => {
     haptics.select();
-    showToast((await copyText(url)) ? 'Enlace copiado' : 'No se pudo copiar el enlace');
+    showToast((await copyText(url)) ? t('share.routes.copied') : t('share.routes.copyFailed'));
   };
 
   const share = async () => {
     const result = await shareContent({
-      title: 'Mis rutas de vBus',
-      text: `🚌 Mis rutas de vBus (${plural(routes.length)}). Ábrelo para añadirlas: ${url}`,
+      title: t('share.routes.shareTitle'),
+      text: t('share.routes.text', { n: routes.length, url }),
     });
-    if (result === 'copied') showToast('Enlace copiado');
-    else if (result === 'failed') showToast('No se pudo compartir');
+    if (result === 'copied') showToast(t('share.routes.copied'));
+    else if (result === 'failed') showToast(t('share.routes.shareFailed'));
   };
 
   return (
@@ -54,18 +54,18 @@ export default function ShareRoutesModal({ open, onClose, routes }) {
         <header className="flex items-start justify-between gap-3">
           <div>
             <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
-              Compartir mis rutas
+              {t('share.routes.title')}
             </h2>
             <p className="mt-1 text-sm font-medium text-white/60">
-              {`${plural(routes.length)}. Escanéalo con la cámara del otro móvil.`}
+              {t('share.routes.subtitle', { n: routes.length })}
             </p>
           </div>
-          <IconButton icon={X} label="Cerrar" onClick={onClose} />
+          <IconButton icon={X} label={t('common.close')} onClick={onClose} />
         </header>
 
         {url && (
           <div className="mx-auto w-full max-w-[16rem] overflow-hidden rounded-3xl bg-white p-3 shadow-relief">
-            <QrCode value={url} label={`Código QR con ${plural(routes.length)}`} className="aspect-square w-full" />
+            <QrCode value={url} label={t('share.routes.qr', { n: routes.length })} className="aspect-square w-full" />
           </div>
         )}
 
@@ -75,7 +75,7 @@ export default function ShareRoutesModal({ open, onClose, routes }) {
           {CAN_SHARE && (
             <PillButton onClick={share}>
               <SHARE_ICON className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-              Compartir enlace
+              {t('share.routes.share')}
             </PillButton>
           )}
           <button
@@ -84,7 +84,7 @@ export default function ShareRoutesModal({ open, onClose, routes }) {
             className={`flex h-14 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-lg font-semibold text-white shadow-relief active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
           >
             <Copy className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            Copiar enlace
+            {t('share.routes.copy')}
           </button>
         </div>
 

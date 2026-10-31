@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { prefersReducedMotion } from '../../lib/motion';
 import IconButton from './IconButton';
 import { PRESSABLE } from './pressable';
+import { useT } from '../../i18n';
 
 const EXIT_MS = 300;
 
@@ -15,6 +16,7 @@ const EXIT_MS = 300;
  * lo deja para luego.
  */
 export default function UpdateToast({ open, updating, onUpdate, onDismiss }) {
+  const t = useT();
   // Montado mientras entra o sale; `shown` dispara la transición.
   const [mounted, setMounted] = useState(open);
   const [shown, setShown] = useState(false);
@@ -47,7 +49,7 @@ export default function UpdateToast({ open, updating, onUpdate, onDismiss }) {
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent shadow-relief">
           <Sparkles className="h-5 w-5" strokeWidth={2.25} aria-hidden="true" />
         </span>
-        <p className="min-w-0 flex-1 text-base/snug font-medium">Nueva versión de vBus disponible.</p>
+        <p className="min-w-0 flex-1 text-base/snug font-medium">{t('update.available')}</p>
         <button
           type="button"
           onClick={onUpdate}
@@ -55,9 +57,9 @@ export default function UpdateToast({ open, updating, onUpdate, onDismiss }) {
           className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-base font-semibold text-black active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-70 ${PRESSABLE}`}
         >
           {updating && <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" strokeWidth={2.5} aria-hidden="true" />}
-          {updating ? 'Actualizando…' : 'Actualizar'}
+          {t(updating ? 'update.updating' : 'update.update')}
         </button>
-        {!updating && <IconButton icon={X} size="sm" label="Ahora no" onClick={onDismiss} />}
+        {!updating && <IconButton icon={X} size="sm" label={t('update.notNow')} onClick={onDismiss} />}
       </div>
     </div>
   );

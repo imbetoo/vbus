@@ -12,6 +12,7 @@
  */
 import { CARD_COLORS, DEFAULT_CARD_COLOR } from '../components/bus/cardColors';
 import { NOTE_MAX, toRouteCard } from '../services/vigobusAdapter';
+import { t } from '../i18n';
 import { lineKey } from './lines';
 
 export const ROUTES_PARAM = 'tarjetas';
@@ -100,7 +101,7 @@ export function decodeRoutes(text) {
 /** Tarjeta completa a partir de una del enlace (`stop`: su parada de `stopsList`). */
 export function toImportedCard(entry, stop) {
   return toRouteCard({
-    stop: { id: entry.stopId, name: stop?.name ?? `Parada ${entry.stopId}` },
+    stop: { id: entry.stopId, name: stop?.name ?? t('stop.fallback', { id: entry.stopId }) },
     buses: [],
     lines: entry.lines,
     title: entry.alias,
@@ -137,5 +138,5 @@ export function newCards(current, incoming) {
 
 /** Lo que se ve de una tarjeta: su alias o el nombre de su parada. */
 export function cardLabel(entry, stop) {
-  return entry.alias || stop?.name || `Parada ${entry.stopId}`;
+  return entry.alias || stop?.name || t('stop.fallback', { id: entry.stopId });
 }

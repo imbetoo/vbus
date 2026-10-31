@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useT } from '../../i18n';
 
 /**
  * Campo de texto para el nombre de la tarjeta, con el estilo de los inputs
@@ -11,16 +12,17 @@ export default function CardNameField({
   onChange,
   placeholder,
   describedBy,
-  label = 'Nombre de la tarjeta',
+  label,
   inputRef,
   maxLength = 32,
 }) {
+  const t = useT();
   const id = useId();
 
   return (
     <div>
       <label htmlFor={id} className="mb-2 block text-sm font-semibold text-white/80">
-        {label}
+        {label ?? t('create.name')}
       </label>
       <input
         id={id}

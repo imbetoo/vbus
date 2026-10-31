@@ -3,6 +3,7 @@ import { Fragment, useEffect } from 'react';
 import RecentHeader from '../create-card/RecentHeader';
 import StopRow from '../create-card/StopRow';
 import SwipeableOption from '../create-card/SwipeableOption';
+import { useT } from '../../i18n';
 
 /** `id` de la opción "Mi ubicación actual" de la lista del origen (vuelve al GPS). */
 export const CURRENT_LOCATION_ID = 'current-location';
@@ -30,6 +31,7 @@ export default function StopSuggestions({
   onChoose,
   onActivate,
 }) {
+  const t = useT();
   // Con las flechas, la opción activa se mantiene a la vista.
   useEffect(() => {
     document.getElementById(`${id}-${activeIndex}`)?.scrollIntoView({ block: 'nearest' });
@@ -73,9 +75,9 @@ export default function StopSuggestions({
                     <>
                       <Navigation className="h-5 w-5 shrink-0 fill-accent text-accent" strokeWidth={2} aria-hidden="true" />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-base/snug font-medium text-[#409CFF]">Mi ubicación actual</span>
+                        <span className="block text-base/snug font-medium text-[#409CFF]">{t('quick.myLocation')}</span>
                         <span className="mt-0.5 block truncate text-sm font-medium text-white/60">
-                          Sale de la parada más cercana a ti
+                          {t('quick.myLocation.hint')}
                         </span>
                       </span>
                     </>

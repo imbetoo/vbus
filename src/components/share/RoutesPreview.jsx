@@ -3,6 +3,7 @@ import { findStop, loadStopsList } from '../../data/stops';
 import { cardLabel } from '../../lib/routesShare';
 import { lineColor } from '../../services/vigobusAdapter';
 import LineBadge from '../bus/LineBadge';
+import { useT } from '../../i18n';
 
 /**
  * Lista breve de las tarjetas que se comparten o se reciben (`entries`:
@@ -11,6 +12,7 @@ import LineBadge from '../bus/LineBadge';
  * carga, "Parada N".
  */
 export default function RoutesPreview({ entries }) {
+  const t = useT();
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let alive = true;
@@ -24,14 +26,14 @@ export default function RoutesPreview({ entries }) {
   }, []);
 
   return (
-    <ul className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/[0.06] px-4" aria-label="Rutas">
+    <ul className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/[0.06] px-4" aria-label={t('share.routes.list')}>
       {entries.map((entry, i) => {
         const stop = ready ? findStop(entry.stopId) : null;
         return (
           <li key={`${entry.stopId}-${i}`} className="flex items-center gap-3 py-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-semibold">{cardLabel(entry, stop)}</p>
-              <p className="text-sm font-medium tabular-nums text-white/60">{`Parada ${entry.stopId}`}</p>
+              <p className="text-sm font-medium tabular-nums text-white/60">{t('stop.fallback', { id: entry.stopId })}</p>
             </div>
             <div className="flex max-w-[50%] flex-wrap justify-end gap-1">
               {entry.lines.slice(0, 4).map((line) => (

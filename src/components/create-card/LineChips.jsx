@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PRESSABLE } from '../ui/pressable';
+import { useT } from '../../i18n';
 
 /**
  * Una pastilla de línea. El círculo de prioridad está siempre en el DOM y
@@ -7,6 +8,7 @@ import { PRESSABLE } from '../ui/pressable';
  * pastilla no cambia nunca al tocarla y las demás no saltan de fila.
  */
 function LineChip({ line, color, priority, onToggle }) {
+  const t = useT();
   const pressed = priority > 0;
   // Se conserva el último número mientras el círculo se desvanece al quitarla
   // (estado ajustado en render, sin efectos).
@@ -25,7 +27,7 @@ function LineChip({ line, color, priority, onToggle }) {
       <span
         className={`${color} flex h-9 min-w-9 items-center justify-center rounded-full px-2.5 text-base font-medium tracking-wide text-white shadow-relief`}
       >
-        <span className="sr-only">Línea </span>
+        <span className="sr-only">{`${t('lineChip.line')} `}</span>
         {line}
       </span>
       {/* Hueco fijo de 36px: anillo vacío sin elegir, círculo con número al elegir. */}
@@ -35,7 +37,7 @@ function LineChip({ line, color, priority, onToggle }) {
             pressed ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
           }`}
         >
-          {pressed && <span className="sr-only">, prioridad </span>}
+          {pressed && <span className="sr-only">{`${t('lineChip.priority')} `}</span>}
           {shownPriority || ''}
         </span>
       </span>

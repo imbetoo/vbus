@@ -1,3 +1,6 @@
+import { useT } from '../../i18n';
+
+// Hora de 24 h («12:45»): igual en los tres idiomas.
 const clock = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 /**
@@ -8,6 +11,7 @@ const clock = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-dig
  *   entre refrescos. Sin `fetchedAt` (tarjeta aún sin refrescar), en minutos.
  */
 export default function ArrivalTime({ minutes, urgent, format = 'relative', fetchedAt }) {
+  const t = useT();
   const arrivesAt = format === 'absolute' && fetchedAt ? new Date(fetchedAt + minutes * 60_000) : null;
 
   return (
@@ -15,16 +19,16 @@ export default function ArrivalTime({ minutes, urgent, format = 'relative', fetc
       className={`whitespace-nowrap text-lg font-semibold tabular-nums ${urgent ? 'text-urgent' : 'text-white'}`}
     >
       {minutes <= 0 ? (
-        'Llegando'
+        t('time.arriving')
       ) : arrivesAt ? (
         <>
-          <span className="sr-only">Llega a las </span>
+          <span className="sr-only">{`${t('arrival.at')} `}</span>
           <time dateTime={arrivesAt.toISOString()}>{clock.format(arrivesAt)}</time>
         </>
       ) : (
         <>
-          <span className="sr-only">Llega en </span>
-          {minutes} min
+          <span className="sr-only">{`${t('arrival.in')} `}</span>
+          {t('time.minutes', { n: minutes })}
         </>
       )}
     </span>

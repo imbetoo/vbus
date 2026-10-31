@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpDown, CircleDot, LoaderCircle, MapPin, Navigation, X } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import IconButton from '../ui/IconButton';
+import { useT } from '../../i18n';
 
 // Giro del botón de invertir: muelle corto, como los controles de iOS.
 const SWAP_SPRING = { type: 'spring', stiffness: 260, damping: 22 };
@@ -34,6 +35,7 @@ export default function RouteFields({
   onClear,
   onSwap,
 }) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   // Medias vueltas acumuladas: cada pulsación gira 180° más.
   const [turns, setTurns] = useState(0);
@@ -53,7 +55,7 @@ export default function RouteFields({
   return (
     <div
       role="group"
-      aria-label="Trayecto"
+      aria-label={t('quick.route')}
       className="relative flex items-center rounded-3xl border border-white/10 bg-white/[0.06] transition-[border-color,box-shadow] duration-300 ease-spring focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40"
     >
       {/* Línea punteada entre los iconos de A y B (filas de 56 px). */}
@@ -65,8 +67,8 @@ export default function RouteFields({
         <RouteField
           {...field('origin')}
           inputRef={originInputRef}
-          label="Origen"
-          placeholder="Buscar parada de origen…"
+          label={t('quick.origin')}
+          placeholder={t('quick.origin.placeholder')}
           accent={origin.isLocation}
           icon={
             origin.locating ? (
@@ -82,15 +84,15 @@ export default function RouteFields({
         <RouteField
           {...field('destination')}
           inputRef={destinationInputRef}
-          label="Destino"
-          placeholder="Buscar parada de destino…"
+          label={t('quick.destination')}
+          placeholder={t('quick.destination.placeholder')}
           icon={<MapPin className="h-5 w-5 text-urgent" strokeWidth={2.5} />}
         />
       </div>
 
       <div className="shrink-0 pr-2">
         <IconButton
-          label="Invertir origen y destino"
+          label={t('quick.swap')}
           disabled={!origin.text && !destination.text}
           onClick={() => {
             setTurns((value) => value + 1);
@@ -133,6 +135,7 @@ function RouteField({
   onKeyDown,
   onClear,
 }) {
+  const t = useT();
   const id = useId();
   useEffect(() => {
     if (editing) inputRef.current?.select();
@@ -174,7 +177,7 @@ function RouteField({
         <IconButton
           icon={X}
           size="sm"
-          label={`Borrar ${label.toLowerCase()}`}
+          label={t('quick.clearField', { field: label.toLowerCase() })}
           // Sin quitar el foco al campo que se está editando.
           onMouseDown={(event) => event.preventDefault()}
           onClick={onClear}
