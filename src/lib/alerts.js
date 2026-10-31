@@ -111,11 +111,7 @@ export function repeatAlert() {
 /** Corta vibración y timbre (al cerrar el aviso). */
 export function stopAlert() {
   haptics.stop();
-  try {
-    chime?.pause();
-  } catch {
-    // Nada que parar.
-  }
+  stopSounds();
 }
 
 // --- Sonido -------------------------------------------------------------
@@ -124,33 +120,95 @@ export function stopAlert() {
 // nada) con `volume = 1.0`: a diferencia de Web Audio, en iPhone un `<audio>`
 // suena aunque el interruptor de silencio esté puesto, y no se pierde con el
 // ruido de la calle. Si no puede sonar, Web Audio como plan B.
+//
+// Tres tonos a elegir en Ajustes ("Tono de alarma"), sintetizados con
+// matemáticas: cada uno es una lista de notas `{ at, freq, dur, decay,
+// partials }` (segundos, hercios, caída exponencial y armónicos `[razón,
+// amplitud]`) que en el aviso suena dos veces (`repeatAt`) y en la
+// previsualización de Ajustes, una.
 
 const SAMPLE_RATE = 22_050;
-// Tres tonos ascendentes (como un timbre de autobús), dos veces seguidas.
-const TONES = [880, 1109, 1319];
-const TONE_S = 0.25;
-const STEP_S = 0.28;
-const REPEAT_AT_S = [0, 1.1];
+// Campana: armónicos inarmónicos (como una campana de verdad) y caída larga.
+const BELL = [
+  [1, 0.55],
+  [2.76, 0.22],
+  [5.4, 0.1],
+];
 
-let chime = null;
-let audioContext = null;
+const TONES = {
+  // Tres tonos ascendentes (como un timbre de autobús).
+  classic: {
+    repeatAt: [0, 1.1],
+    notes: [880, 1109, 1319].map((freq, i) => ({ at: i * 0.28, freq, dur: 0.25, decay: 9, partials: [[1, 1]] })),
+  },
+  // Campanilla: Mi6 → Si5, suave y clara, con eco.
+  chime: {
+    repeatAt: [0, 1.6],
+    notes: [
+      { at: 0, freq: 1318.5, dur: 1.3, decay: 3.2, partials: BELL },
+      { at: 0.38, freq: 987.8, dur: 1.3, decay: 3, partials: BELL },
+    ],
+  },
+  // Urgente: cuatro pitidos cortos y agudos (con armónico impar, como un
+  // despertador), que cortan el ruido de la calle.
+  urgent: {
+    repeatAt: [0, 0.75],
+    notes: [0, 1, 2, 3].map((i) => ({
+      at: i * 0.14,
+      freq: 1800,
+      dur: 0.09,
+      decay: 4,
+      partials: [
+        [1, 0.75],
+        [3, 0.25],
+      ],
+    })),
+  },
+};
 
-/** WAV PCM de 16 bits del timbre, como URL de un `Blob`. */
-function chimeWavUrl() {
-  const length = Math.ceil(SAMPLE_RATE * (REPEAT_AT_S.at(-1) + STEP_S * 2 + TONE_S + 0.05));
+/** Tonos de alarma, en el orden de Ajustes. */
+export const ALARM_TONES = Object.keys(TONES);
+const toneOf = (id) => TONES[id] ?? TONES.classic;
+
+/** Lo que dura un tono, en segundos (`once`: la previsualización). */
+export function toneDuration(id, { once = false } = {}) {
+  const tone = toneOf(id);
+  const end = Math.max(...tone.notes.map((note) => note.at + note.dur));
+  return (once ? 0 : tone.repeatAt.at(-1)) + end;
+}
+
+/** Muestras del tono, normalizadas para no saturar. */
+function synthesize(id, once) {
+  const tone = toneOf(id);
+  const length = Math.ceil(SAMPLE_RATE * (toneDuration(id, { once }) + 0.05));
   const samples = new Float32Array(length);
-  for (const offset of REPEAT_AT_S) {
-    TONES.forEach((frequency, step) => {
-      const begin = Math.floor((offset + step * STEP_S) * SAMPLE_RATE);
-      const count = Math.floor(TONE_S * SAMPLE_RATE);
+  for (const offset of once ? [0] : tone.repeatAt) {
+    for (const { at, freq, dur, decay, partials } of tone.notes) {
+      const begin = Math.floor((offset + at) * SAMPLE_RATE);
+      const count = Math.floor(dur * SAMPLE_RATE);
       for (let i = 0; i < count; i++) {
         const t = i / SAMPLE_RATE;
-        // Ataque de 10 ms y caída exponencial: suena limpio, sin chasquidos.
-        const envelope = Math.min(1, t / 0.01) * Math.exp(-t * 9);
-        samples[begin + i] += 0.9 * envelope * Math.sin(2 * Math.PI * frequency * t);
+        // Ataque de 8 ms, caída exponencial y 20 ms de salida: sin chasquidos.
+        const envelope = Math.min(1, t / 0.008) * Math.exp(-t * decay) * Math.min(1, (dur - t) / 0.02);
+        let value = 0;
+        for (const [ratio, amplitude] of partials) value += amplitude * Math.sin(2 * Math.PI * freq * ratio * t);
+        samples[begin + i] += envelope * value;
       }
-    });
+    }
   }
+  let peak = 0;
+  for (const sample of samples) peak = Math.max(peak, Math.abs(sample));
+  if (peak > 0) {
+    const gain = 0.95 / peak;
+    for (let i = 0; i < length; i++) samples[i] *= gain;
+  }
+  return samples;
+}
+
+/** WAV PCM de 16 bits de un tono, como URL de un `Blob`. */
+function toneWavUrl(id, once) {
+  const samples = synthesize(id, once);
+  const { length } = samples;
   const buffer = new ArrayBuffer(44 + length * 2);
   const view = new DataView(buffer);
   const text = (at, value) => [...value].forEach((char, i) => view.setUint8(at + i, char.charCodeAt(0)));
@@ -173,6 +231,27 @@ function chimeWavUrl() {
   return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
 }
 
+// Un `Audio` por tono (aviso y previsualización), creado al usarlo por primera vez.
+const players = new Map();
+function player(id, once) {
+  const key = `${id}:${once ? 'preview' : 'alarm'}`;
+  if (!players.has(key) && typeof Audio !== 'undefined') {
+    const audio = new Audio(toneWavUrl(id, once));
+    audio.preload = 'auto';
+    players.set(key, audio);
+  }
+  return players.get(key) ?? null;
+}
+
+// Ajustes → "Tono de alarma" (`setAlarmTone`, lo sincroniza `App.jsx`).
+let selectedTone = 'classic';
+let audioContext = null;
+
+/** Elige el tono de los avisos (`classic`, `chime` o `urgent`). */
+export function setAlarmTone(id) {
+  selectedTone = TONES[id] ? id : 'classic';
+}
+
 /**
  * Prepara el sonido del aviso. Llamar dentro del toque del usuario: Safari
  * solo deja sonar audio que se haya empezado en un gesto (aquí se reproduce
@@ -180,10 +259,7 @@ function chimeWavUrl() {
  */
 export function unlockSound() {
   try {
-    if (!chime && typeof Audio !== 'undefined') {
-      chime = new Audio(chimeWavUrl());
-      chime.preload = 'auto';
-    }
+    const chime = player(selectedTone, false);
     if (chime) {
       chime.volume = 1.0;
       chime.muted = true;
@@ -199,7 +275,7 @@ export function unlockSound() {
         });
     }
   } catch {
-    chime = null;
+    // Sin `Audio`: queda Web Audio.
   }
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -213,39 +289,75 @@ export function unlockSound() {
 
 /** El timbre a todo volumen (`Audio` con `volume = 1.0`; si falla, Web Audio). */
 export function playChime() {
+  const chime = players.get(`${selectedTone}:alarm`);
   if (!chime) {
-    playChimeWebAudio();
+    playToneWebAudio(selectedTone);
     return;
   }
   try {
     chime.muted = false;
     chime.volume = 1.0;
     chime.currentTime = 0;
-    chime.play().catch(playChimeWebAudio);
+    chime.play().catch(() => playToneWebAudio(selectedTone));
   } catch {
-    playChimeWebAudio();
+    playToneWebAudio(selectedTone);
   }
 }
 
-function playChimeWebAudio() {
+/**
+ * Escucha un tono en Ajustes (una vez, al 70 %): llamar desde el toque. Corta
+ * cualquier otro que estuviera sonando. Devuelve lo que dura, en ms.
+ */
+export function previewTone(id) {
+  stopSounds();
+  try {
+    const audio = player(id, true);
+    if (audio) {
+      audio.muted = false;
+      audio.volume = 0.7;
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+  } catch {
+    // Sin sonido.
+  }
+  return Math.round(toneDuration(id, { once: true }) * 1000);
+}
+
+// Para todos los tonos (aviso y previsualizaciones).
+function stopSounds() {
+  for (const audio of players.values()) {
+    try {
+      audio.pause();
+    } catch {
+      // Nada que parar.
+    }
+  }
+}
+
+function playToneWebAudio(id) {
   if (!audioContext) return;
   try {
     audioContext.resume?.().catch(() => {});
     const start = audioContext.currentTime + 0.05;
-    TONES.forEach((frequency, step) => {
-      const at = start + step * STEP_S;
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      oscillator.type = 'sine';
-      oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.0001, at);
-      // Al máximo sin saturar (los tonos no se solapan).
-      gain.gain.exponentialRampToValueAtTime(1.0, at + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, at + TONE_S);
-      oscillator.connect(gain).connect(audioContext.destination);
-      oscillator.start(at);
-      oscillator.stop(at + TONE_S + 0.01);
-    });
+    const tone = toneOf(id);
+    for (const offset of tone.repeatAt) {
+      for (const { at, freq, dur, partials } of tone.notes) {
+        for (const [ratio, amplitude] of partials) {
+          const when = start + offset + at;
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          oscillator.type = 'sine';
+          oscillator.frequency.value = freq * ratio;
+          gain.gain.setValueAtTime(0.0001, when);
+          gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, amplitude), when + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+          oscillator.connect(gain).connect(audioContext.destination);
+          oscillator.start(when);
+          oscillator.stop(when + dur + 0.01);
+        }
+      }
+    }
   } catch {
     // Sin sonido.
   }

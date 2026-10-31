@@ -40,6 +40,16 @@
           theme = palettes[settings.palette] || theme;
         }
         if (['fluid', 'relaxed', 'static'].indexOf(settings.motion) >= 0) root.dataset.motion = settings.motion;
+        // Idioma (misma regla que `src/i18n`): el elegido o el del navegador.
+        var lang = ['gl', 'es', 'en'].indexOf(settings.language) >= 0 ? settings.language : null;
+        var wanted = (navigator.languages || []).concat(navigator.language || []);
+        for (var i = 0; !lang && i < wanted.length; i++) {
+          var base = String(wanted[i]).toLowerCase().split('-')[0];
+          if (base === 'gl') lang = 'gl';
+          else if (base === 'es' || base === 'ca' || base === 'eu') lang = 'es';
+          else if (base === 'en') lang = 'en';
+        }
+        root.lang = lang || 'es';
         root.classList.toggle('dark', theme === 'dark');
       } catch (e) {
         // Sin almacenamiento disponible: se queda en modo claro.

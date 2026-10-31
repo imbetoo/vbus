@@ -1,4 +1,5 @@
 import { Moon, Sun } from 'lucide-react';
+import { useT } from '../../i18n';
 import IconButton from '../ui/IconButton';
 
 const ICON = 'absolute inset-0 h-full w-full transition-[transform,opacity] duration-500 ease-spring motion-reduce:transition-none';
@@ -10,8 +11,9 @@ const ICON = 'absolute inset-0 h-full w-full transition-[transform,opacity] dura
  */
 export default function ThemeToggle({ theme, onToggle, lockedBy = null, className = '' }) {
   const isDark = theme === 'dark';
-  let label = isDark ? 'Activar modo claro' : 'Activar modo oscuro';
-  if (lockedBy) label = `El tema ${lockedBy} siempre es ${isDark ? 'oscuro' : 'claro'}`;
+  const t = useT();
+  let label = t(isDark ? 'theme.toLight' : 'theme.toDark');
+  if (lockedBy) label = t(isDark ? 'theme.locked.dark' : 'theme.locked.light', { name: lockedBy });
 
   return (
     <IconButton

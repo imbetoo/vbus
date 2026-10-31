@@ -6,6 +6,7 @@ import ScannerSheet from '../scanner/ScannerSheet';
 import { PRESSABLE } from '../ui/pressable';
 import NearbyStops from './NearbyStops';
 import StopSearchField from './StopSearchField';
+import { useT } from '../../i18n';
 
 /**
  * Selector de parada reutilizable: buscador predictivo (dirección o número,
@@ -31,6 +32,7 @@ export default function StopPicker({
   inputRef,
   children,
 }) {
+  const t = useT();
   // Búsqueda con debounce de 200 ms y memorizada (`useStopSearch`).
   const { suggestions } = useStopSearch(query, { excludeId });
   const [scanning, setScanning] = useState(false);
@@ -66,7 +68,7 @@ export default function StopPicker({
         className={`mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 text-base font-semibold text-white shadow-relief active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
       >
         <ScanQrCode className="h-5 w-5 text-accent" strokeWidth={2.5} aria-hidden="true" />
-        Escanear QR de la parada
+        {t('create.scan')}
       </button>
       <ScannerSheet
         open={scanning}

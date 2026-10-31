@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { LANGUAGES } from '../i18n';
+import { ALARM_TONES } from '../lib/alerts';
+import { APP_ICONS } from '../lib/appIcon';
 import { MOTIONS, PALETTES } from '../lib/appearance';
 
 const STORAGE_KEY = 'vbus:settings';
@@ -15,6 +18,9 @@ const STORAGE_KEY = 'vbus:settings';
  * - `vibration`: vibración y toques hápticos (también los de las alarmas).
  * - `palette`: colores del fondo y de los acentos (`PALETTES`, `appearance.js`).
  * - `motion`: velocidad de las manchas del fondo (fluido, relajado o estático).
+ * - `language`: idioma de la interfaz (`auto`: el del navegador; `src/i18n`).
+ * - `alarmTone`: tono de los avisos (`ALARM_TONES`, `alerts.js`).
+ * - `appIcon`: icono de la pantalla de inicio al instalar (`APP_ICONS`, `appIcon.js`).
  */
 export const DEFAULT_SETTINGS = {
   sortBy: 'time',
@@ -25,6 +31,9 @@ export const DEFAULT_SETTINGS = {
   vibration: true,
   palette: 'vigo',
   motion: 'relaxed',
+  language: 'auto',
+  alarmTone: 'classic',
+  appIcon: 'classic',
 };
 
 const VALID = {
@@ -36,6 +45,9 @@ const VALID = {
   vibration: [true, false],
   palette: PALETTES.map((palette) => palette.id),
   motion: MOTIONS.map((motion) => motion.value),
+  language: ['auto', ...LANGUAGES.map((lang) => lang.id)],
+  alarmTone: ALARM_TONES,
+  appIcon: APP_ICONS,
 };
 
 function loadSettings() {

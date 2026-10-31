@@ -12,6 +12,7 @@ import FocusPill from '../focus/FocusPill';
 import { AlarmPanel, FocusDialog, FocusLayout, NotificationStatus, PANEL, ScreenStatus, StatusRow } from '../focus/FocusScreen';
 import PillButton from '../ui/PillButton';
 import { PRESSABLE } from '../ui/pressable';
+import { t, useT } from '../../i18n';
 
 // Llegadas a la parada de subida mientras se espera el autobús.
 const ORIGIN_POLL_MS = 30_000;
@@ -26,11 +27,15 @@ function reachingBuses(buses, { plan, lines }) {
 /** Texto de la píldora: lo que queda, según la fase. */
 function pillText({ phase, busA, aEta, eta, progress }) {
   if (phase === 'riding') {
-    if (eta != null) return eta < 0.5 ? 'Llegando a tu parada' : `Bajas en ${minutesText(eta)}`;
-    return progress ? `Quedan ${formatDistance(progress.remainingMetres)}` : 'En camino';
+    if (eta != null) return eta < 0.5 ? t('trip.pill.arriving') : t('trip.pill.getOffIn', { time: minutesText(eta) });
+    return progress ? t('trip.pill.left', { distance: formatDistance(progress.remainingMetres) }) : t('trip.riding');
   }
-  if (busA && aEta != null) return `${busA.line} ${aEta < 0.5 ? 'llegando' : `en ${minutesText(aEta)}`}`;
-  return 'Esperando tu autobús';
+  if (busA && aEta != null) {
+    return aEta < 0.5
+      ? t('pill.lineArriving', { line: busA.line })
+      : t('pill.lineIn', { line: busA.line, time: minutesText(aEta) });
+  }
+  return t('trip.pill.waiting');
 }
 
 /**
@@ -43,6 +48,7 @@ function pillText({ phase, busA, aEta, eta, progress }) {
  * de la consulta al empezar); `live` a `false` mientras la pantalla sale.
  */
 export default function TripSession({ session, live, onEnd, onMinimize, onRestore }) {
+  const t = useT();
   const titleId = useId();
   const trip = session.payload;
   const [waiting, setWaiting] = useState(true);
@@ -92,7 +98,7 @@ export default function TripSession({ session, live, onEnd, onMinimize, onRestor
       <FocusPill
         visible={live && session.view === 'pill' && !alarmed}
         text={pillText(state)}
-        label="Modo viaje"
+        label={t('trip.mode')}
         onRestore={onRestore}
       />
     </>
@@ -100,6 +106,7 @@ export default function TripSession({ session, live, onEnd, onMinimize, onRestor
 }
 
 function TripView({ trip, state, buses, notifications, titleId, onEnd }) {
+  const t = useT();
   const { phase, alight, alarm } = state;
   const { destination } = trip;
   const walk =
@@ -108,28 +115,30 @@ function TripView({ trip, state, buses, notifications, titleId, onEnd }) {
       : null;
 
   return (
-    <FocusLayout icon={Bell} label="Modo viaje" endLabel="Terminar viaje" armed={phase !== 'alarm'}>
-      <p className="text-lg font-medium text-white/60">Bájate en</p>
+    <FocusLayout icon={Bell} label={t('trip.mode')} endLabel={t('trip.end')} armed={phase !== 'alarm'}>
+      <p className="text-lg font-medium text-white/60">{t('trip.getOffAt')}</p>
       <h2 id={titleId} className="text-pretty text-3xl font-bold tracking-tight">
         {alight.name}
       </h2>
       <p className="mt-1 text-base font-medium tabular-nums text-white/60">
-        {`Parada ${alight.id}${walk != null ? ` · a ${formatDistance(walk)} de tu destino` : ''}`}
+        {`${t('stop.fallback', { id: alight.id })}${
+          walk != null ? ` · ${t('trip.fromDestination', { distance: formatDistance(walk) })}` : ''
+        }`}
       </p>
 
       <div className="mt-5">
-        {phase === 'alarm' && <AlarmPanel title="Prepárate para bajar" text={alarm.text} onDone={onEnd} />}
+        {phase === 'alarm' && <AlarmPanel title={t('trip.alert.title')} text={alarm.text} onDone={onEnd} />}
         {phase === 'riding' && <RidingPanel state={state} />}
         {phase === 'waiting' && <WaitingPanel state={state} trip={trip} buses={buses} />}
       </div>
 
       {phase !== 'alarm' && (
         <p className="mt-4 px-1 text-base font-medium text-white/60">
-          {`Te aviso unos ${ALERT_MINUTES} min antes de llegar, con el tiempo real de Vitrasa (incluye el tráfico) y tu GPS.`}
+          {t('trip.explain', { n: ALERT_MINUTES })}
         </p>
       )}
 
-      <ul className="mt-5 flex flex-col gap-2" aria-label="Estado del aviso">
+      <ul className="mt-5 flex flex-col gap-2" aria-label={t('focus.status')}>
         <ScreenStatus />
         <NotificationStatus status={notifications} />
         <LocationStatus status={state.gpsStatus} />
@@ -140,6 +149,7 @@ function TripView({ trip, state, buses, notifications, titleId, onEnd }) {
 }
 
 function WaitingPanel({ state, trip, buses }) {
+  const t = useT();
   const { busA, aEta, eta, selectedKey, select, board } = state;
   // Próximo autobús de cada línea directa, para elegir otro.
   const choices = [];
@@ -153,17 +163,17 @@ function WaitingPanel({ state, trip, buses }) {
   }
 
   return (
-    <section className={`${PANEL} p-5`} aria-label="Tu autobús">
-      <p className="text-base font-medium text-white/60">Tu autobús</p>
+    <section className={`${PANEL} p-5`} aria-label={t('trip.yourBus')}>
+      <p className="text-base font-medium text-white/60">{t('trip.yourBus')}</p>
       {busA ? (
         <div className="mt-2 flex items-center gap-3">
           <LineBadge line={busA.line} color={lineColor(busA.line)} />
           <p className="min-w-0 flex-1 text-lg/snug font-medium text-white/80">
             {aEta < 0.5 ? (
-              <>Llegando a {trip.boarding.name}</>
+              t('trip.busArriving', { stop: trip.boarding.name })
             ) : (
               <>
-                Llega a {trip.boarding.name} en{' '}
+                {t('trip.busArrives', { stop: trip.boarding.name })}{' '}
                 <span className="font-bold tabular-nums text-white">{minutesText(aEta)}</span>
               </>
             )}
@@ -171,18 +181,18 @@ function WaitingPanel({ state, trip, buses }) {
         </div>
       ) : (
         <p className="mt-2 text-lg font-medium text-white/80">
-          {`No hay autobuses directos previstos ahora en ${trip.boarding.name}. Si ya vas en uno, tócalo abajo.`}
+          {t('trip.noBuses', { stop: trip.boarding.name })}
         </p>
       )}
       {eta != null && busA && (
         <p className="mt-3 text-base font-medium tabular-nums text-white/60">
-          {`Llegarías a tu parada en unos ${minutesText(eta)}.`}
+          {t('trip.wouldArrive', { time: minutesText(eta) })}
         </p>
       )}
 
       {choices.length > 1 && (
         <div className="mt-4 border-t border-white/10 pt-4">
-          <p className="text-sm font-medium text-white/60">¿Vas a coger otro?</p>
+          <p className="text-sm font-medium text-white/60">{t('trip.otherBus')}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {choices.map((bus) => {
               const key = lineKey(bus.line);
@@ -207,30 +217,31 @@ function WaitingPanel({ state, trip, buses }) {
       )}
 
       <PillButton className="mt-5" onClick={board}>
-        Ya voy en el autobús
+        {t('trip.boarded')}
       </PillButton>
     </section>
   );
 }
 
 function RidingPanel({ state }) {
+  const t = useT();
   const { eta, line, progress } = state;
   const details = [];
   if (progress?.stopsLeft != null) {
-    details.push(`${progress.stopsLeft} ${progress.stopsLeft === 1 ? 'parada' : 'paradas'}`);
+    details.push(t('direct.stops', { n: progress.stopsLeft }));
   }
   if (progress) details.push(formatDistance(progress.remainingMetres));
 
   return (
-    <section className={`${PANEL} p-5`} aria-label="En camino">
-      <p className="text-base font-medium text-white/60">Llegas a tu parada en</p>
+    <section className={`${PANEL} p-5`} aria-label={t('trip.riding')}>
+      <p className="text-base font-medium text-white/60">{t('trip.reachIn')}</p>
       <p className="mt-1 text-6xl font-bold tabular-nums tracking-tight">
         {eta != null ? minutesText(eta) : '—'}
       </p>
       <div className="mt-3 flex items-center gap-3">
         {line && <LineBadge line={line} color={lineColor(line)} />}
         <p className="text-base font-medium tabular-nums text-white/70">
-          {details.length ? `Quedan ${details.join(' · ')}` : 'Siguiendo tu autobús…'}
+          {details.length ? t('trip.left', { details: details.join(' · ') }) : t('trip.following')}
         </p>
       </div>
     </section>
@@ -238,41 +249,43 @@ function RidingPanel({ state }) {
 }
 
 function LocationStatus({ status }) {
+  const t = useT();
   switch (status) {
     case 'active':
-      return <StatusRow ok icon={LocateFixed}>Siguiendo tu posición en el recorrido.</StatusRow>;
+      return <StatusRow ok icon={LocateFixed}>{t('trip.gps.active')}</StatusRow>;
     case 'locating':
-      return <StatusRow ok icon={LocateFixed}>Buscando tu posición…</StatusRow>;
+      return <StatusRow ok icon={LocateFixed}>{t('trip.gps.locating')}</StatusRow>;
     case 'denied':
-      return <StatusRow icon={LocateOff}>Sin permiso de ubicación: me guío solo por los tiempos de Vitrasa.</StatusRow>;
+      return <StatusRow icon={LocateOff}>{t('trip.gps.denied')}</StatusRow>;
     case 'unavailable':
-      return <StatusRow icon={LocateOff}>Sin señal GPS ahora mismo: me guío por los tiempos de Vitrasa.</StatusRow>;
+      return <StatusRow icon={LocateOff}>{t('trip.gps.unavailable')}</StatusRow>;
     case 'off':
       return null;
     default:
-      return <StatusRow icon={LocateOff}>Este navegador no da tu ubicación: me guío por los tiempos de Vitrasa.</StatusRow>;
+      return <StatusRow icon={LocateOff}>{t('trip.gps.unsupported')}</StatusRow>;
   }
 }
 
 function DataStatus({ status, error, gpsStatus }) {
+  const t = useT();
   if (!error) return null;
   const gps = gpsStatus === 'active' || gpsStatus === 'locating';
   if (error.kind === 'offline') {
     return (
       <StatusRow icon={WifiOff}>
         {gps
-          ? 'Sin conexión: te aviso por GPS hasta que vuelva la red.'
-          : 'Sin conexión ni GPS: ahora mismo no puedo seguir tu autobús.'}
+          ? t('trip.data.offlineGps')
+          : t('trip.data.offline')}
       </StatusRow>
     );
   }
   return (
     <StatusRow icon={CircleAlert}>
       {status === 'success'
-        ? 'Vitrasa no responde: uso los últimos tiempos recibidos.'
+        ? t('trip.data.stale')
         : gps
-          ? 'Vitrasa no responde: te aviso por GPS mientras tanto.'
-          : 'Vitrasa no responde ahora mismo: lo sigo intentando.'}
+          ? t('trip.data.gps')
+          : t('trip.data.retrying')}
     </StatusRow>
   );
 }

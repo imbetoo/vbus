@@ -4,6 +4,7 @@ import { loadStopsList, nearestStops } from '../../data/stops';
 import { OUTSIDE_VIGO_M, formatDistance, getCurrentPosition, locationErrorStatus } from '../../lib/geo';
 import { PRESSABLE } from '../ui/pressable';
 import StopRow from './StopRow';
+import { t, useT } from '../../i18n';
 
 // Radio en el que se buscan paradas "cerca de mí" y número de resultados.
 const RADIUS_M = 800;
@@ -13,13 +14,13 @@ const LIMIT = 5;
 function statusMessage(state) {
   switch (state.status) {
     case 'unsupported':
-      return 'Este navegador no puede darte tu ubicación. Busca la parada por dirección o número.';
+      return t('nearby.unsupported');
     case 'denied':
-      return 'No hay permiso para usar tu ubicación. Actívalo en los ajustes del navegador para esta web y vuelve a intentarlo.';
+      return t('nearby.denied');
     case 'unavailable':
-      return 'No se pudo saber dónde estás (sin señal o tardó demasiado). Inténtalo de nuevo.';
+      return t('nearby.unavailable');
     case 'outside':
-      return `Pareces estar fuera de Vigo: la parada de Vitrasa más cercana está a ${formatDistance(state.nearestMeters)}.`;
+      return t('nearby.outside', { distance: formatDistance(state.nearestMeters) });
     default:
       return null;
   }
@@ -35,6 +36,7 @@ function statusMessage(state) {
  * y fuera de Vigo. La ubicación no se guarda en ningún sitio.
  */
 export default function NearbyStops({ onSelect }) {
+  const t = useT();
   const [state, setState] = useState({ status: 'idle' });
   const alive = useRef(true);
   useEffect(() => {
@@ -82,7 +84,7 @@ export default function NearbyStops({ onSelect }) {
         ) : (
           <LocateFixed className="h-5 w-5 text-accent" strokeWidth={2.5} aria-hidden="true" />
         )}
-        {locating ? 'Buscando tu ubicación…' : 'Paradas cerca de mí'}
+        {t(locating ? 'nearby.locating' : 'nearby.button')}
       </button>
 
       <div aria-live="polite">
@@ -100,8 +102,8 @@ export default function NearbyStops({ onSelect }) {
           <div key="results" className="animate-fade-in motion-reduce:animate-none">
             <p className="mb-2 mt-3 text-sm font-medium text-white/60">
               {state.withinRadius
-                ? `Paradas a menos de ${RADIUS_M} m de ti:`
-                : `No hay paradas a menos de ${RADIUS_M} m. Las más cercanas:`}
+                ? t('nearby.within', { m: RADIUS_M })
+                : t('nearby.closest', { m: RADIUS_M })}
             </p>
             <ul className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06]">
               {state.stops.map((stop) => (

@@ -1,4 +1,5 @@
 import { RotateCw } from 'lucide-react';
+import { useT } from '../../i18n';
 
 const TONES = {
   // Sobre el fondo de la app (Mis rutas): sigue al tema.
@@ -16,6 +17,7 @@ const TONES = {
  * `overflow-hidden`, encima de la lista.
  */
 export default function PullIndicator({ ref, refreshing, tone = 'auto' }) {
+  const t = useT();
   return (
     <>
       <div
@@ -38,7 +40,7 @@ export default function PullIndicator({ ref, refreshing, tone = 'auto' }) {
       </div>
       {/* Aviso para lectores de pantalla. */}
       <span className="sr-only" role="status">
-        {refreshing ? 'Actualizando tiempos…' : ''}
+        {refreshing ? t('pull.refreshing') : ''}
       </span>
     </>
   );

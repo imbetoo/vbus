@@ -3,6 +3,7 @@
  * API: WhatsApp, Telegram…) y, si no existe o falla, copiándolo al
  * portapapeles.
  */
+import { t } from '../i18n';
 
 /**
  * Enlace que abre la app con ese trayecto ya puesto (consulta rápida con
@@ -20,10 +21,7 @@ export function routeShareUrl(origin, destination, base = window.location.origin
  * Líneas directas: C3i, 5A. Consulta tiempos en https://…"
  */
 export function routeShareText({ origin, destination, lines = [], url }) {
-  const linesText = lines.length
-    ? ` ${lines.length === 1 ? 'Línea directa' : 'Líneas directas'}: ${lines.join(', ')}.`
-    : '';
-  return `🚌 Ruta vBus: De ${origin.name} a ${destination.name}.${linesText} Consulta tiempos en ${url}`;
+  return t('share.route.text', { origin: origin.name, destination: destination.name, lines, url });
 }
 
 /**

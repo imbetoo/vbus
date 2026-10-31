@@ -15,6 +15,7 @@
  * faltaba la vez anterior menos lo que ha pasado). En la duda se elige el
  * que llega antes: mejor un aviso temprano que pasarse de parada.
  */
+import { t } from '../i18n';
 import { lineKey } from './lines';
 
 /** Se avisa cuando faltan estos minutos (o menos) para llegar a la parada de bajada. */
@@ -118,7 +119,8 @@ export function routeProgress(path, coords, position, { fromSegment = 0 } = {}) 
 export const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 /** "Llegando", "1 min", "12 min". */
-export const minutesText = (minutes) => (minutes < 0.5 ? 'Llegando' : `${Math.round(minutes)} min`);
+export const minutesText = (minutes) =>
+  minutes < 0.5 ? t('time.arriving') : t('time.minutes', { n: Math.round(minutes) });
 
 /** Minutos que le faltan a `bus` ahora, descontando lo que ha pasado desde que llegó el dato. */
 export const etaNow = (bus, fetchedAt, now) => bus.time - Math.max(0, now - fetchedAt) / 60_000;

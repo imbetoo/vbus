@@ -1,13 +1,19 @@
 import { Download, QrCode, Share, X } from 'lucide-react';
 import { Suspense, lazy, useId, useState } from 'react';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
+import { LANGUAGES, detectLanguage, useT } from '../../i18n';
 import { MOTIONS, applyAppearance, changeAppearance } from '../../lib/appearance';
+import { haptics } from '../../lib/haptics';
+import { isStandalone } from '../../lib/platform';
 import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
 import SegmentedControl from '../ui/SegmentedControl';
+import ChoiceList from '../ui/ChoiceList';
 import Switch from '../ui/Switch';
+import AppIconPicker from '../onboarding/AppIconPicker';
 import PalettePicker from './PalettePicker';
+import TonePicker from './TonePicker';
 import { PRESSABLE } from '../ui/pressable';
 
 // El QR (y su generador) solo se descarga al abrirlo.
@@ -18,6 +24,7 @@ const ShareRoutesModal = lazy(() => import('../share/ShareRoutesModal'));
 const BUILD_LABEL = (() => {
   const { version, time, commit } = __BUILD_INFO__;
   const [major = '1', minor = '0'] = String(version ?? '').split('.');
+  // Formato fijo (día/mes/año, hora de Vigo): es un dato técnico, no un texto.
   const date = new Date(time).toLocaleString('es-ES', {
     timeZone: 'Europe/Madrid',
     day: '2-digit',
@@ -29,39 +36,11 @@ const BUILD_LABEL = (() => {
   return `vBus v${major}.${minor} • Build: ${date}${commit ? ` · ${commit}` : ''}`;
 })();
 
-const SORT_OPTIONS = [
-  { value: 'time', label: 'Llegada' },
-  { value: 'preference', label: 'Preferencia' },
-];
-
-const TIME_FORMAT_OPTIONS = [
-  { value: 'relative', label: 'Relativo' },
-  { value: 'absolute', label: 'Absoluto' },
-];
-
-const REFRESH_OPTIONS = [
-  { value: 15, label: '15 s' },
-  { value: 30, label: '30 s' },
-  { value: 60, label: '60 s' },
-];
-
-const BACKGROUND_OPTIONS = [
-  { value: 'full', label: 'Completo' },
-  { value: 'lite', label: 'Ligero' },
-];
-
-// Explicación de la paleta elegida (las que fijan el modo lo dicen).
-const PALETTE_HINTS = {
-  vigo: 'Azules y morados: el de siempre.',
-  nature: 'Esmeralda, menta y bosque.',
-  sunset: 'Naranjas, rojos y amarillos cálidos.',
-  ocean: 'Azul marino, turquesa y cian.',
-  cyberpunk: 'Magenta y cian neón. Siempre en modo oscuro.',
-  lavender: 'Lilas y rosas pastel, relajante.',
-  cloud: 'Blancos y grises, sin color. Siempre en modo claro.',
-  shadow: 'Grises muy oscuros y carbón. Siempre en modo oscuro.',
-  oled: 'Negro puro y sin animación: ahorra batería. Siempre en modo oscuro.',
-};
+// Opciones de los controles segmentados: el valor y la clave de su texto.
+const SORT_OPTIONS = ['time', 'preference'];
+const TIME_FORMAT_OPTIONS = ['relative', 'absolute'];
+const REFRESH_OPTIONS = [15, 30, 60];
+const BACKGROUND_OPTIONS = ['full', 'lite'];
 
 /** Una fila de ajuste en un contenedor Bento: título, explicación y control. */
 function SettingRow({ title, description, children }) {
@@ -92,8 +71,11 @@ function SwitchRow({ title, description, checked, onChange }) {
 
 /** Menú flotante de ajustes: afecta a cómo se pintan todas las tarjetas. */
 export default function SettingsModal({ open, onClose, settings, onChange, routes = [] }) {
+  const t = useT();
   const titleId = useId();
   const { canInstall, install, iosHint } = useInstallPrompt();
+  const installed = isStandalone();
+  const autoLanguage = LANGUAGES.find((lang) => lang.id === detectLanguage())?.name;
   // "Compartir mis rutas guardadas": se monta la primera vez que se abre y se
   // queda montado para que también salga animado.
   const [sharing, setSharing] = useState(false);
@@ -109,37 +91,33 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
       <div className="flex max-h-[calc(100dvh-2rem)] transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain p-5">
         <header className="flex items-center justify-between gap-3">
           <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
-            Ajustes
+            {t('settings.title')}
           </h2>
-          <IconButton icon={X} label="Cerrar" onClick={onClose} />
+          <IconButton icon={X} label={t('common.close')} onClick={onClose} />
         </header>
 
         <SettingRow
-          title="Ordenar autobuses por"
+          title={t('settings.sortBy')}
           description={
             // `key`: al cambiar de opción, la explicación nueva entra con un fundido.
             <span key={settings.sortBy} className="block animate-fade-in motion-reduce:animate-none">
-              {settings.sortBy === 'time'
-                ? 'El que llega antes, primero.'
-                : 'Tus líneas en el orden en que las elegiste.'}
+              {t(`settings.sortBy.${settings.sortBy}.hint`)}
             </span>
           }
         >
           <SegmentedControl
-            label="Ordenar autobuses por"
-            options={SORT_OPTIONS}
+            label={t('settings.sortBy')}
+            options={SORT_OPTIONS.map((value) => ({ value, label: t(`settings.sortBy.${value}`) }))}
             value={settings.sortBy}
             onChange={(value) => onChange('sortBy', value)}
           />
         </SettingRow>
 
         <SwitchRow
-          title="Ordenar tarjetas por cercanía"
+          title={t('settings.proximity')}
           description={
             <span key={String(settings.sortByProximity)} className="block animate-fade-in motion-reduce:animate-none">
-              {settings.sortByProximity
-                ? 'La tarjeta de la parada que tienes más cerca sale la primera. Tu orden no se pierde.'
-                : 'Siempre en el orden en que las colocaste.'}
+              {t(settings.sortByProximity ? 'settings.proximity.on' : 'settings.proximity.off')}
             </span>
           }
           checked={settings.sortByProximity}
@@ -147,12 +125,10 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
         />
 
         <SwitchRow
-          title="Vibración"
+          title={t('settings.vibration')}
           description={
             <span key={String(settings.vibration)} className="block animate-fade-in motion-reduce:animate-none">
-              {settings.vibration
-                ? 'Toques al usar la app y vibración fuerte en los avisos.'
-                : 'Sin vibración. Los avisos siguen sonando y notificando.'}
+              {t(settings.vibration ? 'settings.vibration.on' : 'settings.vibration.off')}
             </span>
           }
           checked={settings.vibration}
@@ -160,48 +136,42 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
         />
 
         <SettingRow
-          title="Formato de tiempo"
+          title={t('settings.timeFormat')}
           description={
             <span key={settings.timeFormat} className="block animate-fade-in motion-reduce:animate-none">
-              {settings.timeFormat === 'relative'
-                ? 'Lo que falta para que llegue: «5 min».'
-                : 'La hora a la que llega: «12:45».'}
+              {t(`settings.timeFormat.${settings.timeFormat}.hint`)}
             </span>
           }
         >
           <SegmentedControl
-            label="Formato de tiempo"
-            options={TIME_FORMAT_OPTIONS}
+            label={t('settings.timeFormat')}
+            options={TIME_FORMAT_OPTIONS.map((value) => ({ value, label: t(`settings.timeFormat.${value}`) }))}
             value={settings.timeFormat}
             onChange={(value) => onChange('timeFormat', value)}
           />
         </SettingRow>
 
         <SettingRow
-          title="Actualizar datos"
+          title={t('settings.refresh')}
           description={
             <span key={settings.refreshSeconds} className="block animate-fade-in motion-reduce:animate-none">
-              {settings.refreshSeconds === 15
-                ? 'Cada 15 segundos: lo más al día, gasta algo más de datos.'
-                : settings.refreshSeconds === 30
-                  ? 'Cada 30 segundos (recomendado).'
-                  : 'Cada minuto: gasta menos datos y batería.'}
+              {t(`settings.refresh.${settings.refreshSeconds}`)}
             </span>
           }
         >
           <SegmentedControl
-            label="Actualizar datos"
-            options={REFRESH_OPTIONS}
+            label={t('settings.refresh')}
+            options={REFRESH_OPTIONS.map((value) => ({ value, label: `${value} s` }))}
             value={settings.refreshSeconds}
             onChange={(value) => onChange('refreshSeconds', value)}
           />
         </SettingRow>
 
         <SettingRow
-          title="Tema"
+          title={t('settings.theme')}
           description={
             <span key={settings.palette} className="block animate-fade-in motion-reduce:animate-none">
-              {PALETTE_HINTS[settings.palette] ?? 'Colores del fondo y de los acentos.'}
+              {t(`palette.${settings.palette}.hint`)}
             </span>
           }
         >
@@ -213,20 +183,16 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
         </SettingRow>
 
         <SettingRow
-          title="Dinamismo"
+          title={t('settings.motion')}
           description={
             <span key={settings.motion} className="block animate-fade-in motion-reduce:animate-none">
-              {settings.motion === 'fluid'
-                ? 'Movimiento vivo, el doble de rápido.'
-                : settings.motion === 'relaxed'
-                  ? 'Movimiento lento y sutil (recomendado).'
-                  : 'Fondo congelado: 0 % de CPU y de batería.'}
+              {t(`motion.${settings.motion}.hint`)}
             </span>
           }
         >
           <SegmentedControl
-            label="Dinamismo"
-            options={MOTIONS}
+            label={t('settings.motion')}
+            options={MOTIONS.map(({ value }) => ({ value, label: t(`motion.${value}`) }))}
             value={settings.motion}
             onChange={(motion) => {
               applyAppearance({ motion });
@@ -238,31 +204,61 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
         {/* Con OLED no hay manchas que aligerar. */}
         {settings.palette !== 'oled' && (
           <SettingRow
-            title="Fondo"
+            title={t('settings.background')}
             description={
               <span key={settings.background} className="block animate-fade-in motion-reduce:animate-none">
-                {settings.background === 'full'
-                  ? 'Cinco manchas de color en movimiento.'
-                  : 'Solo tres manchas: más fluido si notas tirones.'}
+                {t(`settings.background.${settings.background}.hint`)}
               </span>
             }
           >
             <SegmentedControl
-              label="Fondo"
-              options={BACKGROUND_OPTIONS}
+              label={t('settings.background')}
+              options={BACKGROUND_OPTIONS.map((value) => ({ value, label: t(`settings.background.${value}`) }))}
               value={settings.background}
               onChange={(value) => onChange('background', value)}
             />
           </SettingRow>
         )}
 
+        {/* Solo sin instalar: ya instalada, el sistema conserva su icono. */}
+        {!installed && (
+          <SettingRow title={t('appIcon.label')} description={t('appIcon.hint')}>
+            <AppIconPicker value={settings.appIcon} onChange={(icon) => onChange('appIcon', icon)} size={56} />
+          </SettingRow>
+        )}
+
+        <SettingRow title={t('settings.tone')} description={t('settings.tone.hint')}>
+          <TonePicker value={settings.alarmTone} onChange={(tone) => onChange('alarmTone', tone)} />
+        </SettingRow>
+
         <SettingRow
-          title="Compartir mis rutas guardadas"
+          title={t('settings.language')}
           description={
-            routes.length
-              ? 'Pásalas a otro móvil con un código QR o un enlace, sin cuentas ni servidores.'
-              : 'Crea alguna ruta para poder compartirla.'
+            <span key={settings.language} className="block animate-fade-in motion-reduce:animate-none">
+              {settings.language === 'auto'
+                ? t('settings.language.hint.auto', { name: autoLanguage })
+                : t('settings.language.hint.manual')}
+            </span>
           }
+        >
+          <ChoiceList
+            label={t('settings.language')}
+            value={settings.language}
+            onSelect={(language) => {
+              if (language === settings.language) return;
+              haptics.select();
+              onChange('language', language);
+            }}
+            options={[
+              { value: 'auto', label: t('settings.language.auto'), hint: autoLanguage },
+              ...LANGUAGES.map((lang) => ({ value: lang.id, label: lang.name })),
+            ]}
+          />
+        </SettingRow>
+
+        <SettingRow
+          title={t('settings.share')}
+          description={routes.length ? t('settings.share.hint') : t('settings.share.empty')}
         >
           {routes.length > 0 && (
             <button
@@ -272,38 +268,39 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
               className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 text-base font-semibold active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
             >
               <QrCode className="h-[18px] w-[18px] text-accent" strokeWidth={2.5} aria-hidden="true" />
-              {`Compartir ${routes.length === 1 ? '1 ruta' : `${routes.length} rutas`}`}
+              {t('settings.share.button', { n: routes.length })}
             </button>
           )}
         </SettingRow>
 
         {/* Solo aparece si el navegador permite instalarla (o en iOS, cómo hacerlo). */}
         {canInstall && (
-          <SettingRow title="Instalar app" description="Ábrela a pantalla completa desde tu pantalla de inicio.">
+          <SettingRow title={t('settings.install')} description={t('settings.install.hint')}>
             <button
               type="button"
               onClick={install}
               className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 text-base font-semibold active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
             >
               <Download className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden="true" />
-              Instalar vBus
+              {t('settings.install.button')}
             </button>
           </SettingRow>
         )}
         {iosHint && (
           <SettingRow
-            title="Instalar app"
+            title={t('settings.install')}
             description={
               <>
-                En Safari, pulsa <Share className="inline h-4 w-4 align-[-2px]" aria-label="Compartir" /> y
-                luego «Añadir a pantalla de inicio».
+                {t('settings.install.ios.before')}{' '}
+                <Share className="inline h-4 w-4 align-[-2px]" aria-label={t('settings.install.ios.share')} />{' '}
+                {t('settings.install.ios.after')}
               </>
             }
           />
         )}
 
         <PillButton onClick={onClose} className="mt-1">
-          Hecho
+          {t('common.done')}
         </PillButton>
 
         {/* Versión: si no coincide con la del último despliegue, el móvil está

@@ -1,8 +1,10 @@
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
 import { BusFront, Check, Moon, Pencil, Search, Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { forcedScheme, paletteOf } from '../lib/appearance';
+import { forcedScheme } from '../lib/appearance';
+import { useT } from '../i18n';
 import { haptics } from '../lib/haptics';
+import { isOnboarded, isStandalone, markOnboarded } from '../lib/platform';
 import { prefersReducedMotion } from '../lib/motion';
 import { withNearestFirst } from '../lib/proximity';
 import EditCardModal from '../components/bus/EditCardModal';
@@ -16,12 +18,14 @@ import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
 import IconButton from '../components/ui/IconButton';
 import PullIndicator from '../components/ui/PullIndicator';
+import OnboardingScreen from '../components/onboarding/OnboardingScreen';
 import ImportRoutesSheet from '../components/share/ImportRoutesSheet';
 import Toast from '../components/ui/Toast';
 import { useToast } from '../hooks/useToast';
 import { findStop, loadStopsList } from '../data/stops';
 import { ROUTES_PARAM, decodeRoutes, toImportedCard } from '../lib/routesShare';
 import { useNearestCard } from '../hooks/useNearestCard';
+import { useDayPart } from '../hooks/useDayPart';
 import { useNightMode } from '../hooks/useNightMode';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
@@ -78,13 +82,14 @@ function clearImportParam() {
 
 /** Mensaje de la lista vacía (la app empieza sin tarjetas). */
 function EmptyState() {
+  const t = useT();
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-black/70 dark:text-white/80">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/70 ring-1 ring-black/5 dark:bg-white/15 dark:ring-white/10">
         <BusFront className="h-7 w-7" strokeWidth={2} aria-hidden="true" />
       </span>
-      <p className="text-xl font-semibold tracking-tight text-black dark:text-white">Aún no tienes rutas</p>
-      <p className="text-base font-medium">Crea tu primera tarjeta con la parada y las líneas que usas a diario.</p>
+      <p className="text-xl font-semibold tracking-tight text-black dark:text-white">{t('dashboard.empty.title')}</p>
+      <p className="text-base font-medium">{t('dashboard.empty.text')}</p>
     </div>
   );
 }
@@ -94,6 +99,7 @@ function EmptyState() {
  * con scroll propio en medio y "Crear nueva tarjeta" fijo abajo.
  */
 export default function Dashboard({ settings, onSettingChange }) {
+  const t = useT();
   const { routes, addRoute, removeRoute, reorderRoutes, updateRoute, importRoutes, refresh } = useRoutes({
     refreshMs: settings.refreshSeconds * 1000,
   });
@@ -129,7 +135,7 @@ export default function Dashboard({ settings, onSettingChange }) {
   // Colección de rutas recibida: se lee antes del primer render y la hoja
   // pregunta qué hacer. Un enlace roto solo avisa.
   const [incoming, setIncoming] = useState(readImport);
-  const [toast, showToast] = useToast(incoming?.invalid ? 'Enlace inválido: no se pudieron leer las rutas' : null);
+  const [toast, showToast] = useToast(incoming?.invalid ? t('toast.importInvalid') : null);
   const invalidImport = Boolean(incoming?.invalid);
   useEffect(() => {
     if (invalidImport) clearImportParam();
@@ -144,14 +150,21 @@ export default function Dashboard({ settings, onSettingChange }) {
       const cards = entries.map((entry) => toImportedCard(entry, findStop(entry.stopId)));
       const added = importRoutes(cards, mode);
       haptics.impact();
-      if (mode === 'replace') showToast('Rutas reemplazadas');
-      else showToast(added === 1 ? '1 ruta añadida' : `${added} rutas añadidas`);
+      showToast(mode === 'replace' ? t('toast.importReplaced') : t('toast.importAdded', { n: added }));
     },
-    [incoming, importRoutes, showToast],
+    [incoming, importRoutes, showToast, t],
   );
   const cancelImport = useCallback(() => {
     setIncoming(null);
     clearImportParam();
+  }, []);
+  // Bienvenida (instalar y elegir icono): la primera vez en el navegador, sin
+  // la app instalada. No si se abrió un enlace o un acceso directo (ya sabe a
+  // qué viene); una vez vista o saltada, no vuelve (`vbus:onboarded`).
+  const [onboarding, setOnboarding] = useState(() => !launch && !incoming && !isStandalone() && !isOnboarded());
+  const finishOnboarding = useCallback(() => {
+    markOnboarded();
+    setOnboarding(false);
   }, []);
   const [isCreating, setIsCreating] = useState(launch?.action === 'nueva');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -185,10 +198,12 @@ export default function Dashboard({ settings, onSettingChange }) {
     }, REMOVE_MS);
   }, [removeRoute]);
   const startEditing = useCallback(() => setIsEditing(true), []);
-  // Smart Night Mode (23:00–06:00): saludo de noche y una luna discreta.
+  // Saludo según el momento del día (días, tardes desde las 14:00, noches
+  // desde las 21:00) y, en el Smart Night Mode (23:00–06:00), una luna discreta.
+  const part = useDayPart();
   const night = useNightMode();
   // Solo se anima el cambio con la app abierta, no al abrirla.
-  const [nightAtStart] = useState(night);
+  const [atStart] = useState(`${part}-${night}`);
   // Smart Sorting (Ajustes → "Ordenar tarjetas por cercanía"): la tarjeta de
   // la parada más cercana se enseña la primera. Es solo una vista: el orden
   // manual (`routes`, el del arrastre, en `vbus:routes`) no cambia nunca, y en
@@ -204,23 +219,24 @@ export default function Dashboard({ settings, onSettingChange }) {
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
       <header className="flex shrink-0 items-end justify-between gap-3 text-black dark:text-white">
         <div className="min-w-0">
-          {/* `key`: el saludo cambia con un fundido si dan las 23:00 o las 06:00. */}
+          {/* `key`: el saludo cambia con un fundido al dar las 06:00, las 14:00,
+              las 21:00 o las 23:00 (llega la luna). */}
           <p
-            key={night ? 'night' : 'day'}
+            key={`${part}-${night}`}
             className={`flex items-center gap-1.5 text-xl font-semibold tracking-tight sm:text-2xl ${
-              night !== nightAtStart ? 'animate-fade-in motion-reduce:animate-none' : ''
+              `${part}-${night}` !== atStart ? 'animate-fade-in motion-reduce:animate-none' : ''
             }`}
           >
-            {night ? 'Buenas noches' : 'Buenos días'}
+            {t(`dashboard.greeting.${part}`)}
             {night && (
-              <span title="Modo nocturno: líneas N primero">
+              <span title={t('dashboard.night.hint')}>
                 <Moon className="h-4 w-4 fill-current opacity-60" strokeWidth={2.25} aria-hidden="true" />
-                <span className="sr-only">· Modo nocturno: líneas N primero</span>
+                <span className="sr-only">{`· ${t('dashboard.night.hint')}`}</span>
               </span>
             )}
           </p>
           <h1 className="whitespace-nowrap text-[1.625rem] font-bold tracking-[-0.03em] min-[360px]:text-[1.875rem] min-[380px]:text-4xl sm:text-5xl">
-            Mis rutas
+            {t('dashboard.title')}
           </h1>
         </div>
         {/* Reloj encima de los botones, todo alineado a la derecha: consulta
@@ -233,7 +249,7 @@ export default function Dashboard({ settings, onSettingChange }) {
             <IconButton
               tone="adaptive"
               icon={Search}
-              label="Consulta rápida"
+              label={t('dashboard.quickLook')}
               aria-haspopup="dialog"
               onClick={() => setIsQuickLookOpen(true)}
               className={HEADER_BUTTON}
@@ -242,7 +258,7 @@ export default function Dashboard({ settings, onSettingChange }) {
               <IconButton
                 tone="adaptive"
                 icon={isEditing ? Check : Pencil}
-                label={isEditing ? 'Terminar de editar' : 'Editar tarjetas'}
+                label={t(isEditing ? 'dashboard.editDone' : 'dashboard.edit')}
                 aria-pressed={isEditing}
                 onClick={() => setIsEditing((value) => !value)}
                 className={HEADER_BUTTON}
@@ -251,13 +267,13 @@ export default function Dashboard({ settings, onSettingChange }) {
             <ThemeToggle
               theme={theme}
               onToggle={toggleTheme}
-              lockedBy={forcedTheme ? paletteOf(settings.palette).name : null}
+              lockedBy={forcedTheme ? t(`palette.${settings.palette}`) : null}
               className={HEADER_BUTTON}
             />
             <IconButton
               tone="adaptive"
               icon={Settings}
-              label="Ajustes"
+              label={t('settings.title')}
               aria-haspopup="dialog"
               onClick={() => setIsSettingsOpen(true)}
               className={HEADER_BUTTON}
@@ -381,6 +397,12 @@ export default function Dashboard({ settings, onSettingChange }) {
         settings={settings}
         onChange={onSettingChange}
         routes={routes}
+      />
+      <OnboardingScreen
+        open={onboarding}
+        appIcon={settings.appIcon}
+        onAppIconChange={(icon) => onSettingChange('appIcon', icon)}
+        onDone={finishOnboarding}
       />
       <ImportRoutesSheet
         entries={incoming?.entries ?? null}

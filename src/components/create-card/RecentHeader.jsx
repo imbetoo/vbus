@@ -1,3 +1,4 @@
+import { useT } from '../../i18n';
 /**
  * Encabezado de la sección "Recientes" dentro de una lista de sugerencias
  * (fila de presentación del listbox, no seleccionable). Sin botón de borrar:
@@ -5,10 +6,11 @@
  * como en iOS; a la derecha, una pista discreta de que se puede.
  */
 export default function RecentHeader() {
+  const t = useT();
   return (
     <li role="presentation" className="flex items-center justify-between px-3.5 pb-1.5 pt-2.5">
-      <span className="text-sm font-semibold text-white/60">Recientes</span>
-      <span className="text-xs font-medium text-white/40">Desliza ← para borrar</span>
+      <span className="text-sm font-semibold text-white/60">{t('recent.title')}</span>
+      <span className="text-xs font-medium text-white/40">{t('recent.swipeHint')}</span>
     </li>
   );
 }

@@ -7,6 +7,7 @@ import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
 import { PRESSABLE } from '../ui/pressable';
+import { useT } from '../../i18n';
 
 const EXIT_MS = 300;
 /** Contenedor de cristal de las pantallas de foco. */
@@ -125,6 +126,7 @@ export function FocusDialog({ open, active = open, onEnd, onMinimize, onRestore,
  * acción de Escape o de tocar fuera) y "Sí, detener" (rojo, destructivo).
  */
 function ConfirmStopModal({ open, onCancel, onConfirm }) {
+  const t = useT();
   const titleId = useId();
   const messageId = useId();
 
@@ -139,10 +141,10 @@ function ConfirmStopModal({ open, onCancel, onConfirm }) {
     >
       <div className="flex flex-col gap-2 p-5 text-center">
         <h2 id={titleId} className="text-xl/tight font-bold tracking-[-0.01em]">
-          ¿Detener el aviso?
+          {t('focus.confirm.title')}
         </h2>
         <p id={messageId} className="text-pretty text-base font-medium text-white/70">
-          Si sales ahora, se cancelará la alarma programada.
+          {t('focus.confirm.text')}
         </p>
         <div className="mt-3 flex flex-col gap-2">
           <button
@@ -150,7 +152,7 @@ function ConfirmStopModal({ open, onCancel, onConfirm }) {
             onClick={onCancel}
             className={`h-12 rounded-full border border-white/15 bg-white/10 text-lg font-semibold text-white active:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
           >
-            Cancelar
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -161,7 +163,7 @@ function ConfirmStopModal({ open, onCancel, onConfirm }) {
             }}
             className={`h-12 rounded-full bg-urgent text-lg font-semibold text-white active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${PRESSABLE}`}
           >
-            Sí, detener
+            {t('focus.confirm.stop')}
           </button>
         </div>
       </div>
@@ -176,6 +178,7 @@ function ConfirmStopModal({ open, onCancel, onConfirm }) {
  * y, si no ha avisado aún, la nota de mantener la app abierta.
  */
 export function FocusLayout({ icon: Icon, label, endLabel, armed = true, children }) {
+  const t = useT();
   const { requestEnd, minimize, armedRef } = useContext(FocusContext);
   useEffect(() => {
     armedRef.current = armed;
@@ -192,7 +195,7 @@ export function FocusLayout({ icon: Icon, label, endLabel, armed = true, childre
           {minimize && armed && (
             <IconButton
               icon={ChevronDown}
-              label="Minimizar: el aviso sigue activo"
+              label={t('focus.minimize')}
               onClick={() => {
                 haptics.tap();
                 minimize();
@@ -209,7 +212,7 @@ export function FocusLayout({ icon: Icon, label, endLabel, armed = true, childre
 
       {armed && (
         <p className="shrink-0 pt-3 text-center text-sm font-medium text-white/50">
-          Mantén vBus abierta: si cambias de app o bloqueas el móvil, el aviso puede no llegar.
+          {t('focus.keepOpen')}
         </p>
       )}
     </div>
@@ -218,6 +221,7 @@ export function FocusLayout({ icon: Icon, label, endLabel, armed = true, childre
 
 /** Panel ámbar del aviso, con "Entendido" (termina el modo). */
 export function AlarmPanel({ title, text, onDone }) {
+  const t = useT();
   return (
     <section
       role="alert"
@@ -229,7 +233,7 @@ export function AlarmPanel({ title, text, onDone }) {
       <p className="mt-4 text-3xl font-bold tracking-tight">{title}</p>
       <p className="mt-2 text-pretty text-lg font-medium text-white/80">{text}</p>
       <PillButton className="mt-6" onClick={onDone}>
-        Entendido
+        {t('focus.gotIt')}
       </PillButton>
     </section>
   );
@@ -251,39 +255,40 @@ export function StatusRow({ ok, icon: Icon, children }) {
 
 /** Pantalla encendida (Wake Lock) o por qué no. */
 export function ScreenStatus() {
+  const t = useT();
   const status = useWakeLockStatus();
-  if (status === 'on') return <StatusRow ok icon={Smartphone}>La pantalla no se apagará hasta el aviso.</StatusRow>;
+  if (status === 'on') return <StatusRow ok icon={Smartphone}>{t('focus.screen.on')}</StatusRow>;
   if (status === 'pending' || status === 'off') {
-    return <StatusRow ok icon={Smartphone}>Manteniendo la pantalla encendida…</StatusRow>;
+    return <StatusRow ok icon={Smartphone}>{t('focus.screen.pending')}</StatusRow>;
   }
   return (
     <StatusRow icon={Smartphone}>
-      Este navegador no puede mantener la pantalla encendida: tócala de vez en cuando para que no se bloquee.
+      {t('focus.screen.unsupported')}
     </StatusRow>
   );
 }
 
 /** Permiso de notificaciones (`notificationStatus`) y qué hacer si falta. */
 export function NotificationStatus({ status }) {
+  const t = useT();
   switch (status) {
     case 'granted':
-      return <StatusRow ok icon={Bell}>Notificaciones activadas.</StatusRow>;
+      return <StatusRow ok icon={Bell}>{t('focus.notif.granted')}</StatusRow>;
     case 'default':
-      return <StatusRow icon={Bell}>Permite las notificaciones para que el aviso llegue también como notificación.</StatusRow>;
+      return <StatusRow icon={Bell}>{t('focus.notif.default')}</StatusRow>;
     case 'denied':
       return (
         <StatusRow icon={BellOff}>
-          Notificaciones bloqueadas: te aviso aquí con sonido y vibración. Puedes activarlas en los ajustes del navegador.
+          {t('focus.notif.denied')}
         </StatusRow>
       );
     case 'ios-install':
       return (
         <StatusRow icon={BellOff}>
-          En iPhone, las notificaciones solo funcionan con vBus en la pantalla de inicio (Compartir → Añadir a pantalla de
-          inicio). Te aviso aquí con sonido.
+          {t('focus.notif.ios')}
         </StatusRow>
       );
     default:
-      return <StatusRow icon={BellOff}>Este navegador no muestra notificaciones: te aviso aquí con sonido y vibración.</StatusRow>;
+      return <StatusRow icon={BellOff}>{t('focus.notif.unsupported')}</StatusRow>;
   }
 }

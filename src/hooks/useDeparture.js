@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { t } from '../i18n';
 import { headKey } from '../lib/directRoute';
 import { FOCUS_TAGS } from '../lib/focusSession';
 import { lineKey } from '../lib/lines';
-import { etaNow, pickBus, plural } from '../lib/tripTracker';
+import { etaNow, pickBus } from '../lib/tripTracker';
 import { useAlarmEffect } from './useFocusSession';
 import { useNow } from './useNow';
 import { useStopArrivals } from './useStopArrivals';
@@ -20,8 +21,8 @@ const NEAR_MARGIN_MIN = 5;
 const LOST_TOLERANCE_MIN = 10;
 
 function alarmText({ line, stop, eta }) {
-  if (eta < 1) return `El ${line} está llegando a ${stop.name}.`;
-  return `El ${line} llega a ${stop.name} en unos ${plural(Math.round(eta), 'minuto', 'minutos')}.`;
+  if (eta < 1) return t('departure.alert.arriving', { line, stop: stop.name });
+  return t('departure.alert.eta', { line, stop: stop.name, n: Math.round(eta) });
 }
 
 /**
@@ -68,7 +69,7 @@ export function useDeparture(departure, { onEnd, live = true }) {
   }
 
   if (!alarm && eta <= lead) setAlarm({ text: alarmText({ line: tracked.line, stop, eta }) });
-  useAlarmEffect(live ? alarm : null, { title: '¡Es hora de salir!', tag: DEPARTURE_NOTIFICATION_TAG, onEnd });
+  useAlarmEffect(live ? alarm : null, { title: t('departure.alert.title'), tag: DEPARTURE_NOTIFICATION_TAG, onEnd });
 
   return {
     eta,

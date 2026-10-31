@@ -4,6 +4,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { haptics } from '../../lib/haptics';
 import { PRESSABLE } from '../ui/pressable';
+import { useT } from '../../i18n';
 
 // --- Anfitrión de la píldora ------------------------------------------------
 // Un `<dialog>` modal va en la "top layer" y deja inerte todo lo de fuera: un
@@ -73,6 +74,7 @@ const noopSubscribe = () => () => {};
  * teniendo dónde estar.
  */
 export default function FocusPill({ visible, text, label, onRestore }) {
+  const t = useT();
   const target = useIslandHost(visible);
   const reduceMotion = useReducedMotion();
   const buttonRef = useRef(null);
@@ -94,7 +96,7 @@ export default function FocusPill({ visible, text, label, onRestore }) {
           haptics.tap();
           onRestore();
         }}
-        aria-label={`${label}: ${text}. Toca para volver al aviso`}
+        aria-label={t('pill.label', { mode: label, text })}
         initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6, y: -8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={reduceMotion ? { duration: 0.2 } : { type: 'spring', stiffness: 420, damping: 30 }}

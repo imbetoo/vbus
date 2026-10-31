@@ -4,6 +4,9 @@ import MeshBackground from './components/ui/MeshBackground';
 import UpdateToast from './components/ui/UpdateToast';
 import { useAppUpdate } from './hooks/useAppUpdate';
 import { applyAppearance } from './lib/appearance';
+import { setLanguage } from './i18n';
+import { setAlarmTone } from './lib/alerts';
+import { applyAppIcon } from './lib/appIcon';
 import { setHapticsEnabled } from './lib/haptics';
 import { useSettings } from './hooks/useSettings';
 import { loadStopsList } from './data/stops';
@@ -20,6 +23,18 @@ export default function App() {
   useEffect(() => {
     setHapticsEnabled(settings.vibration);
   }, [settings.vibration]);
+
+  // Idioma (`auto`: el del navegador) y tono de los avisos.
+  useEffect(() => {
+    setLanguage(settings.language);
+  }, [settings.language]);
+  useEffect(() => {
+    setAlarmTone(settings.alarmTone);
+  }, [settings.alarmTone]);
+  // Icono de la pantalla de inicio: los `<link>` que leen los sistemas al instalar.
+  useEffect(() => {
+    applyAppIcon(settings.appIcon);
+  }, [settings.appIcon]);
 
   // Paleta y dinamismo del fondo: solo atributos de <html> (el CSS hace el
   // resto). Ajustes ya los aplica con su fundido; esto cubre la carga y que

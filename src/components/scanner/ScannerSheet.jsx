@@ -7,6 +7,7 @@ import { createQrDecoder } from '../../lib/qrDecoder';
 import { parseStopQr } from '../../lib/qrStop';
 import IconButton from '../ui/IconButton';
 import { PRESSABLE } from '../ui/pressable';
+import { useT } from '../../i18n';
 
 const EXIT_MS = 300;
 // Fotogramas analizados por segundo: de sobra para leer al instante sin
@@ -16,14 +17,8 @@ const SCAN_INTERVAL_MS = 120;
 const FOUND_MS = 450;
 
 // Mensaje para cada estado que no es "escaneando".
-const MESSAGES = {
-  unsupported: 'Este navegador no puede usar la cámara. Haz una foto del QR o escribe el número de la parada.',
-  denied: 'Sin permiso para usar la cámara. Actívalo en los ajustes del navegador, o haz una foto del QR.',
-  nocamera: 'No se encuentra ninguna cámara. Haz una foto del QR o escribe el número de la parada.',
-  error: 'No se pudo abrir la cámara. Inténtalo de nuevo o haz una foto del QR.',
-  invalid: 'Este QR no es de una parada de Vitrasa.',
-  nophoto: 'No encuentro ningún QR en la foto. Prueba a acercarte más.',
-};
+// Avisos del escáner: la clave de su texto (`scanner.*` en `src/i18n`).
+const MESSAGES = ['unsupported', 'denied', 'nocamera', 'error', 'invalid', 'nophoto'];
 
 function cameraErrorStatus(error) {
   if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') return 'denied';
@@ -60,6 +55,7 @@ export default function ScannerSheet({ open, onClose, onScan }) {
 }
 
 function Scanner({ titleId, onClose, onScan }) {
+  const t = useT();
   const videoRef = useRef(null);
   const fileRef = useRef(null);
   const trackRef = useRef(null);
@@ -203,7 +199,8 @@ function Scanner({ titleId, onClose, onScan }) {
 
   const scanning = status === 'scanning' || status === 'starting';
   const found = status === 'found';
-  const message = notice ? MESSAGES[notice] : MESSAGES[status];
+  const messageKey = notice ?? status;
+  const message = MESSAGES.includes(messageKey) ? t(`scanner.${messageKey}`) : null;
 
   return (
     <div className="relative h-full w-full">
@@ -231,11 +228,11 @@ function Scanner({ titleId, onClose, onScan }) {
       <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 px-5 pt-[calc(env(safe-area-inset-top,0px)+1.25rem)]">
         <div>
           <h2 id={titleId} className="text-2xl font-bold tracking-[-0.015em]">
-            Escanear parada
+            {t('scanner.title')}
           </h2>
-          <p className="text-base font-medium text-white/80">Apunta al QR de la marquesina</p>
+          <p className="text-base font-medium text-white/80">{t('scanner.subtitle')}</p>
         </div>
-        <IconButton icon={X} label="Cerrar" onClick={onClose} />
+        <IconButton icon={X} label={t('common.close')} onClick={onClose} />
       </div>
 
       {/* Pie: estado y acciones */}
@@ -243,7 +240,7 @@ function Scanner({ titleId, onClose, onScan }) {
         <div aria-live="polite" className="min-h-[3.5rem] w-full max-w-sm">
           {found && (
             <p className="animate-fade-in rounded-2xl bg-emerald-500/90 px-4 py-3 text-center text-base font-semibold motion-reduce:animate-none">
-              Parada encontrada
+              {t('scanner.found')}
             </p>
           )}
           {!found && message && (
@@ -260,7 +257,7 @@ function Scanner({ titleId, onClose, onScan }) {
         <div className="flex items-center gap-3">
           {torch.available && (
             <IconButton
-              label={torch.on ? 'Apagar linterna' : 'Encender linterna'}
+              label={t(torch.on ? 'scanner.torchOff' : 'scanner.torchOn')}
               aria-pressed={torch.on}
               onClick={toggleTorch}
               className={torch.on ? 'bg-white text-black' : ''}
@@ -278,7 +275,7 @@ function Scanner({ titleId, onClose, onScan }) {
             className={`flex h-12 items-center gap-2 rounded-full border border-white/15 bg-white/15 px-5 text-base font-semibold text-white active:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
           >
             <Camera className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            Hacer una foto
+            {t('scanner.photo')}
           </button>
           {!scanning && !found && (
             <button
@@ -287,7 +284,7 @@ function Scanner({ titleId, onClose, onScan }) {
               className={`flex h-12 items-center gap-2 rounded-full border border-white/15 bg-white/15 px-5 text-base font-semibold text-white active:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${PRESSABLE}`}
             >
               <Keyboard className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-              Escribir
+              {t('scanner.type')}
             </button>
           )}
         </div>

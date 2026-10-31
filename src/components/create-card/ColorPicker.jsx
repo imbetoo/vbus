@@ -3,6 +3,7 @@ import { useId } from 'react';
 import { useRadioGroup } from '../../hooks/useRadioGroup';
 import { CARD_COLORS } from '../bus/cardColors';
 import { PRESSABLE } from '../ui/pressable';
+import { useT } from '../../i18n';
 
 /**
  * Selector de color a medida: una fila de círculos con relieve (sin
@@ -10,6 +11,7 @@ import { PRESSABLE } from '../ui/pressable';
  * un check. Accesible como grupo de radios (Tab + flechas).
  */
 export default function ColorPicker({ value, onChange }) {
+  const t = useT();
   const labelId = useId();
   const index = Math.max(
     0,
@@ -20,7 +22,7 @@ export default function ColorPicker({ value, onChange }) {
   return (
     <div>
       <p id={labelId} className="mb-2 text-sm font-semibold text-white/80">
-        Color del icono
+        {t('color.label')}
       </p>
       <div role="radiogroup" aria-labelledby={labelId} className="grid grid-cols-8 gap-2">
         {CARD_COLORS.map((color, i) => {
@@ -29,7 +31,7 @@ export default function ColorPicker({ value, onChange }) {
             <button
               key={color.id}
               type="button"
-              aria-label={color.label}
+              aria-label={t(`color.${color.id}`)}
               {...itemProps(i)}
               onClick={() => onChange(color.id)}
               className={`${color.bg} ${color.icon} flex aspect-square w-full items-center justify-center rounded-full shadow-relief focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-graphite ${PRESSABLE} ${

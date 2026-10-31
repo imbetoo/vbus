@@ -1,3 +1,4 @@
+import { locale } from '../i18n';
 const EARTH_RADIUS_M = 6_371_000;
 const toRadians = (degrees) => (degrees * Math.PI) / 180;
 
@@ -19,7 +20,7 @@ export function formatDistance(meters) {
   const rounded = Math.round(meters / 10) * 10;
   if (rounded < 1000) return `${Math.max(10, rounded)} m`;
   const km = meters / 1000;
-  return `${km.toLocaleString('es-ES', { maximumFractionDigits: km < 10 ? 1 : 0 })} km`;
+  return `${km.toLocaleString(locale(), { maximumFractionDigits: km < 10 ? 1 : 0 })} km`;
 }
 
 // Si la parada más cercana está más lejos que esto, se está fuera de Vigo.

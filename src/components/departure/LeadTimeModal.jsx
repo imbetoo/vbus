@@ -10,17 +10,18 @@ import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
 import { PRESSABLE } from '../ui/pressable';
+import { t, useT } from '../../i18n';
 
 function problemText(problem, eta) {
   switch (problem) {
     case 'empty':
-      return 'Escribe cuántos minutos antes quieres el aviso.';
+      return t('departure.problem.empty');
     case 'range':
-      return `Elige entre 1 y ${MAX_LEAD_MINUTES} minutos.`;
+      return t('departure.problem.range', { max: MAX_LEAD_MINUTES });
     case 'arriving':
-      return 'El bus ya está llegando: si quieres cogerlo, sal ya.';
+      return t('departure.problem.arriving');
     case 'too-late':
-      return `El bus ya está más cerca de ese tiempo: llega en ${minutesText(eta)}. Elige menos minutos.`;
+      return t('departure.problem.tooLate', { time: minutesText(eta) });
     default:
       return null;
   }
@@ -47,6 +48,7 @@ export default function LeadTimeModal({ request, onClose, onConfirm }) {
 }
 
 function LeadTimeForm({ request, titleId, onClose, onConfirm }) {
+  const t = useT();
   const { bus, fetchedAt } = request;
   const inputId = useId();
   const errorId = useId();
@@ -71,20 +73,20 @@ function LeadTimeForm({ request, titleId, onClose, onConfirm }) {
         <LineBadge line={bus.line} color={lineColor(bus.line)} />
         <div className="min-w-0 flex-1">
           <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
-            Avisarme para salir
+            {t('departure.title')}
           </h2>
           <p className="mt-0.5 truncate text-base font-medium tabular-nums text-white/60">
-            {`${bus.destination} · ${eta < 0.5 ? 'llegando' : `llega en ${minutesText(eta)}`}`}
+            {`${bus.destination} · ${eta < 0.5 ? t('departure.busArriving') : t('departure.busArrives', { time: minutesText(eta) })}`}
           </p>
         </div>
-        <IconButton icon={X} label="Cerrar" onClick={onClose} />
+        <IconButton icon={X} label={t('common.close')} onClick={onClose} />
       </header>
 
       <label htmlFor={inputId} className="text-lg/snug font-medium text-white/90">
-        ¿Con cuántos minutos de antelación quieres que te avisemos?
+        {t('departure.question')}
       </label>
 
-      <div className="flex gap-2" role="group" aria-label="Atajos">
+      <div className="flex gap-2" role="group" aria-label={t('departure.shortcuts')}>
         {QUICK_LEADS.map((minutes) => {
           const selected = lead === minutes;
           return (
@@ -97,7 +99,7 @@ function LeadTimeForm({ request, titleId, onClose, onConfirm }) {
                 selected ? 'border-white bg-white text-black' : 'border-white/15 bg-white/10 text-white active:bg-white/15'
               }`}
             >
-              {`${minutes} min`}
+              {t('time.minutes', { n: minutes })}
             </button>
           );
         })}
@@ -119,7 +121,7 @@ function LeadTimeForm({ request, titleId, onClose, onConfirm }) {
           placeholder="5"
         />
         <span className="text-lg font-medium text-white/60" aria-hidden="true">
-          min antes
+          {t('departure.minBefore')}
         </span>
       </div>
 
@@ -135,7 +137,7 @@ function LeadTimeForm({ request, titleId, onClose, onConfirm }) {
       )}
 
       <PillButton type="submit" disabled={Boolean(problem)}>
-        Avisarme
+        {t('departure.submit')}
       </PillButton>
     </form>
   );

@@ -14,6 +14,7 @@ import ColorPicker from './ColorPicker';
 import LineChips from './LineChips';
 import StepSection from './StepSection';
 import StopPicker from './StopPicker';
+import { t, useT } from '../../i18n';
 
 /** Hoja "Nueva tarjeta": elegir parada y después sus líneas. */
 export default function CreateCardSheet({ open, onClose, onCreate }) {
@@ -27,12 +28,12 @@ export default function CreateCardSheet({ open, onClose, onCreate }) {
 }
 
 function lookupErrorMessage(error, query) {
-  if (error?.kind === 'offline') return 'Sin conexión. Comprueba tu conexión a internet e inténtalo de nuevo.';
-  if (error?.kind === 'not_found') return `No existe la parada ${query.trim()}. Revisa el número de la marquesina.`;
-  if (error?.kind === 'upstream') return 'Vitrasa no responde ahora mismo. Inténtalo en un momento.';
-  if (error?.kind === 'timeout') return 'El servidor está arrancando. Vuelve a intentarlo en unos segundos.';
-  if (error?.kind === 'network') return 'No se puede conectar con el servidor de vBus.';
-  return 'No se pudo conectar con el servicio de autobuses. Inténtalo de nuevo.';
+  if (error?.kind === 'offline') return t('error.offline');
+  if (error?.kind === 'not_found') return t('error.notFound', { stop: query.trim() });
+  if (error?.kind === 'upstream') return t('error.upstream');
+  if (error?.kind === 'timeout') return t('error.timeout');
+  if (error?.kind === 'network') return t('error.network');
+  return t('error.generic');
 }
 
 // Tipo de mensaje bajo el buscador (cargar mantiene la ayuda, sin parpadeo).
@@ -41,10 +42,7 @@ function statusKind(lookup) {
   return 'hint';
 }
 
-const BUSES_OPTIONS = [
-  { value: 2, label: '2 autobuses' },
-  { value: 3, label: '3 autobuses' },
-];
+const BUSES_OPTIONS = [2, 3];
 
 /**
  * Líneas que se pueden elegir en una parada: las teóricas de los datos
@@ -58,6 +56,7 @@ function selectableLines(stop, buses) {
 }
 
 function StopStatus({ id, lookup, lines, query, suggestionCount }) {
+  const t = useT();
   if (lookup.status === 'error') {
     return (
       <p id={id} className="mt-3 flex animate-fade-in items-start gap-2 rounded-2xl border border-urgent/30 bg-urgent/10 px-3.5 py-2.5 text-sm font-medium text-red-200 motion-reduce:animate-none">
@@ -72,7 +71,7 @@ function StopStatus({ id, lookup, lines, query, suggestionCount }) {
       <p id={id} className="mt-3 flex animate-fade-in items-center gap-2 text-sm font-medium text-white/80 motion-reduce:animate-none">
         <CircleCheck className="h-4 w-4 shrink-0 text-emerald-400" strokeWidth={2.5} aria-hidden="true" />
         <span className="truncate">
-          {lookup.stop.name} · {count} {count === 1 ? 'línea' : 'líneas'}
+          {lookup.stop.name} · {t('lines.count', { n: count })}
         </span>
       </p>
     );
@@ -80,15 +79,16 @@ function StopStatus({ id, lookup, lines, query, suggestionCount }) {
   return (
     <p id={id} className="mt-3 animate-fade-in text-sm font-medium text-white/60 motion-reduce:animate-none">
       {lookup.status !== 'invalid'
-        ? 'Escribe la dirección o el número que aparece en la marquesina.'
+        ? t('create.stop.hint')
         : suggestionCount > 0
-          ? 'Elige tu parada en la lista.'
-          : 'No la encuentro entre las paradas conocidas. Prueba con el número de la marquesina.'}
+          ? t('create.stop.pick')
+          : t('create.stop.unknown')}
     </p>
   );
 }
 
 function CreateCardForm({ titleId, onClose, onCreate }) {
+  const t = useT();
   // Los pasos se abren por separado: al encontrar la parada, "líneas" se
   // despliega sin plegar el buscador (que tiene el foco mientras se escribe).
   const [openSteps, setOpenSteps] = useState({ stop: false, lines: false, customize: false });
@@ -151,20 +151,20 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
         <IconHeading
           icon={Plus}
           iconStrokeWidth={2.75}
-          title="Nueva tarjeta"
-          subtitle="Asigna la parada y línea que quieras"
+          title={t('create.title')}
+          subtitle={t('create.subtitle')}
           titleAs="h2"
           titleId={titleId}
           wrap
         />
-        <IconButton icon={X} label="Cerrar" onClick={onClose} className="ml-auto shrink-0" />
+        <IconButton icon={X} label={t('common.close')} onClick={onClose} className="ml-auto shrink-0" />
       </header>
 
       <div className="mt-6 flex flex-col gap-4">
         <StepSection
           icon={BusFront}
-          title="Selecciona la parada"
-          subtitle={stop ? `Parada ${stop.id} · ${stop.name}` : 'Busca por dirección o por código'}
+          title={t('create.stop.title')}
+          subtitle={stop ? `${t('stop.fallback', { id: stop.id })} · ${stop.name}` : t('create.stop.subtitle')}
           open={openSteps.stop}
           onToggle={() => toggleStep('stop')}
         >
@@ -195,11 +195,11 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
 
         <StepSection
           icon={Route}
-          title="Escoge la(s) línea(s)"
+          title={t('create.lines.title')}
           subtitle={
             selectedLines.length
-              ? `${selectedLines.length} ${selectedLines.length === 1 ? 'línea elegida' : 'líneas elegidas'}`
-              : 'Mira las líneas que pasan por tu parada'
+              ? t('create.lines.chosen', { n: selectedLines.length })
+              : t('create.lines.subtitle')
           }
           open={openSteps.lines}
           onToggle={() => toggleStep('lines')}
@@ -208,48 +208,49 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
             <div key="lines" className="animate-fade-in motion-reduce:animate-none">
               <LineChips lines={lines} selected={selectedLines} onToggle={toggleLine} />
               <p className="mt-3 text-sm font-medium text-white/60">
-                Toca tus líneas en orden de preferencia: la primera saldrá arriba.
+                {t('create.lines.hint')}
               </p>
             </div>
           ) : (
             <p key="empty" className="animate-fade-in text-base font-medium text-white/70 motion-reduce:animate-none">
-              Selecciona primero una parada.
+              {t('create.lines.empty')}
             </p>
           )}
         </StepSection>
 
         <StepSection
           icon={SlidersHorizontal}
-          title="Personaliza la tarjeta"
-          subtitle={`${cardName ? `${cardName} · ` : ''}${busesToShow} visibles`}
+          title={t('create.customize.title')}
+          subtitle={`${cardName ? `${cardName} · ` : ''}${t('create.customize.visible', { n: busesToShow })}`}
           open={openSteps.customize}
           onToggle={() => toggleStep('customize')}
         >
           <CardNameField
+            label={t('create.name')}
             value={name}
             onChange={setName}
-            placeholder={stop ? stop.name : 'Ej. Ir al instituto'}
+            placeholder={stop ? stop.name : t('create.name.placeholder')}
             describedBy={nameHintId}
           />
           <p id={nameHintId} className="mt-2 text-sm font-medium text-white/60">
-            Si lo dejas vacío, se usará el nombre de la parada.
+            {t('create.name.hint')}
           </p>
           <div className="mt-4">
             <CardNameField
-              label="Nota"
+              label={t('edit.note')}
               value={note}
               onChange={setNote}
-              placeholder="Opcional · Ej. Coger el de las 8:10"
+              placeholder={t('edit.note.placeholder')}
               maxLength={NOTE_MAX}
             />
           </div>
 
           <p className="mb-2 mt-4 text-sm font-semibold text-white/80" aria-hidden="true">
-            Autobuses visibles
+            {t('create.visible')}
           </p>
           <SegmentedControl
-            label="Autobuses visibles en esta tarjeta"
-            options={BUSES_OPTIONS}
+            label={t('create.visible.label')}
+            options={BUSES_OPTIONS.map((value) => ({ value, label: t('create.visible.option', { n: value }) }))}
             value={busesToShow}
             onChange={setBusesToShow}
           />
@@ -268,7 +269,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
           }
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-          Crear tarjeta
+          {t('create.submit')}
         </PillButton>
       </div>
     </>
