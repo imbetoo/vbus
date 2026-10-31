@@ -685,9 +685,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.35 • Build: 31/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.34 • Build: 31/10/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.35 = PR #35), hora de compilación
+  PR: `npm version minor`; v1.34 = PR #34), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
