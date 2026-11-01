@@ -73,7 +73,7 @@ function EditableRouteItem({
       }`}
     >
       <div className={`min-h-0 ${leaving ? 'overflow-hidden' : ''}`}>
-        <div className={`pb-5 transition-transform duration-[800ms] ease-out ${leaving ? 'scale-90' : ''}`}>
+        <div className={`pb-4 transition-transform duration-[800ms] ease-out ${leaving ? 'scale-90' : ''}`}>
           {/* En edición, la tarjeta se encoge al 92 % desde la izquierda para dejar
               sitio al tirador. Con `transform` (no con margen ni padding): el
               navegador no recalcula el layout de la lista en cada fotograma y

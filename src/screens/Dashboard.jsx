@@ -33,9 +33,11 @@ import { useRoutes } from '../hooks/useRoutes';
 import { useTheme } from '../hooks/useTheme';
 
 // Las tarjetas se desvanecen al llegar al borde inferior del área de scroll
-// (y un poco arriba, bajo la cabecera) en vez de cortarse en seco.
+// (una franja corta de 56 px, pegada a "Crear nueva tarjeta") y un poco
+// arriba, bajo la barra de búsqueda (12 px, lo mismo que el `pt-3` de la
+// lista), en vez de cortarse en seco.
 const SCROLL_FADE =
-  '[mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_16px,black_80%,transparent)]';
+  '[mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-56px),transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-56px),transparent)]';
 
 // Fuera del modo edición no se arrastra: el orden de la vista no se guarda.
 const ignoreReorder = () => {};
@@ -277,7 +279,7 @@ export default function Dashboard({ settings, onSettingChange }) {
 
       {/* Consulta rápida: barra de búsqueda fija bajo el título (fuera del
           scroll: siempre a mano y sin taparla el estado vacío). */}
-      <div className="mt-4 shrink-0">
+      <div className="mt-3 shrink-0">
         <SearchBar onClick={() => setIsQuickLookOpen(true)} />
       </div>
 
@@ -288,7 +290,7 @@ export default function Dashboard({ settings, onSettingChange }) {
           capa ya dibujada. */}
       {/* Pista del "tirar para actualizar": recorta el indicador, que espera
           oculto por encima. */}
-      <div className="relative -mx-5 mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="relative -mx-5 mt-1 flex min-h-0 flex-1 flex-col overflow-hidden">
         <PullIndicator ref={indicatorRef} refreshing={refreshing} />
       {/* `layoutScroll`: framer-motion tiene en cuenta el scroll al medir las
           tarjetas que se reordenan. */}
@@ -321,7 +323,7 @@ export default function Dashboard({ settings, onSettingChange }) {
             values={shownRoutes}
             // Solo se reordena (y se guarda) arrastrando en modo edición, sobre el orden manual.
             onReorder={isEditing ? reorderRoutes : ignoreReorder}
-            className="flex flex-col pb-24 pt-4"
+            className="flex flex-col pb-24 pt-3"
           >
             {shownRoutes.map((route, index) => (
               <EditableRouteItem

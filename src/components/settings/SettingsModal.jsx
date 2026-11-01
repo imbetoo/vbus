@@ -87,16 +87,19 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
 
   return (
     <Modal open={open} onClose={onClose} labelledBy={titleId} className="w-[min(92vw,24rem)]">
-      {/* Columna: el contenido hace scroll y "Hecho" se queda fijo abajo; lo que
-          pasa por debajo del pie se desvanece (`scroll-fade`, solo máscara). */}
+      {/* Columna: cabecera y "Hecho" fijos (opacos, hermanos del scroll: nunca
+          se solapan con él) y el contenido hace scroll entre ellos. Lo que pasa
+          bajo la cabecera o sobre el pie se difumina con velos grafito, del
+          mismo color opaco que el modal en todas las paletas. */}
       <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
-      <div className="scroll-fade flex min-h-0 flex-1 transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain p-5 pb-10 [--fade-bottom:40px] [--fade-top:0px]">
-        <header className="flex items-center justify-between gap-3">
-          <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
-            {t('settings.title')}
-          </h2>
-          <IconButton icon={X} label={t('common.close')} onClick={onClose} />
-        </header>
+      <header className="relative z-10 flex shrink-0 items-center justify-between gap-3 bg-graphite px-5 pb-3 pt-5">
+        <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
+          {t('settings.title')}
+        </h2>
+        <IconButton icon={X} label={t('common.close')} onClick={onClose} />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-full h-5 bg-gradient-to-b from-graphite to-graphite/0" />
+      </header>
+      <div className="flex min-h-0 flex-1 transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain px-5 pb-24 pt-2">
 
         <SettingRow
           title={t('settings.sortBy')}
@@ -308,6 +311,8 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
 
       {/* "Hecho", fijo al pie (opaco, por encima del contenido que se desliza). */}
       <div className="relative z-10 shrink-0 bg-graphite px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-2">
+        {/* Velo alto (96 px): el contenido se difumina suave antes del botón. */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-full h-24 bg-gradient-to-t from-graphite to-graphite/0" />
         <PillButton onClick={onClose}>{t('common.done')}</PillButton>
       </div>
       </div>
