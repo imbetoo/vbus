@@ -14,7 +14,9 @@
  * primer render.
  */
 
-export const APP_ICONS = ['classic', 'dark', 'neon'];
+import { APP_ICONS } from './appIconList';
+
+export { APP_ICONS, EXTRA_APP_ICONS, MAIN_APP_ICONS } from './appIconList';
 
 const suffix = (id) => (id === 'classic' ? '' : `-${id}`);
 

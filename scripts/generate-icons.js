@@ -14,6 +14,7 @@
 //   (mantener pulsado el icono en Android): el glifo de lucide en blanco sobre
 //   el mismo azul profundo del icono, a sangre y dentro de la zona segura
 //   (el lanzador los recorta con su forma).
+import { APP_ICONS } from '../src/lib/appIconList.js';
 import { readFile, writeFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
@@ -33,35 +34,132 @@ for (const id of ['shape-rect', 'rim']) {
 // `src/lib/appIcon.js`): el mismo dibujo con otros colores. La clásica usa
 // los nombres de siempre; las demás llevan `-<id>` y su propio manifest
 // (`vite.config.js`). Colores: los del SVG maestro → los de la variante.
+// Cada variante: `colors` (colores del SVG maestro → los suyos) y, si hace
+// falta, `bus` y `window` ([arriba, abajo]): los degradados de la carrocería y
+// de los cristales se reescriben por su id (el blanco del autobús es el mismo
+// `#FFFFFF` de los brillos, así que no basta con cambiar colores).
 const VARIANTS = {
   classic: {},
   // Medianoche: grafito y negro (combina con las paletas Sombra y OLED); el
   // reflejo cian del cristal se queda como único acento.
   dark: {
-    '#1F5BD8': '#3A3A3C',
-    '#0B1E4A': '#050505',
-    '#061233': '#000000',
-    '#030A1F': '#000000',
-    '#0E2A66': '#1C1C1E',
-    '#163C8C': '#2C2C2E',
-    '#DCE6F7': '#D1D1D6',
-    '#5A6E96': '#6E6E73',
+    colors: {
+      '#1F5BD8': '#3A3A3C',
+      '#0B1E4A': '#050505',
+      '#061233': '#000000',
+      '#030A1F': '#000000',
+      '#0E2A66': '#1C1C1E',
+      '#163C8C': '#2C2C2E',
+      '#DCE6F7': '#D1D1D6',
+      '#5A6E96': '#6E6E73',
+    },
   },
   // Neón: magenta y morado profundo con cristales cian neón (paleta Cyberpunk).
   neon: {
-    '#1F5BD8': '#C026D3',
-    '#0B1E4A': '#1A0533',
-    '#061233': '#12062B',
-    '#030A1F': '#0A0216',
-    '#0E2A66': '#2A0B4F',
-    '#163C8C': '#3B0F6E',
-    '#5AC8FA': '#22F5FF',
-    '#DCE6F7': '#F3E8FF',
-    '#5A6E96': '#7A5A96',
+    colors: {
+      '#1F5BD8': '#C026D3',
+      '#0B1E4A': '#1A0533',
+      '#061233': '#12062B',
+      '#030A1F': '#0A0216',
+      '#0E2A66': '#2A0B4F',
+      '#163C8C': '#3B0F6E',
+      '#5AC8FA': '#22F5FF',
+      '#DCE6F7': '#F3E8FF',
+      '#5A6E96': '#7A5A96',
+    },
+  },
+  // Día: Medianoche invertido. Lienzo blanco perla y autobús negro con
+  // cristales grafito y el reflejo cian.
+  light: {
+    colors: {
+      '#1F5BD8': '#FFFFFF',
+      '#0B1E4A': '#C7C7CC',
+      '#061233': '#3A3A3C',
+      '#030A1F': '#8E8E93',
+      '#5A6E96': '#000000',
+    },
+    bus: ['#3A3A3C', '#0A0A0A'],
+    window: ['#5A5A5E', '#2C2C2E'],
+  },
+  // Coral: rojo iOS a granate, autobús blanco.
+  coral: {
+    colors: {
+      '#1F5BD8': '#FF5A4E',
+      '#0B1E4A': '#6B0A12',
+      '#061233': '#3D0409',
+      '#030A1F': '#250206',
+      '#0E2A66': '#5C0A12',
+      '#163C8C': '#8C1420',
+      '#DCE6F7': '#FBE3E1',
+      '#5A6E96': '#9A5A60',
+    },
+  },
+  // Bosque: verde iOS a verde musgo profundo.
+  forest: {
+    colors: {
+      '#1F5BD8': '#34C759',
+      '#0B1E4A': '#0A3A1E',
+      '#061233': '#04200F',
+      '#030A1F': '#021208',
+      '#0E2A66': '#0A3A22',
+      '#163C8C': '#145A34',
+      '#DCE6F7': '#E1F5E7',
+      '#5A6E96': '#5A8A6C',
+    },
+  },
+  // Ámbar: naranja a tostado, autobús crema.
+  amber: {
+    colors: {
+      '#1F5BD8': '#FF9F0A',
+      '#0B1E4A': '#7A2E05',
+      '#061233': '#3D1602',
+      '#030A1F': '#250C01',
+      '#0E2A66': '#5C2405',
+      '#163C8C': '#8A3A08',
+      '#DCE6F7': '#FBEBD5',
+      '#5A6E96': '#9A6A4A',
+    },
+  },
+  // Limón: amarillo intenso con el autobús en negro y cristales ámbar.
+  lemon: {
+    colors: {
+      '#1F5BD8': '#FFE14D',
+      '#0B1E4A': '#E0A800',
+      '#061233': '#5C4300',
+      '#030A1F': '#7A5A00',
+      '#5A6E96': '#000000',
+    },
+    bus: ['#2C2C2E', '#050505'],
+    window: ['#FFC21A', '#C98A00'],
+  },
+  // Océano: turquesa a azul petróleo.
+  ocean: {
+    colors: {
+      '#1F5BD8': '#30C6E0',
+      '#0B1E4A': '#073B4C',
+      '#061233': '#03222C',
+      '#030A1F': '#02151B',
+      '#0E2A66': '#07384A',
+      '#163C8C': '#0C5670',
+      '#DCE6F7': '#DDF4F8',
+      '#5A6E96': '#4F8090',
+    },
   },
 };
-const recolor = (svg, colors) =>
-  Object.entries(colors).reduce((out, [from, to]) => out.replaceAll(from, to), svg);
+if (Object.keys(VARIANTS).join() !== APP_ICONS.join()) {
+  throw new Error('VARIANTS no coincide con APP_ICONS (src/lib/appIconList.js)');
+}
+const gradient = (svg, id, [top, bottom]) =>
+  svg.replace(
+    new RegExp(`(<linearGradient id="${id}"[^>]*>)[\\s\\S]*?(</linearGradient>)`),
+    `$1\n      <stop offset="0" stop-color="${top}" />\n      <stop offset="1" stop-color="${bottom}" />\n    $2`,
+  );
+const recolor = (svg, { colors = {}, bus, window } = {}) => {
+  let out = Object.entries(colors).reduce((acc, [from, to]) => acc.replaceAll(from, to), svg);
+  if (bus) out = gradient(out, 'bus-fill', bus);
+  if (window) out = gradient(out, 'window', window);
+  return out;
+};
 const suffix = (id) => (id === 'classic' ? '' : `-${id}`);
 
 const ICONS = Object.entries(VARIANTS).flatMap(([id, colors]) => {

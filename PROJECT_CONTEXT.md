@@ -805,7 +805,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   enlace (`?tarjetas=`, `?origen=`) o un acceso directo. Paso 1: el icono
   elegido en grande, "Te damos la bienvenida a vBus", tres novedades (rutas,
   avisos, sin conexión) y "Elige tu icono" (`AppIconPicker`: Clásico,
-  Medianoche y Neón, como iconos de verdad con check; háptico `select`).
+  Medianoche y Neón a la vista, como iconos de verdad con check; háptico
+  `select`; a su derecha una flecha pequeña "Más iconos" que gira hacia
+  abajo y despliega con `Collapse`, bajo una línea, una rejilla de 3 × 2
+  con Día (Medianoche invertido: lienzo blanco y autobús negro), Coral,
+  Bosque, Ámbar, Limón (amarillo con el autobús negro) y Océano; empieza
+  abierto si el elegido es uno de ellos y las flechas del teclado recorren
+  solo los visibles; el mismo selector en Ajustes → "Icono de la app").
   Paso 2: "Añade vBus a tu pantalla de inicio", por qué (se abre al instante,
   notificaciones y pantalla encendida), una pantalla de inicio de mentira con
   el icono elegido y, según el sistema (`platform()`, solo
@@ -816,10 +822,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `accepted`/`dismissed`) o, si el navegador no lo ofrece, dónde está en su
   menú. "Atrás" vuelve al paso 1. "Saltar por ahora" (siempre), Escape,
   "Entendido", instalar o el evento `appinstalled` ponen `vbus:onboarded` y
-  no vuelve. **Iconos:** `npm run icons` genera, recoloreando el SVG maestro,
-  las variantes `dark` (grafito y negro) y `neon` (magenta y morado con
-  cristal cian): `icon-<id>.svg` y los PNG con `-<id>`; `vite.config.js`
-  emite `manifest-<id>.webmanifest` (el mismo manifest con sus iconos). Al
+  no vuelve. **Iconos:** la lista vive en `src/lib/appIconList.js`
+  (`MAIN_APP_ICONS` y `EXTRA_APP_ICONS`, sin dependencias: la leen la app,
+  `vite.config.js` y el generador, que falla si no coinciden). `npm run
+  icons` genera, recoloreando el SVG maestro, las variantes `dark` (grafito
+  y negro), `neon` (magenta y morado con cristal cian), `light`, `coral`,
+  `forest`, `amber`, `lemon` y `ocean`: cada una con su mapa de `colors` y,
+  para el autobús negro, `bus` y `window` (los degradados `bus-fill` y
+  `window` se reescriben por id: el blanco de la carrocería es el mismo
+  `#FFFFFF` de los brillos). Salen `icon-<id>.svg` y los PNG con `-<id>`;
+  `vite.config.js` emite `manifest-<id>.webmanifest` (el mismo manifest con
+  sus iconos) y deja fuera del precache sus PNG. Al
   elegir (bienvenida o Ajustes → "Icono de la app", que solo sale sin
   instalar), `applyAppIcon` cambia `<link rel="manifest">` (Chromium vigila
   ese enlace) y `<link rel="apple-touch-icon">` (Safari lo lee al "Añadir a
@@ -827,7 +840,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   módulo, antes del primer render. Ya instalada, el sistema conserva el
   icono que tenía. Los PNG de las variantes no van en el precache (solo los
   descarga el sistema al instalar); sus SVG y manifests sí. `vercel.json`
-  sirve los manifests con `no-cache`.
+  sirve todos los manifests (`manifest-[a-z]+.webmanifest`) con `no-cache`.
 - **Accesos directos del icono (manifest `shortcuts`):** al mantener pulsado
   el icono (Android y escritorio; iOS no los admite en apps web): "Escanear
   QR" (`/?accion=escanear`: consulta rápida con el escáner encima, la parada
@@ -964,7 +977,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 ### Fase 4 · Onboarding — *En curso*
 
-- Hecho: bienvenida de instalación con selector de icono (Feature #18).
+- Hecho: bienvenida de instalación con selector de icono (Feature #18),
+  con seis iconos más en un desplegable.
 
 Métodos para añadir paradas:
 

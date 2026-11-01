@@ -1,3 +1,4 @@
+import { APP_ICONS } from './src/lib/appIconList.js';
 import { readFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react-swc';
 import { defineConfig } from 'vite';
@@ -75,7 +76,7 @@ const MANIFEST = {
 // `src/lib/appIcon.js`): cada una tiene su manifest, igual que el de
 // vite-plugin-pwa salvo los iconos (`npm run icons` genera sus PNG). La app
 // cambia el `<link rel="manifest">` y el `apple-touch-icon` al elegir.
-const ICON_VARIANTS = ['dark', 'neon'];
+const ICON_VARIANTS = APP_ICONS.filter((id) => id !== 'classic');
 const variantManifests = {
   name: 'vbus-icon-manifests',
   generateBundle() {
@@ -106,7 +107,7 @@ const pwa = VitePWA({
     globPatterns: ['**/*.{js,css,html,svg,png,json,webmanifest}'],
     // Los PNG de las variantes del icono solo los descarga el sistema al
     // instalar: no hace falta que todos los usuarios los lleven en el precache.
-    globIgnores: ['**/*-dark.png', '**/*-neon.png'],
+    globIgnores: ICON_VARIANTS.map((id) => `**/*-${id}.png`),
     // Las peticiones a la API no son páginas de la app.
     navigateFallbackDenylist: [/^\/vigobus/],
     // Tocar la notificación del modo viaje vuelve a la app (`public/`).
