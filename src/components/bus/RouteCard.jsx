@@ -43,6 +43,8 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * `failure`: si el último refresco de su parada falló (tipo de error), se
  * enseña el horario teórico del GTFS en gris (Feature #20); mientras carga,
  * los últimos tiempos guardados.
+ * `onOpenLine({ stopId, bus })` (estable): tocar un autobús abre el visor
+ * de línea (no en modo edición).
  */
 function RouteCard({
   id,
@@ -65,6 +67,7 @@ function RouteCard({
   onDepartureAlarm,
   nearMeters = null,
   failure = null,
+  onOpenLine = null,
 }) {
   const t = useT();
   const [showMore, setShowMore] = useState(false);
@@ -88,12 +91,14 @@ function RouteCard({
   const visible = arranged.slice(0, busesToShow);
   const more = arranged.slice(busesToShow);
   const stop = { id: stopId, name: stopName || t('stop.fallback', { id: stopId }) };
+  const openLine = onOpenLine && stopId && !editing ? onOpenLine : null;
   const renderBus = (bus) => (
     <BusLineItem
       key={busKey(bus)}
       {...bus}
       timeFormat={timeFormat}
       fetchedAt={updatedAt}
+      onOpen={openLine ? () => openLine({ stopId, bus }) : null}
       action={
         onDepartureAlarm && stopId && !editing ? (
           <DepartureBell bus={bus} onClick={() => onDepartureAlarm({ stop, bus, fetchedAt: updatedAt })} />
@@ -154,6 +159,7 @@ function RouteCard({
             limit={busesToShow}
             offline={failure === 'offline'}
             timeFormat={timeFormat}
+            onOpenLine={openLine}
             fallback={<ul>{visible.map(renderBus)}</ul>}
           />
         </div>
