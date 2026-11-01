@@ -230,7 +230,10 @@ export default function Dashboard({ settings, onSettingChange }) {
   return (
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
       <header className="flex shrink-0 items-end justify-between gap-3 text-black dark:text-white">
-        <div className="min-w-0">
+        {/* Ocupa el espacio que dejan los botones y nunca se monta sobre ellos:
+            si el título no cabe (gallego en móviles estrechos), se recorta con
+            puntos suspensivos. */}
+        <div className="min-w-0 flex-1">
           {/* `key`: el saludo cambia con un fundido al dar las 06:00, las 14:00,
               las 21:00 o las 23:00 (llega la luna). */}
           <p
@@ -247,7 +250,7 @@ export default function Dashboard({ settings, onSettingChange }) {
               </span>
             )}
           </p>
-          <h1 className="whitespace-nowrap text-[1.625rem] font-bold tracking-[-0.03em] min-[360px]:text-[1.875rem] min-[380px]:text-4xl sm:text-5xl">
+          <h1 className="truncate text-[1.625rem] font-bold tracking-[-0.03em] min-[390px]:text-[1.875rem] min-[420px]:text-4xl sm:text-5xl">
             {t('dashboard.title')}
           </h1>
         </div>
