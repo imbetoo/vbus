@@ -425,7 +425,7 @@ export default {
   // Visor de línea (timeline).
   'timeline.title': "Liña {line}",
   'timeline.toward': "Cara a {head}",
-  'timeline.here': "Estás aquí",
+  'timeline.here': "Esta parada",
   'timeline.approx': "Percorrido aproximado",
   'timeline.loading': "Cargando o percorrido…",
   'timeline.notFound': "Non hai percorrido para esta liña nesta parada.",
