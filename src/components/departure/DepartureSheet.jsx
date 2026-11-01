@@ -1,6 +1,7 @@
 import { CircleAlert, DoorOpen, WifiOff } from 'lucide-react';
 import { useEffect, useId } from 'react';
 import { useDeparture } from '../../hooks/useDeparture';
+import { useLockScreenActivity } from '../../hooks/useLockScreenActivity';
 import { whenLeft } from '../../lib/departure';
 import { minutesText } from '../../lib/tripTracker';
 import { lineColor } from '../../services/vigobusAdapter';
@@ -22,6 +23,16 @@ export default function DepartureSession({ session, live, onEnd, onMinimize, onR
   const departure = session.payload;
   const state = useDeparture(departure, { onEnd, live });
   const open = live && session.view === 'full';
+  // Pantalla de bloqueo (Media Session): lo que queda y la línea y la parada.
+  useLockScreenActivity(
+    state.alarm
+      ? t('departure.alert.title')
+      : state.eta < 0.5
+        ? t('lock.arriving')
+        : t('lock.in', { time: minutesText(state.eta) }),
+    `${state.line} · ${departure.stop.name}`,
+    live,
+  );
 
   // Con la píldora a la vista, el aviso vuelve solo a pantalla completa.
   useEffect(() => {

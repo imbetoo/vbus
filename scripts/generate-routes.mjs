@@ -18,6 +18,16 @@
 // - `m`: metros acumulados en cada parada (suma de las distancias en línea
 //   recta entre paradas consecutivas; sirve para comparar líneas).
 //
+// Además genera src/data/schedules.json (horarios teóricos, para enseñar los
+// próximos autobuses cuando la API de tiempos no responde):
+//   { v: 1, gen, svc: { id: [días, inicio, fin, [+fechas], [-fechas]] },
+//     p: [{ line, head, stops, off, t: { id: [salidas] } }] }
+// - `svc`: servicios de `calendar.txt` (días "1111100" de lunes a domingo,
+//   fechas AAAAMMDD) y excepciones de `calendar_dates.txt`.
+// - `off`: minutos de cada parada desde la primera (mediana de los viajes).
+// - `t`: salidas de la primera parada por servicio, en minutos desde la
+//   medianoche (pueden pasar de 1440), en deltas: [primera, +d, +d…].
+//
 // Datos: GTFS de Vitrasa, Concello de Vigo (Open Data Commons Attribution).
 import { existsSync } from 'node:fs';
 import { readFile, rename, writeFile } from 'node:fs/promises';
@@ -25,7 +35,11 @@ import { Unzip, UnzipInflate } from 'fflate';
 
 const SOURCE_URL = 'https://datos.vigo.org/data/transporte/gtfs_vigo.zip';
 const OUTPUT = new URL('../src/data/routes.json', import.meta.url);
+const SCHEDULES_OUTPUT = new URL('../src/data/schedules.json', import.meta.url);
+const EMPTY_SCHEDULES = '{"v":1,"svc":{},"p":[]}\n';
 const NEEDED = ['stops.txt', 'routes.txt', 'trips.txt', 'stop_times.txt'];
+// Sin ellos, cada viaje vale todos los días (mejor un horario aproximado que ninguno).
+const OPTIONAL = ['calendar.txt', 'calendar_dates.txt'];
 // El ZIP se pasa al descompresor en trozos: nunca hay un fichero entero
 // descomprimido en memoria, solo las filas que ya se han convertido.
 const CHUNK_BYTES = 1 << 20;
@@ -198,6 +212,16 @@ function readGtfs(zip) {
   const tripIds = new Map();
   const stopIds = new Map();
   const tripStops = [];
+  // Servicios: id → { days, start, end, add: [], remove: [] }.
+  const services = new Map();
+  const service = (id) => {
+    let entry = services.get(id);
+    if (!entry) {
+      entry = { days: '0000000', start: null, end: null, add: [], remove: [] };
+      services.set(id, entry);
+    }
+    return entry;
+  };
   const intern = (map, value) => {
     let id = map.get(value);
     if (id === undefined) {
@@ -228,13 +252,31 @@ function readGtfs(zip) {
         route: row.route_id,
         dir: Number.parseInt(row.direction_id, 10) || 0,
         head: String(row.trip_headsign ?? '').replace(/\s+/g, ' ').trim(),
+        service: String(row.service_id ?? ''),
       });
     },
     'stop_times.txt': (row) => {
       const sequence = Number.parseInt(row.stop_sequence, 10);
       if (!row.trip_id || !row.stop_id || !Number.isFinite(sequence)) return;
       const trip = intern(tripIds, row.trip_id);
-      (tripStops[trip] ??= []).push(sequence, intern(stopIds, row.stop_id));
+      // Tripletas [secuencia, parada, minutos]; -1 = sin hora (se interpola).
+      const minutes = gtfsMinutes(row.departure_time || row.arrival_time);
+      (tripStops[trip] ??= []).push(sequence, intern(stopIds, row.stop_id), minutes);
+    },
+    'calendar.txt': (row) => {
+      if (!row.service_id) return;
+      const entry = service(row.service_id);
+      entry.days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        .map((day) => (row[day] === '1' ? '1' : '0'))
+        .join('');
+      entry.start = /^\d{8}$/.test(row.start_date) ? row.start_date : null;
+      entry.end = /^\d{8}$/.test(row.end_date) ? row.end_date : null;
+    },
+    'calendar_dates.txt': (row) => {
+      if (!row.service_id || !/^\d{8}$/.test(row.date)) return;
+      const entry = service(row.service_id);
+      if (row.exception_type === '1') entry.add.push(row.date);
+      else if (row.exception_type === '2') entry.remove.push(row.date);
     },
   };
 
@@ -288,8 +330,13 @@ function readGtfs(zip) {
     if (!entry.reader.rows) throw new GtfsError(`${name} está vacío`);
     log(`${name}: ${entry.reader.rows} filas`);
   }
+  for (const name of OPTIONAL) {
+    const entry = found.get(name);
+    if (entry?.done) log(`${name}: ${entry.reader.rows} filas`);
+    else log(`${name}: no está (los horarios valdrán cualquier día)`);
+  }
 
-  return { stops, lines, trips, tripIds, stopIds, tripStops };
+  return { stops, lines, trips, tripIds, stopIds, tripStops, services };
 }
 
 // ---------------------------------------------------------------------------
@@ -302,6 +349,47 @@ function haversineMeters(a, b) {
   const dLon = toRadians(b.lon - a.lon);
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(a.lat)) * Math.cos(toRadians(b.lat)) * Math.sin(dLon / 2) ** 2;
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** "25:07:00" → 1507 minutos desde la medianoche del día de servicio; -1 si no hay hora. */
+function gtfsMinutes(text) {
+  const match = /^\s*(\d{1,3}):(\d{2})(?::\d{2})?\s*$/.exec(String(text ?? ''));
+  return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
+}
+
+/**
+ * Paradas de un viaje en orden de paso (sin las que no tienen marquesina ni
+ * las repetidas seguidas) con su hora; las horas que faltan se interpolan
+ * entre las conocidas (el GTFS solo obliga a la primera y la última).
+ */
+function tripSequence(triples, stopById) {
+  const order = [];
+  for (let i = 0; i < triples.length; i += 3) order.push([triples[i], triples[i + 1], triples[i + 2]]);
+  order.sort((a, b) => a[0] - b[0]);
+  const sequence = [];
+  const minutes = [];
+  for (const [, stopIndex, time] of order) {
+    const stop = stopById[stopIndex];
+    if (!stop) continue;
+    if (sequence.at(-1) === stop) {
+      if (minutes.at(-1) < 0) minutes[minutes.length - 1] = time;
+      continue;
+    }
+    sequence.push(stop);
+    minutes.push(time);
+  }
+  let previous = -1;
+  for (let i = 0; i < minutes.length; i++) {
+    if (minutes[i] < 0) continue;
+    if (previous >= 0 && i - previous > 1) {
+      for (let k = previous + 1; k < i; k++) {
+        minutes[k] = Math.round(minutes[previous] + ((minutes[i] - minutes[previous]) * (k - previous)) / (i - previous));
+      }
+    }
+    previous = i;
+  }
+  const timed = minutes.length > 0 && minutes[0] >= 0 && minutes.at(-1) >= 0;
+  return { sequence, minutes: timed ? minutes : null };
 }
 
 function buildRoutes({ stops, lines, trips, tripIds, stopIds, tripStops }) {
@@ -320,15 +408,7 @@ function buildRoutes({ stops, lines, trips, tripIds, stopIds, tripStops }) {
       skipped++;
       continue;
     }
-    const order = [];
-    for (let i = 0; i < pairs.length; i += 2) order.push([pairs[i], pairs[i + 1]]);
-    order.sort((a, b) => a[0] - b[0]);
-    const sequence = [];
-    for (const [, stopIndex] of order) {
-      const stop = stopById[stopIndex];
-      // Paradas sin número de marquesina o repetidas seguidas: fuera.
-      if (stop && sequence.at(-1) !== stop) sequence.push(stop);
-    }
+    const { sequence } = tripSequence(pairs, stopById);
     if (sequence.length < 2) {
       skipped++;
       continue;
@@ -367,13 +447,84 @@ function validate(routes) {
 }
 
 // ---------------------------------------------------------------------------
+// Horarios teóricos
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
+function buildSchedules({ stops, lines, trips, tripIds, stopIds, tripStops, services }) {
+  const stopById = [];
+  for (const [stopId, index] of stopIds) stopById[index] = stops.get(stopId);
+
+  // Un patrón por línea + letrero + secuencia, con el desfase de cada parada
+  // de cada viaje y sus salidas por servicio.
+  const patterns = new Map();
+  let untimed = 0;
+  for (const [tripId, index] of tripIds) {
+    const trip = trips.get(tripId);
+    const line = trip && lines.get(trip.route);
+    const triples = tripStops[index];
+    if (!line || !triples) continue;
+    const { sequence, minutes } = tripSequence(triples, stopById);
+    if (sequence.length < 2) continue;
+    if (!minutes) {
+      untimed++;
+      continue;
+    }
+    const key = `${line}|${trip.head}|${sequence.map((stop) => stop.id).join(',')}`;
+    let pattern = patterns.get(key);
+    if (!pattern) {
+      pattern = { line, head: trip.head, stops: sequence.map((stop) => stop.id), offsets: sequence.map(() => []), t: {} };
+      patterns.set(key, pattern);
+    }
+    const start = minutes[0];
+    minutes.forEach((time, i) => pattern.offsets[i].push(Math.max(0, time - start)));
+    (pattern.t[trip.service] ??= []).push(start);
+  }
+  if (untimed) log(`${untimed} viajes sin horas, fuera de los horarios`);
+
+  const used = new Set();
+  const collator = new Intl.Collator('es', { numeric: true });
+  const p = [...patterns.values()]
+    .sort((a, b) => collator.compare(a.line, b.line) || collator.compare(a.head, b.head))
+    .map(({ line, head, stops: ids, offsets, t }) => {
+      const off = offsets.map(median);
+      // Nunca hacia atrás (un desfase menor que el de la parada anterior).
+      for (let i = 1; i < off.length; i++) off[i] = Math.max(off[i], off[i - 1]);
+      const deltas = {};
+      for (const [id, starts] of Object.entries(t)) {
+        used.add(id);
+        const sorted = [...new Set(starts)].sort((a, b) => a - b);
+        deltas[id] = sorted.map((value, i) => (i ? value - sorted[i - 1] : value));
+      }
+      return { line, head, stops: ids, off, t: deltas };
+    });
+
+  const svc = {};
+  for (const id of used) {
+    const entry = services.get(id);
+    // Servicio desconocido (sin calendario): todos los días.
+    svc[id] = entry ? [entry.days, entry.start, entry.end, entry.add.sort(), entry.remove.sort()] : ['1111111', null, null, [], []];
+  }
+  const gen = new Date().toISOString().slice(0, 10);
+  return { v: 1, gen, svc, p };
+}
+
+const serializeSchedules = (data) =>
+  `{"v":${data.v},"gen":${JSON.stringify(data.gen)},"svc":${JSON.stringify(data.svc)},"p":[\n${data.p
+    .map((pattern) => JSON.stringify(pattern))
+    .join(',\n')}\n]}\n`;
+
+// ---------------------------------------------------------------------------
 // Escritura
 
 // Se escribe en un temporal y se renombra: nunca queda un routes.json a medias.
-async function writeAtomic(text) {
-  const temporary = new URL(`${OUTPUT.href}.tmp`);
+async function writeAtomic(text, output = OUTPUT) {
+  const temporary = new URL(`${output.href}.tmp`);
   await writeFile(temporary, text);
-  await rename(temporary, OUTPUT);
+  await rename(temporary, output);
 }
 
 const serialize = (routes) => `[\n${routes.map((route) => `  ${JSON.stringify(route)}`).join(',\n')}\n]\n`;
@@ -381,15 +532,20 @@ const serialize = (routes) => `[\n${routes.map((route) => `  ${JSON.stringify(ro
 try {
   const zip = inputFile ? new Uint8Array(await readFile(inputFile)) : await download();
   log(`ZIP de ${(zip.length / 1024 / 1024).toFixed(1)} MB`);
-  const routes = buildRoutes(readGtfs(zip));
+  const gtfs = readGtfs(zip);
+  const routes = buildRoutes(gtfs);
   validate(routes);
+  const schedules = buildSchedules(gtfs);
+  const schedulesText = serializeSchedules(schedules);
   await writeAtomic(serialize(routes));
   log('→ src/data/routes.json');
+  await writeAtomic(schedulesText, SCHEDULES_OUTPUT);
+  log(`→ src/data/schedules.json (${schedules.p.length} patrones, ${(schedulesText.length / 1024).toFixed(0)} KB)`);
 } catch (error) {
   const message = error instanceof GtfsError ? error.message : `Error inesperado: ${error.stack ?? error}`;
   if (!soft) {
     console.error(`[routes] ${message}`);
-    console.error('[routes] routes.json no se ha modificado.');
+    console.error('[routes] routes.json y schedules.json no se han modificado.');
     process.exit(1);
   }
   console.warn(`[routes] AVISO: ${message}`);
@@ -398,5 +554,9 @@ try {
   } else {
     await writeAtomic('[]\n');
     console.warn('[routes] Sin datos de recorridos: la app avisará de que no puede verificar el sentido.');
+  }
+  if (!existsSync(SCHEDULES_OUTPUT)) {
+    await writeAtomic(EMPTY_SCHEDULES, SCHEDULES_OUTPUT);
+    console.warn('[routes] Sin horarios teóricos: sin conexión no se enseñarán.');
   }
 }

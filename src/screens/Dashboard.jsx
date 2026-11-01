@@ -101,7 +101,7 @@ function EmptyState() {
  */
 export default function Dashboard({ settings, onSettingChange }) {
   const t = useT();
-  const { routes, addRoute, removeRoute, reorderRoutes, updateRoute, importRoutes, refresh } = useRoutes({
+  const { routes, failures, addRoute, removeRoute, reorderRoutes, updateRoute, importRoutes, refresh } = useRoutes({
     refreshMs: settings.refreshSeconds * 1000,
   });
   // Tarjeta que se está editando (modal del lápiz: alias y líneas).
@@ -334,6 +334,8 @@ export default function Dashboard({ settings, onSettingChange }) {
                 animateIn={!savedIds.has(route.id)}
                 sortBy={settings.sortBy}
                 timeFormat={settings.timeFormat}
+                // Sin tiempos de Vitrasa: la tarjeta enseña el horario teórico.
+                failure={failures.get(route.stopId)}
                 onRemove={handleRemove}
                 onEditCard={setEditingRouteId}
                 onStartEditing={startEditing}

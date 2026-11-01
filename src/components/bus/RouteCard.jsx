@@ -15,6 +15,7 @@ import IconHeading from '../ui/IconHeading';
 import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from './BusLineItem';
 import DayServiceEnded from './DayServiceEnded';
+import TheoreticalArrivals from './TheoreticalArrivals';
 import { cardColor } from './cardColors';
 
 // Las rutinas guardan el icono por nombre para poder serializarse.
@@ -39,6 +40,9 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * De noche (Smart Night Mode), las nocturnas con tiempo real van primero y
  * las diurnas ya terminadas, plegadas al final ("Servicio diurno
  * finalizado").
+ * `failure`: si el último refresco de su parada falló (tipo de error), se
+ * enseña el horario teórico del GTFS en gris (Feature #20); mientras carga,
+ * los últimos tiempos guardados.
  */
 function RouteCard({
   id,
@@ -60,6 +64,7 @@ function RouteCard({
   onEditCard,
   onDepartureAlarm,
   nearMeters = null,
+  failure = null,
 }) {
   const t = useT();
   const [showMore, setShowMore] = useState(false);
@@ -141,14 +146,27 @@ function RouteCard({
       <div className="mx-1 mb-1 mt-3 border-t border-white/10" />
 
       {/* `key`: al pasar de día a noche (o al revés), la lista entra con un fundido. */}
-      <ul
-        key={night ? 'night' : 'day'}
-        className={`px-1 ${night !== nightAtMount ? 'animate-fade-in motion-reduce:animate-none' : ''}`}
-      >
-        {visible.map(renderBus)}
-      </ul>
+      {failure && stopId ? (
+        <div className="px-1">
+          <TheoreticalArrivals
+            stopId={stopId}
+            lines={lines}
+            limit={busesToShow}
+            offline={failure === 'offline'}
+            timeFormat={timeFormat}
+            fallback={<ul>{visible.map(renderBus)}</ul>}
+          />
+        </div>
+      ) : (
+        <ul
+          key={night ? 'night' : 'day'}
+          className={`px-1 ${night !== nightAtMount ? 'animate-fade-in motion-reduce:animate-none' : ''}`}
+        >
+          {visible.map(renderBus)}
+        </ul>
+      )}
 
-      {more.length > 0 && (
+      {!failure && more.length > 0 && (
         <>
           <Collapse id={moreId} open={showMore}>
             <ul className="px-1">
@@ -168,7 +186,7 @@ function RouteCard({
         </>
       )}
 
-      {ended && (
+      {!failure && ended && (
         <div className="px-1">
           <DayServiceEnded ended={ended} fetchedAt={updatedAt} />
         </div>
