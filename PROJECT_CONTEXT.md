@@ -452,12 +452,16 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     autobús (`headKey`: el sentido de la marcha sale solo); si ninguno
     coincide, el primero que pase por ella y "Recorrido aproximado". Nombres
     de `stopsList` ("Parada N" si falta). Cabecera fija y opaca (distintivo,
-    "Línea 4A", "Hacia [letrero]", "31 paradas") con velo corto; debajo una
-    `<ol>`: columna con un tramo grueso (`w-1.5`) del color de la línea
+    "Línea 4A", "Hacia [letrero]", "31 paradas"), fuera del scroll: la hoja
+    es una columna y solo la lista se desplaza, en su propio contenedor con
+    `scroll-fade` (16 px arriba, 32 abajo, con relleno al menos igual: la
+    primera y la última parada se ven enteras), así ninguna asoma sobre la
+    cabecera; debajo una `<ol>`: columna con un tramo grueso (`w-1.5`) del color de la línea
     (la clase de `lineColor`, la del distintivo), cortado en los extremos,
     y un punto por parada; lo ya recorrido, al 40 % y en gris. La parada
     desde la que se abrió: círculo de 20 px relleno con anillo blanco,
-    nombre en negrita y "Estás aquí" (`aria-current="location"`), centrada
+    nombre en negrita y "Esta parada" (neutral: puede ser una parada lejana
+    de una tarjeta; `aria-current`), centrada
     al abrir (`scrollIntoView` en `useLayoutEffect`). Hasta ~70 paradas:
     sin virtualizar (`memo` + `useMemo`, abre en ~150 ms). Estados: cargando
     y "No hay recorrido para esta línea en esta parada." Un único visor en
@@ -790,9 +794,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.39 • Build: 01/11/2026,
+  versión en gris pequeño y centrada ("vBus v1.40 • Build: 01/11/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.39 = PR #39), hora de compilación
+  PR: `npm version minor`; v1.40 = PR #40), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.

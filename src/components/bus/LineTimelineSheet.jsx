@@ -55,10 +55,11 @@ const Timeline = memo(function Timeline({ request, titleId }) {
   const color = bus.color ?? lineColor(bus.line);
 
   return (
-    <>
-      {/* Fija arriba (opaca) mientras la lista hace scroll; un velo corto
-          difumina las paradas que pasan por debajo. */}
-      <header className="sticky top-0 z-10 -mx-5 bg-graphite px-5 pb-2 pt-3">
+    // Ocupa el alto de la hoja: la cabecera queda fija (fuera del scroll) y
+    // solo la lista de paradas se desplaza, en su propio contenedor.
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Opaca y por encima: ninguna parada asoma sobre ella. */}
+      <header className="relative z-10 shrink-0 bg-graphite pb-1">
         <div className="flex items-center gap-3">
           <LineBadge line={bus.line} color={color} />
           <div className="min-w-0">
@@ -74,7 +75,6 @@ const Timeline = memo(function Timeline({ request, titleId }) {
             {!found.verified && ` · ${t('timeline.approx')}`}
           </p>
         )}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-full h-5 bg-gradient-to-b from-graphite to-graphite/0" />
       </header>
 
       {status === 'loading' || (found && !stopsReady) ? (
@@ -88,9 +88,14 @@ const Timeline = memo(function Timeline({ request, titleId }) {
           {t('timeline.notFound')}
         </p>
       ) : (
-        <StopList stops={found.route.stops} active={found.position} color={color} />
+        // Scroll propio con `scroll-fade`: las paradas se difuminan arriba y
+        // abajo en vez de cortarse; el relleno (≥ la máscara) deja ver
+        // enteras la primera y la última en reposo.
+        <div className="scroll-fade -mx-5 min-h-0 flex-1 transform-gpu overflow-y-auto overscroll-contain px-5 pb-8 pt-4 [--fade-bottom:32px] [--fade-top:16px]">
+          <StopList stops={found.route.stops} active={found.position} color={color} />
+        </div>
       )}
-    </>
+    </div>
   );
 });
 
@@ -106,7 +111,7 @@ const StopList = memo(function StopList({ stops, active, color }) {
 
   const last = stops.length - 1;
   return (
-    <ol className="mt-2 animate-fade-in pb-4 motion-reduce:animate-none">
+    <ol className="animate-fade-in motion-reduce:animate-none">
       {stops.map((id, i) => {
         const isActive = i === active;
         const passed = i < active;
@@ -115,7 +120,7 @@ const StopList = memo(function StopList({ stops, active, color }) {
           <li
             key={`${id}-${i}`}
             ref={isActive ? activeRef : null}
-            aria-current={isActive ? 'location' : undefined}
+            aria-current={isActive ? "true" : undefined}
             className="relative flex min-h-[3.25rem] items-center gap-4"
           >
             {/* Columna de la línea: medio tramo arriba y medio abajo (se corta en los extremos). */}
