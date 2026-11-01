@@ -40,6 +40,7 @@ function EditableRouteItem({
   onEditCard,
   onStartEditing,
   onDepartureAlarm,
+  onOpenLine,
   nearMeters = null,
 }) {
   const controls = useDragControls();
@@ -102,6 +103,7 @@ function EditableRouteItem({
                   onRemove={onRemove}
                   onEditCard={onEditCard}
                   onDepartureAlarm={onDepartureAlarm}
+                  onOpenLine={onOpenLine}
                   nearMeters={nearMeters}
                 />
 

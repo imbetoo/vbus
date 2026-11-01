@@ -8,6 +8,7 @@ import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from '../bus/BusLineItem';
 import DayServiceEnded from '../bus/DayServiceEnded';
 import TheoreticalArrivals from '../bus/TheoreticalArrivals';
+import LineTimelineSheet from '../bus/LineTimelineSheet';
 import DepartureAlarm from '../departure/DepartureAlarm';
 import DepartureBell from '../departure/DepartureBell';
 import IconTile from '../ui/IconTile';
@@ -109,7 +110,7 @@ function StopSummary({ stop, distance, action, children }) {
 }
 
 /** El error de la API y, si se puede, los horarios teóricos en su lugar. */
-function ErrorOrSchedule({ stop, error, offline, offlineText, reach, timeFormat }) {
+function ErrorOrSchedule({ stop, error, offline, offlineText, reach, timeFormat, onOpenLine }) {
   const message = offline ? (
     <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-white/80 motion-reduce:animate-none">
       <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-white/60" strokeWidth={2.5} aria-hidden="true" />
@@ -124,7 +125,14 @@ function ErrorOrSchedule({ stop, error, offline, offlineText, reach, timeFormat 
   // Parada que Vitrasa no conoce: no hay horario que enseñar.
   if (error?.kind === 'not_found') return message;
   return (
-    <TheoreticalArrivals stopId={stop.id} filter={reach} offline={offline} timeFormat={timeFormat} fallback={message} />
+    <TheoreticalArrivals
+      stopId={stop.id}
+      filter={reach}
+      offline={offline}
+      timeFormat={timeFormat}
+      fallback={message}
+      onOpenLine={onOpenLine}
+    />
   );
 }
 
@@ -153,6 +161,8 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
   const endedCount = arranged.ended ? arranged.ended.buses.length + arranged.ended.lines.length : 0;
   // Autobús cuya campana se ha tocado: `{ stop, bus, fetchedAt }`.
   const [request, setRequest] = useState(null);
+  // Autobús tocado: visor de línea (`{ stopId, bus }`).
+  const [lineRequest, setLineRequest] = useState(null);
   return (
     <>
       <div className={`${BENTO} px-4 py-2`}>
@@ -167,6 +177,7 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
             offlineText={offlineText}
             reach={reach}
             timeFormat={timeFormat}
+            onOpenLine={setLineRequest}
           />
         )}
         {arrivals.status === 'success' &&
@@ -179,6 +190,7 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
                   {...bus}
                   timeFormat={timeFormat}
                   fetchedAt={arrivals.updatedAt}
+                  onOpen={() => setLineRequest({ stopId: stop.id, bus })}
                   action={
                     <DepartureBell bus={bus} onClick={() => setRequest({ stop, bus, fetchedAt: arrivals.updatedAt })} />
                   }
@@ -202,6 +214,7 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
         </p>
       )}
       <DepartureAlarm request={request} onClose={() => setRequest(null)} />
+      <LineTimelineSheet request={lineRequest} onClose={() => setLineRequest(null)} />
     </>
   );
 }

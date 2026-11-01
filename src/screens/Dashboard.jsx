@@ -12,6 +12,7 @@ import EditableRouteItem from '../components/bus/EditableRouteItem';
 import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
 import DepartureAlarm from '../components/departure/DepartureAlarm';
+import LineTimelineSheet from '../components/bus/LineTimelineSheet';
 import QuickLookSheet from '../components/quick-look/QuickLookSheet';
 import SearchBar from '../components/quick-look/SearchBar';
 import Clock from '../components/settings/Clock';
@@ -110,6 +111,8 @@ export default function Dashboard({ settings, onSettingChange }) {
   const [editingRouteId, setEditingRouteId] = useState(null);
   // Campana de un autobús de una tarjeta (modo salida): `{ stop, bus, fetchedAt }`.
   const [departureRequest, setDepartureRequest] = useState(null);
+  // Autobús tocado en una tarjeta: visor de línea (`{ stopId, bus }`).
+  const [lineRequest, setLineRequest] = useState(null);
   const editingRoute = routes.find((route) => route.id === editingRouteId) ?? null;
   // Modo edición (botón "Editar" o pulsación larga en una tarjeta): las
   // tarjetas tiemblan, se arrastran desde su tirador y se borran con el botón
@@ -342,6 +345,7 @@ export default function Dashboard({ settings, onSettingChange }) {
                 onEditCard={setEditingRouteId}
                 onStartEditing={startEditing}
                 onDepartureAlarm={setDepartureRequest}
+                onOpenLine={setLineRequest}
                 // Indicador "A 120 m" en la que ha subido por cercanía.
                 nearMeters={proximityOn && route.id === nearest.id ? nearest.meters : null}
               />
@@ -365,6 +369,7 @@ export default function Dashboard({ settings, onSettingChange }) {
         }}
       />
       <DepartureAlarm request={departureRequest} onClose={() => setDepartureRequest(null)} />
+      <LineTimelineSheet request={lineRequest} onClose={() => setLineRequest(null)} />
       <EditCardModal
         route={editingRoute}
         onClose={() => setEditingRouteId(null)}

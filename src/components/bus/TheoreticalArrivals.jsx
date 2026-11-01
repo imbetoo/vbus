@@ -31,9 +31,19 @@ export function TheoreticalNotice({ offline, className = '' }) {
  *
  * Mientras los horarios cargan (o si no hay), pinta `fallback` (el error de
  * siempre). `filter` limita las filas (líneas de la tarjeta o que llegan al
- * destino); `limit`, cuántas se enseñan.
+ * destino); `limit`, cuántas se enseñan. `onOpenLine({ stopId, bus })`:
+ * tocar una fila abre el visor de línea.
  */
-export default function TheoreticalArrivals({ stopId, lines = null, filter = null, limit = 3, offline, timeFormat, fallback = null }) {
+export default function TheoreticalArrivals({
+  stopId,
+  lines = null,
+  filter = null,
+  limit = 3,
+  offline,
+  timeFormat,
+  fallback = null,
+  onOpenLine = null,
+}) {
   const t = useT();
   const data = useSchedules(true);
   const now = useNow(TICK_MS);
@@ -52,7 +62,13 @@ export default function TheoreticalArrivals({ stopId, lines = null, filter = nul
       {buses.length ? (
         <ul>
           {buses.map((bus) => (
-            <BusLineItem key={bus.id} {...bus} timeFormat={timeFormat} fetchedAt={minute * 60_000} />
+            <BusLineItem
+              key={bus.id}
+              {...bus}
+              timeFormat={timeFormat}
+              fetchedAt={minute * 60_000}
+              onOpen={onOpenLine ? () => onOpenLine({ stopId, bus }) : null}
+            />
           ))}
         </ul>
       ) : (

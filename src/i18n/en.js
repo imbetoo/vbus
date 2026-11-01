@@ -409,12 +409,18 @@ export default {
   'onboarding.homeScreen': "Preview of your home screen",
   // Barra de búsqueda de Mis rutas
   'quick.searchBar': "Search stop or destination…",
-  // Pantalla de bloqueo (Media Session) y horarios teóricos.
-  'lock.in': "In {time}",
-  'lock.arriving': "Arriving…",
-  'lock.getOffAt': "Get off at {stop}",
+  // Horarios teóricos.
   'schedule.theoretical': "Scheduled time",
   'schedule.unreachable': "Server unreachable · Showing scheduled times",
   'schedule.offline': "No connection · Showing scheduled times",
   'schedule.none': "No buses scheduled in the next 2 h.",
+  // Visor de línea (timeline).
+  'timeline.title': "Line {line}",
+  'timeline.toward': "Towards {head}",
+  'timeline.here': "You are here",
+  'timeline.approx': "Approximate route",
+  'timeline.loading': "Loading the route…",
+  'timeline.notFound': "No route for this line at this stop.",
+  'timeline.open': "See the route of the {line} towards {head}",
+  'timeline.stops': ({ n }) => (n === 1 ? '1 stop' : `${n} stops`),
 };
