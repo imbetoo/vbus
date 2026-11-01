@@ -217,7 +217,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   GPS y fuera de Vigo (parada más cercana a más de 15 km). La ubicación no se
   guarda. Buscador y cercanas forman `StopPicker`, reutilizable: solo
   devuelve la parada elegida (`onSelect`), sin crear nada.
-- **Consulta rápida (lupa de la cabecera) · Asistente de rutas directas:**
+- **Consulta rápida (barra de búsqueda de Mis rutas) · Asistente de rutas directas:**
   `QuickLookSheet`, panel inferior con framer-motion dentro de un `<dialog>`
   modal (entra y sale deslizándose con muelle; alto fijo del 85 % para que
   nada salte al cambiar el contenido; se cierra con la X, Escape, tocando
@@ -510,10 +510,16 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `createTimeHook`, `src/lib/timeStore.js`) / "Mis rutas"; a la derecha, en
   columna, el reloj `hh:mm` (Inter semibold, `tabular-nums`, color del tema; al
   cambiar el minuto la hora anterior sube y sale mientras la nueva entra desde
-  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo cuatro
-  botones circulares: Consulta rápida (lupa), Editar (lápiz/✓), Sol/Luna y
-  Ajustes (36 px por debajo de 400 px de ancho). "Mis rutas" no se parte en
-  pantallas estrechas (baja de tamaño por debajo de 380 px).
+  abajo, 600 ms, en un contenedor con `overflow: hidden`) y debajo tres
+  botones circulares: Editar (lápiz/✓), Sol/Luna y Ajustes (36 px por debajo
+  de 400 px de ancho). "Mis rutas" no se parte en pantallas estrechas (baja
+  de tamaño por debajo de 380 px).
+- **Barra de búsqueda (`SearchBar`):** la consulta rápida se abre desde una
+  barra al estilo de iOS fija bajo el título y encima de las tarjetas (fuera
+  del scroll): lupa y "Buscar parada o destino…" en gris tenue, con los
+  mismos colores que las tarjetas (`GlassCard`: grafito al 80 %, degradado,
+  borde de 2px y `shadow-glass`, así sigue al motor de temas). Es un botón
+  (`aria-haspopup="dialog"`).
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
 - **Hápticos (`src/lib/haptics.js`):** todo lo que vibra pasa por aquí,
@@ -663,8 +669,10 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   número 1, 2, 3… al elegir), así nada salta de fila. El paso de líneas usa el
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
-  (pulgar blanco que se desliza; accesibles como grupo de radios), con scroll
-  si no cabe. Once ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  (pulgar blanco que se desliza; accesibles como grupo de radios). El
+  contenido hace scroll y "Hecho" se queda fijo al pie (opaco, con el
+  `safe-area` inferior); lo que pasa por debajo se desvanece (`scroll-fade`,
+  40 px). Once ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
   "Icono de la app" (`appIcon`, solo sin instalar; ver "Bienvenida e icono"),
   "Idioma" (`language`: auto, gl, es, en) y "Tono de alarma" (`alarmTone`:
   classic, chime, urgent), ver sus secciones;
@@ -685,9 +693,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.34 • Build: 31/10/2026,
+  versión en gris pequeño y centrada ("vBus v1.35 • Build: 01/11/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.34 = PR #34), hora de compilación
+  PR: `npm version minor`; v1.35 = PR #35), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.

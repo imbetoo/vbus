@@ -87,8 +87,10 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
 
   return (
     <Modal open={open} onClose={onClose} labelledBy={titleId} className="w-[min(92vw,24rem)]">
-      {/* Con todos los ajustes puede no caber en un móvil apaisado: hace scroll. */}
-      <div className="flex max-h-[calc(100dvh-2rem)] transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain p-5">
+      {/* Columna: el contenido hace scroll y "Hecho" se queda fijo abajo; lo que
+          pasa por debajo del pie se desvanece (`scroll-fade`, solo máscara). */}
+      <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
+      <div className="scroll-fade flex min-h-0 flex-1 transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain p-5 pb-10 [--fade-bottom:40px] [--fade-top:0px]">
         <header className="flex items-center justify-between gap-3">
           <h2 id={titleId} className="text-2xl/tight font-bold tracking-[-0.015em]">
             {t('settings.title')}
@@ -299,13 +301,15 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
           />
         )}
 
-        <PillButton onClick={onClose} className="mt-1">
-          {t('common.done')}
-        </PillButton>
-
         {/* Versión: si no coincide con la del último despliegue, el móvil está
             usando un build antiguo del caché (basta con cerrar y abrir la app). */}
         <p className="text-center text-xs font-medium tabular-nums text-white/40">{BUILD_LABEL}</p>
+      </div>
+
+      {/* "Hecho", fijo al pie (opaco, por encima del contenido que se desliza). */}
+      <div className="relative z-10 shrink-0 bg-graphite px-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-2">
+        <PillButton onClick={onClose}>{t('common.done')}</PillButton>
+      </div>
       </div>
       {shareLoaded && (
         <Suspense fallback={null}>
