@@ -4,12 +4,13 @@
  * mensaje. Es un parámetro aparte del de un trayecto (`?origen=&destino=`,
  * `share.js`), que no cambia.
  *
- * Formato: `{ v: 1, t: [[stopId, alias, lines, color, busesToShow, note?], …] }`
+ * Formato: `{ v: 1, t: [[stopId, alias, lines, color, busesToShow, note?, slot?], …] }`
  * en JSON → bytes UTF-8 (alias con tildes y emoji) → base64url sin relleno.
  * Sin tiempos ni ids: se regeneran al importar (`toImportedCard`). La nota
  * es un 6.º elemento opcional (solo si hay): los enlaces anteriores, sin él,
  * se siguen leyendo igual (nota vacía).
  */
+import { cardSlot } from './cardSlots';
 import { CARD_COLORS, DEFAULT_CARD_COLOR } from '../components/bus/cardColors';
 import { NOTE_MAX, toRouteCard } from '../services/vigobusAdapter';
 import { t } from '../i18n';
@@ -46,6 +47,9 @@ function toEntry(route) {
     route.busesToShow ?? 3,
   ];
   const note = (route.note ?? '').trim();
+  const slot = cardSlot(route);
+  // Opcionales al final: la nota (6.º) y el momento del día (7.º, solo si no es `any`).
+  if (slot !== 'any') return [...entry, note, slot];
   return note ? [...entry, note] : entry;
 }
 
@@ -65,7 +69,7 @@ export function routesShareUrl(routes, base = window.location.origin) {
 // manipulado). `null` si no vale.
 function readEntry(entry) {
   if (!Array.isArray(entry)) return null;
-  const [stopId, alias, lines, color, busesToShow, note] = entry;
+  const [stopId, alias, lines, color, busesToShow, note, slot] = entry;
   if (!Number.isInteger(stopId) || stopId <= 0 || stopId > 999_999) return null;
   if (typeof alias !== 'string' || alias.length > MAX_ALIAS) return null;
   if (!Array.isArray(lines) || !lines.length || lines.length > MAX_LINES) return null;
@@ -78,6 +82,8 @@ function readEntry(entry) {
     busesToShow: busesToShow === 2 ? 2 : 3,
     // Opcional: sin ella (enlaces anteriores) o si no es texto, vacía.
     note: typeof note === 'string' ? note.trim().slice(0, NOTE_MAX) : '',
+    // Opcional (enlaces anteriores no lo llevan): si no vale, `any`.
+    slot: cardSlot({ slot }),
   };
 }
 
@@ -106,6 +112,7 @@ export function toImportedCard(entry, stop) {
     lines: entry.lines,
     title: entry.alias,
     note: entry.note ?? '',
+    slot: entry.slot ?? 'any',
     busesToShow: entry.busesToShow,
     color: entry.color,
   });
@@ -123,7 +130,8 @@ const signature = (card) =>
 /**
  * Las tarjetas de `incoming` que no están ya, exactamente iguales (misma
  * parada, alias, líneas en el mismo orden, color y autobuses visibles; la
- * nota no cuenta: dos notas distintas no duplican la tarjeta), en
+ * nota y el momento del día no cuentan: dos notas distintas no duplican
+ * la tarjeta), en
  * `current` ni repetidas entre sí.
  */
 export function newCards(current, incoming) {

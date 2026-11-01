@@ -344,7 +344,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   - **Compartir Mis rutas (sin backend, `src/lib/routesShare.js`):** todas las
     tarjetas viajan en el propio enlace, `/?tarjetas=…`, un parámetro aparte
     del de un trayecto (`origen`/`destino`, que no cambia). Formato `{ v: 1,
-    t: [[stopId, alias, lines, color, busesToShow, note?], …] }` en JSON → UTF-8
+    t: [[stopId, alias, lines, color, busesToShow, note?, slot?], …] }` en JSON → UTF-8
     (alias con tildes y emoji) → base64url sin relleno; sin tiempos ni ids (se
     regeneran al importar; la nota, 6.º elemento opcional: los enlaces sin ella
     siguen valiendo). `decodeRoutes` nunca lanza: base64 o JSON rotos,
@@ -697,6 +697,28 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   repintan por unos metros). La que sube lleva bajo el título "📍 A 120 m ·
   La más cercana" (azul iOS, `text-sm`); el salto lo anima `Reorder`
   (`layout="position"`). Sin permiso o sin GPS, tu orden, sin errores.
+- **Orden inteligente por hora del día (`src/lib/cardSlots.js`, ajuste
+  "Ordenar tarjetas por hora del día"):** cada tarjeta guarda `slot`
+  (`any`, por defecto y en las antiguas; `morning`, `afternoon` o
+  `evening`), los mismos tramos que el saludo (`dayPart.js`: 06:00–13:59,
+  14:00–20:59 y 21:00–05:59). Se elige al crearla (paso "Personaliza la
+  tarjeta") o con el lápiz del modo edición: "¿Cuándo la usas?", control
+  segmentado Siempre / Mañana / Tarde / Noche (`SlotPicker`, `compact`:
+  texto de 13 px, 11 px por debajo de 360 de ancho; en inglés etiquetas
+  cortas Any / AM / PM / Night con el nombre completo como nombre
+  accesible) y la pista "Sube arriba de 6:00 a 14:00. Tu orden no se
+  pierde." Con el ajuste activado (`sortByTime`, por defecto), las del
+  momento actual se enseñan primero, en tu orden, y después el resto, en tu
+  orden (`withDayPartFirst`; devuelve el mismo array si nada se mueve). Es
+  solo una vista, como la cercanía: `vbus:routes` no cambia, en modo
+  edición se ve y se arrastra el orden guardado, y la cercanía por GPS
+  manda por encima (`withNearestFirst` sobre el orden por hora). Cambia
+  solo, sin recargar, a las 06:00, 14:00 y 21:00 (`useDayPart`), con el
+  salto animado por `Reorder`. Las que suben llevan "🕒 Tu ruta de la
+  mañana / tarde / noche" (azul iOS, `text-sm`; no si ya enseña "La más
+  cercana"). Viaja en "Compartir Mis rutas" como 7.º elemento opcional
+  (solo si no es `any`; uno desconocido → `any`) y no cuenta para los
+  duplicados al importar.
 - **Alias:** cada tarjeta guarda `alias` ("Trabajo 💻"; vacío = sin alias) y
   `title` (lo que se enseña: el alias o el nombre de la parada). Con alias, el
   alias es el título y el nombre oficial va al subtítulo ("Desde Rúa do Conde
@@ -746,7 +768,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   debajo de la cabecera se difumina con un velo grafito de 20 px y lo que
   llega al pie, con uno de 96 px (`h-24`, `from-graphite`), del mismo color
   opaco que el modal en todas las paletas (también OLED y Nube); "Hecho"
-  lleva el `safe-area` inferior. Once ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  lleva el `safe-area` inferior. Doce ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
   "Icono de la app" (`appIcon`, solo sin instalar; ver "Bienvenida e icono"),
   "Idioma" (`language`: auto, gl, es, en) y "Tono de alarma" (`alarmTone`:
   classic, chime, urgent), ver sus secciones;
@@ -760,16 +782,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   (por defecto) o 60 s (el intervalo de `useRoutes` se rehace al cambiarlo); y
   "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
   perla) para móviles con tirones (oculto con OLED); y el interruptor "Ordenar tarjetas por
-  cercanía" (`sortByProximity`, activado por defecto). Interruptor "Vibración"
+  cercanía" (`sortByProximity`, activado por defecto) y "Ordenar tarjetas por
+  hora del día" (`sortByTime`, activado por defecto). Interruptor "Vibración"
   (`vibration`, activado por defecto): apagado, `haptics.js` no vibra nada
   (`setHapticsEnabled`, sincronizado en `App.jsx`), tampoco las alarmas ni
   su notificación; los avisos siguen sonando y notificando. "Compartir mis
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.38 • Build: 01/11/2026,
+  versión en gris pequeño y centrada ("vBus v1.39 • Build: 01/11/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.38 = PR #38), hora de compilación
+  PR: `npm version minor`; v1.39 = PR #39), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -913,8 +936,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 - Hecho: tarjetas inteligentes por GPS (la parada más cercana, la primera;
   tu orden intacto).
-- Orden inteligente: reordenar las tarjetas según la hora del día (p. ej.
-  mañanas: "Ir al instituto" primero; tardes: "Volver a casa" primero).
+- Hecho: orden inteligente por hora del día (cada tarjeta, su momento:
+  mañanas "Ir al instituto" primero; tardes "Volver a casa" primero).
 - Hecho: alarma de destino ("Avisarme", modo viaje en la consulta rápida).
 - Hecho: alarma de salida configurable ("Avisar cuando queden 5 min para el
   C3": campana de cada autobús en la consulta rápida y en Mis rutas, modo

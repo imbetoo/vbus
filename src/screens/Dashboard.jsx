@@ -28,6 +28,7 @@ import { findStop, loadStopsList } from '../data/stops';
 import { ROUTES_PARAM, decodeRoutes, toImportedCard } from '../lib/routesShare';
 import { useNearestCard } from '../hooks/useNearestCard';
 import { useDayPart } from '../hooks/useDayPart';
+import { cardSlot, withDayPartFirst } from '../lib/cardSlots';
 import { useNightMode } from '../hooks/useNightMode';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useRoutes } from '../hooks/useRoutes';
@@ -216,9 +217,14 @@ export default function Dashboard({ settings, onSettingChange }) {
   // modo edición se ve y se arrastra ese orden.
   const { nearest } = useNearestCard(routes, settings.sortByProximity);
   const proximityOn = settings.sortByProximity && !isEditing && nearest != null;
-  const shownRoutes = useMemo(
-    () => (proximityOn ? withNearestFirst(routes, nearest.id) : routes),
-    [proximityOn, routes, nearest],
+  // Orden inteligente por hora: las tarjetas del momento del día (su `slot`)
+  // primero, en tu orden; la cercanía manda por encima. Solo es una vista:
+  // editando se ve y se arrastra tu orden guardado.
+  const timeOn = settings.sortByTime && !isEditing;
+  const shownRoutes = useMemo(() => {
+    const byTime = timeOn ? withDayPartFirst(routes, part) : routes;
+    return proximityOn ? withNearestFirst(byTime, nearest.id) : byTime;
+  }, [timeOn, part, proximityOn, routes, nearest],
   );
 
   return (
@@ -348,6 +354,8 @@ export default function Dashboard({ settings, onSettingChange }) {
                 onOpenLine={setLineRequest}
                 // Indicador "A 120 m" en la que ha subido por cercanía.
                 nearMeters={proximityOn && route.id === nearest.id ? nearest.meters : null}
+                // "Tu ruta de la mañana" en las que han subido por la hora.
+                forNow={timeOn && cardSlot(route) === part ? part : null}
               />
             ))}
           </Reorder.Group>

@@ -5,6 +5,8 @@ import { useT } from '../../i18n';
 import { NOTE_MAX, lineColor } from '../../services/vigobusAdapter';
 import CardNameField from '../create-card/CardNameField';
 import LineChips from '../create-card/LineChips';
+import SlotPicker from '../create-card/SlotPicker';
+import { cardSlot } from '../../lib/cardSlots';
 import IconButton from '../ui/IconButton';
 import Modal from '../ui/Modal';
 import PillButton from '../ui/PillButton';
@@ -19,7 +21,7 @@ import PillButton from '../ui/PillButton';
  *   tarjeta no las enseña. Al menos una.
  * `route` es la tarjeta que se edita (o `null` con el modal cerrado).
  * - Nota: opcional, hasta 60 caracteres ("Coger el de las 8:10").
- * `onSave(id, { alias, note, lines })`.
+ * `onSave(id, { alias, note, slot, lines })`.
  */
 export default function EditCardModal({ route, onClose, onSave }) {
   const titleId = useId();
@@ -36,6 +38,7 @@ function EditCardForm({ route, titleId, onClose, onSave }) {
   const t = useT();
   const [alias, setAlias] = useState(route.alias ?? '');
   const [note, setNote] = useState(route.note ?? '');
+  const [slot, setSlot] = useState(() => cardSlot(route));
   const [visible, setVisible] = useState(route.lines ?? []);
   const hintId = useId();
   const linesHintId = useId();
@@ -72,7 +75,7 @@ function EditCardForm({ route, titleId, onClose, onSave }) {
       className="flex max-h-[calc(100dvh-2rem)] transform-gpu flex-col gap-4 overflow-y-auto overscroll-contain p-5"
       onSubmit={(event) => {
         event.preventDefault();
-        if (visible.length) onSave(route.id, { alias, note, lines: visible });
+        if (visible.length) onSave(route.id, { alias, note, slot, lines: visible });
       }}
     >
       <header className="flex items-center justify-between gap-3">
@@ -104,6 +107,10 @@ function EditCardForm({ route, titleId, onClose, onSave }) {
             maxLength={NOTE_MAX}
           />
         </div>
+      </section>
+
+      <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
+        <SlotPicker value={slot} onChange={setSlot} />
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-4" aria-describedby={linesHintId}>

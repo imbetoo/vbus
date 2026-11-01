@@ -130,6 +130,17 @@ export default function SettingsModal({ open, onClose, settings, onChange, route
         />
 
         <SwitchRow
+          title={t('settings.byTime')}
+          description={
+            <span key={String(settings.sortByTime)} className="block animate-fade-in motion-reduce:animate-none">
+              {t(settings.sortByTime ? 'settings.byTime.on' : 'settings.byTime.off')}
+            </span>
+          }
+          checked={settings.sortByTime}
+          onChange={(value) => onChange('sortByTime', value)}
+        />
+
+        <SwitchRow
           title={t('settings.vibration')}
           description={
             <span key={String(settings.vibration)} className="block animate-fade-in motion-reduce:animate-none">
