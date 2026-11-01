@@ -269,7 +269,46 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     consecutivas; escritura atómica. `prebuild` lo ejecuta con `--soft` (si
     falla, aviso y el build sigue con el fichero anterior o `[]`;
     `vercel.json` fija `npm run build`) y `update-routes.yml` (GitHub
-    Actions, semanal) sin `--soft` y sube el resultado a `main`.
+    Actions, semanal) sin `--soft` y sube el resultado a `main`. El mismo
+    script escribe `src/data/schedules.json` (horarios teóricos, ver abajo).
+  - **Horarios teóricos sin conexión (Feature #20, `src/lib/schedule.js`,
+    `src/data/schedules.js`, `useSchedules`, `TheoreticalArrivals`):** si la
+    API de tiempos falla (modo avión, Lie-Fi, Render caído o un 5xx; no si la
+    parada no existe), en vez de un error vacío se enseñan los próximos
+    autobuses según el GTFS. **Datos:** el generador lee además las horas de
+    `stop_times.txt` (las que faltan se interpolan) y los servicios de
+    `calendar.txt` y `calendar_dates.txt` (opcionales: sin ellos, todos los
+    días) y escribe `schedules.json`: `{ v: 1, gen, svc: { id: [días
+    "1111100", inicio, fin, [+fechas], [-fechas]] }, p: [{ line, head, stops,
+    off, t: { id: [salidas] } }] }`, un patrón por línea + letrero +
+    secuencia; `off` = minutos de cada parada desde la primera (mediana de
+    los viajes, nunca hacia atrás) y `t` = salidas de la primera parada por
+    servicio en deltas (minutos desde la medianoche, pueden pasar de 1440).
+    Así no hay una hora por parada y viaje. Escritura atómica; con `--soft`,
+    si falla, el anterior o `{"v":1,"svc":{},"p":[]}` (sin horarios se ve el
+    error de siempre). En el precache (`?url` + `fetchJsonAsset`, guarda de
+    Lie-Fi) y precargado en segundo plano junto a `stopsList`.
+    **Cálculo** (`theoreticalArrivals`, ~0,1 ms): índice parada → [patrón,
+    posición] una vez por objeto (`WeakMap`, salidas decodificadas al
+    usarse); servicios que circulan hoy (y ayer, para los viajes de pasada
+    la medianoche) por día de la semana, rango y excepciones; llegada =
+    salida + `off`, en las próximas 2 h, sin la última parada del recorrido
+    (no recoge) y sin duplicados de línea + letrero + minuto; filas con la
+    forma de `toBusArrival` y `theoretical: true`. **UI:** aviso gris sutil
+    (`TheoreticalNotice`, `role="status"`): "Servidor inalcanzable ·
+    Mostrando horarios teóricos" (`CloudOff`) o "Sin conexión · …"
+    (`WifiOff`), y filas `BusLineItem` con `theoretical`: letrero y tiempo en
+    gris (`ArrivalTime muted`), "Horario teórico" con un `WifiOff` pequeño
+    debajo, sin urgencia ni campana (una alarma sobre un horario engañaría).
+    En la consulta rápida (solo origen o ruta directa, con el mismo filtro
+    `reach` que los tiempos reales: solo las que llegan) sustituye al error;
+    en las tarjetas, `useRoutes` expone `failures` (parada → tipo de error
+    del último refresco, sin guardar y el mismo `Map` si nada cambia) y la
+    tarjeta con fallo enseña sus `busesToShow` teóricos de sus `lines`
+    (mientras cargan, los últimos tiempos). Sin autobuses en 2 h: "Sin
+    autobuses programados en las próximas 2 h." Al volver la red o la API,
+    los tiempos reales vuelven solos. `TheoreticalArrivals` solo se monta con
+    el fallo: su reloj (`useNow`, 30 s) no repinta nada mientras todo va bien.
   - **Sin conexión (rutas offline):** `routes.json`, `stopsList` y la app van
     en el precache del service worker (al instalar; `assetsInlineLimit` impide
     que un JSON se incruste como `data:` y salga del precache), así que el plan
@@ -402,6 +441,25 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
     estimación y se dice. Con ETA ≤ X: vibración, tres tonos, notificación
     "¡Es hora de salir!" (`tag` `vbus-departure`) y panel ámbar con
     "Entendido" (suelta la pantalla y vuelve a la consulta).
+  - **Pantalla de bloqueo · "Live Activity" (Feature #19,
+    `src/lib/lockScreen.js`, `useLockScreenActivity`):** con un aviso activo,
+    el widget de música del sistema (pantalla de bloqueo, centro de control,
+    notificación multimedia de Android) enseña lo que queda como título y la
+    línea y la parada como artista: salida, "En 8 min" / "Llegando…" / "¡Es
+    hora de salir!" y "4A · Avda. de Castelao, 25"; viaje, el texto de la
+    píldora ("Bajas en 6 min", "4A en 5 min"…) o "Prepárate para bajar" y
+    "4A · Bajas en [parada]"; álbum "vBus" y carátula `pwa-192x192.png` /
+    `pwa-512x512.png`. Media Session API: el sistema solo enseña el widget
+    con audio sonando, así que `startLockScreen` (en el gesto de
+    `startFocus` y `restoreFocus`, como `unlockSound`) reproduce en bucle un
+    WAV de 1 s de silencio sintetizado en memoria (`Blob`, 8 kHz) a volumen
+    0,01; "pausa" desde el widget no lo quita (vuelve a sonar).
+    `updateLockScreen` crea un `MediaMetadata` solo si cambia el texto;
+    `useLockScreenActivity(título, artista, live)` es un `useEffect` sobre
+    esos dos strings en `DepartureSession` y `TripSession` (sin estado ni
+    re-renders). `endFocus` llama a `stopLockScreen`: pausa y suelta el
+    audio, `metadata = null`, `playbackState = 'none'` y quita los
+    manejadores. Sin Media Session o sin `Audio`, nada.
   - **Infraestructura común de los modos que avisan:** sesión global
     (`src/lib/focusSession.js`, store con `useSyncExternalStore`; una sola a
     la vez: `{ id, kind: trip|departure, payload, view: full|pill,
@@ -693,9 +751,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.35 • Build: 01/11/2026,
+  versión en gris pequeño y centrada ("vBus v1.36 • Build: 01/11/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.35 = PR #35), hora de compilación
+  PR: `npm version minor`; v1.36 = PR #36), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -772,7 +830,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   cambian.
 - **Idiomas (`src/i18n`, ajuste "Idioma"):** gallego, castellano e inglés,
   sin librerías. Tres diccionarios de objetos JS con las mismas claves
-  (`es.js` es la fuente; ~355 claves por zona: `settings.*`, `card.*`,
+  (`es.js` es la fuente; ~390 claves por zona: `settings.*`, `card.*`,
   `quick.*`, `trip.*`…): texto con `{var}` o una función `(vars) => texto`
   para plurales y concordancias; si falta una clave, castellano. Store de
   módulo con `useSyncExternalStore`: `t(clave, vars)` sirve dentro y fuera de
@@ -831,8 +889,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   Concello (`datos.vigo.org`), con el mismo JSON que VigoBusAPI.
 - Tiempo real: auto-refresh cada 30 segundos (invisible para el usuario) +
   pull-to-refresh nativo.
-- Fallback de errores: si la API/Vitrasa falla, mostrar "Error Vitrasa" y
-  enseñar la hora teórica en gris en lugar del tiempo real.
+- Hecho: fallback de errores con horarios teóricos (Feature #20): si la API
+  falla o no hay conexión, los próximos autobuses del GTFS en gris con
+  "Horario teórico", en la consulta rápida y en las tarjetas.
 
 ### Fase 3 · UX avanzada — *En curso*
 
@@ -865,6 +924,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 ### Fase 4 · Onboarding — *En curso*
 
 - Hecho: bienvenida de instalación con selector de icono (Feature #18).
+- Hecho: "Live Activity" en la pantalla de bloqueo con la Media Session API
+  (Feature #19): lo que queda del aviso en el widget de música del sistema.
 
 Métodos para añadir paradas:
 

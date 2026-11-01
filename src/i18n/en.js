@@ -409,4 +409,12 @@ export default {
   'onboarding.homeScreen': "Preview of your home screen",
   // Barra de búsqueda de Mis rutas
   'quick.searchBar': "Search stop or destination…",
+  // Pantalla de bloqueo (Media Session) y horarios teóricos.
+  'lock.in': "In {time}",
+  'lock.arriving': "Arriving…",
+  'lock.getOffAt': "Get off at {stop}",
+  'schedule.theoretical': "Scheduled time",
+  'schedule.unreachable': "Server unreachable · Showing scheduled times",
+  'schedule.offline': "No connection · Showing scheduled times",
+  'schedule.none': "No buses scheduled in the next 2 h.",
 };

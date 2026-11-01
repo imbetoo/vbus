@@ -52,6 +52,10 @@ function loadRoutes() {
  */
 export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
   const [routes, setRoutes] = useState(loadRoutes);
+  // Paradas cuyo último refresco falló: parada → tipo de error (`offline`,
+  // `timeout`, `network`…). Sin guardar: con ellas, la tarjeta enseña el
+  // horario teórico (Feature #20). Mismo objeto si nada cambia (sin repintar).
+  const [failures, setFailures] = useState(() => new Map());
 
   useEffect(() => {
     try {
@@ -86,6 +90,14 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
         stopIds.map((stopId) => Promise.resolve().then(() => getBuses(stopId, { all: true, signal }))),
       );
       if (signal.aborted) return;
+      const failed = new Map(
+        stopIds.flatMap((stopId, i) =>
+          results[i].status === 'rejected' ? [[stopId, results[i].reason?.kind ?? 'upstream']] : [],
+        ),
+      );
+      setFailures((current) =>
+        current.size === failed.size && [...failed].every(([id, kind]) => current.get(id) === kind) ? current : failed,
+      );
       const fresh = new Map(
         stopIds.flatMap((stopId, i) => (results[i].status === 'fulfilled' ? [[stopId, results[i].value]] : [])),
       );
@@ -173,5 +185,5 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
     },
     [refresh],
   );
-  return { routes, addRoute, removeRoute, reorderRoutes, updateRoute, importRoutes, refresh };
+  return { routes, failures, addRoute, removeRoute, reorderRoutes, updateRoute, importRoutes, refresh };
 }

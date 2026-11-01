@@ -2,6 +2,7 @@ import { Bell, CircleAlert, LocateFixed, LocateOff, WifiOff } from 'lucide-react
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useStopArrivals } from '../../hooks/useStopArrivals';
 import { useTrip } from '../../hooks/useTrip';
+import { useLockScreenActivity } from '../../hooks/useLockScreenActivity';
 import { formatDistance, haversineMeters } from '../../lib/geo';
 import { lineKey } from '../../lib/lines';
 import { ALERT_MINUTES, minutesText } from '../../lib/tripTracker';
@@ -70,6 +71,13 @@ export default function TripSession({ session, live, onEnd, onMinimize, onRestor
   if (waiting && state.phase !== 'waiting') setWaiting(false);
   const open = live && session.view === 'full';
   const alarmed = state.phase === 'alarm';
+  // Pantalla de bloqueo (Media Session): el texto de la píldora y la bajada.
+  const lockLine = state.line ?? state.busA?.line;
+  useLockScreenActivity(
+    alarmed ? t('trip.alert.title') : pillText(state),
+    `${lockLine ? `${lockLine} · ` : ''}${t('lock.getOffAt', { stop: state.alight.name })}`,
+    live,
+  );
 
   // Con la píldora a la vista, el aviso vuelve solo a pantalla completa.
   useEffect(() => {

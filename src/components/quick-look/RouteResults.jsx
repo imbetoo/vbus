@@ -1,5 +1,5 @@
 import { CircleAlert, LoaderCircle, MapPinCheck, RouteOff, TriangleAlert, WifiOff } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { filterBusesByLines, filterReachingBuses } from '../../lib/directRoute';
 import { formatDistance } from '../../lib/geo';
 import { arrangeForNight } from '../../lib/nightMode';
@@ -7,6 +7,7 @@ import { useNightMode } from '../../hooks/useNightMode';
 import { sortBuses } from '../../services/vigobusAdapter';
 import BusLineItem from '../bus/BusLineItem';
 import DayServiceEnded from '../bus/DayServiceEnded';
+import TheoreticalArrivals from '../bus/TheoreticalArrivals';
 import DepartureAlarm from '../departure/DepartureAlarm';
 import DepartureBell from '../departure/DepartureBell';
 import IconTile from '../ui/IconTile';
@@ -107,6 +108,26 @@ function StopSummary({ stop, distance, action, children }) {
   );
 }
 
+/** El error de la API y, si se puede, los horarios teóricos en su lugar. */
+function ErrorOrSchedule({ stop, error, offline, offlineText, reach, timeFormat }) {
+  const message = offline ? (
+    <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-white/80 motion-reduce:animate-none">
+      <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-white/60" strokeWidth={2.5} aria-hidden="true" />
+      {offlineText}
+    </p>
+  ) : (
+    <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-red-200 motion-reduce:animate-none">
+      <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-urgent" strokeWidth={2.5} aria-hidden="true" />
+      {errorMessage(error)}
+    </p>
+  );
+  // Parada que Vitrasa no conoce: no hay horario que enseñar.
+  if (error?.kind === 'not_found') return message;
+  return (
+    <TheoreticalArrivals stopId={stop.id} filter={reach} offline={offline} timeFormat={timeFormat} fallback={message} />
+  );
+}
+
 /**
  * Llegadas de la parada de origen (ya filtradas si es una ruta directa), con
  * los mismos estados que las tarjetas: cargando, error, vacía y lista. Si un
@@ -120,7 +141,7 @@ function StopSummary({ stop, distance, action, children }) {
  * Al cambiar de día a noche con la app abierta, la lista se recoloca con un
  * fundido.
  */
-function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFormat }) {
+function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFormat, reach = null }) {
   const t = useT();
   const offline = arrivals.error?.kind === 'offline';
   const night = useNightMode();
@@ -136,17 +157,17 @@ function Arrivals({ stop, lines, arrivals, buses, emptyText, offlineText, timeFo
     <>
       <div className={`${BENTO} px-4 py-2`}>
         {arrivals.status === 'loading' && <Loading>{t('quick.loadingTimes')}</Loading>}
-        {arrivals.status === 'error' && offline && (
-          <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-white/80 motion-reduce:animate-none">
-            <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-white/60" strokeWidth={2.5} aria-hidden="true" />
-            {offlineText}
-          </p>
-        )}
-        {arrivals.status === 'error' && !offline && (
-          <p className="flex animate-fade-in items-start gap-2 py-3 text-base font-medium text-red-200 motion-reduce:animate-none">
-            <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-urgent" strokeWidth={2.5} aria-hidden="true" />
-            {errorMessage(arrivals.error)}
-          </p>
+        {/* Sin tiempos (sin conexión o API caída): horario teórico del GTFS en
+            gris; mientras carga (o si no hay horarios), el error de siempre. */}
+        {arrivals.status === 'error' && (
+          <ErrorOrSchedule
+            stop={stop}
+            error={arrivals.error}
+            offline={offline}
+            offlineText={offlineText}
+            reach={reach}
+            timeFormat={timeFormat}
+          />
         )}
         {arrivals.status === 'success' &&
           (shown.length ? (
@@ -225,6 +246,14 @@ function RouteResults({
     if (mode !== 'direct') return { buses: sorted, hidden: 0 };
     return plan ? filterReachingBuses(sorted, plan) : { buses: filterBusesByLines(sorted, directLines), hidden: 0 };
   }, [arrivals, mode, plan, directLines]);
+  // Mismo filtro para los horarios teóricos (sin conexión): solo las que llegan.
+  const reach = useCallback(
+    (list) => {
+      if (mode !== 'direct') return list;
+      return plan ? filterReachingBuses(list, plan).buses : filterBusesByLines(list, directLines);
+    },
+    [mode, plan, directLines],
+  );
   // Trayecto para el modo viaje ("Avisarme").
   const trip = useMemo(
     () =>
@@ -265,6 +294,7 @@ function RouteResults({
           timeFormat={timeFormat}
           emptyText={t('quick.noBuses')}
           offlineText={t('quick.error.offline')}
+          reach={reach}
         />
       </>
     );
@@ -314,6 +344,7 @@ function RouteResults({
           timeFormat={timeFormat}
           emptyText={t('quick.noBuses.direct')}
           offlineText={t('quick.offline.direct')}
+          reach={reach}
         />
         {hidden > 0 && (
           <p className="animate-fade-in px-1 text-sm font-medium text-white/50 motion-reduce:animate-none">

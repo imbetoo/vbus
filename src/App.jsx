@@ -10,6 +10,7 @@ import { applyAppIcon } from './lib/appIcon';
 import { setHapticsEnabled } from './lib/haptics';
 import { useSettings } from './hooks/useSettings';
 import { loadStopsList } from './data/stops';
+import { loadSchedules } from './data/schedules';
 import Dashboard from './screens/Dashboard';
 import { wakeApi } from './services/vigobus';
 
@@ -54,7 +55,11 @@ export default function App() {
   useEffect(() => {
     let idle;
     const timer = setTimeout(() => {
-      const preload = () => loadStopsList().catch(() => {});
+      // Paradas y horarios teóricos (por si luego falla la API sin service worker).
+      const preload = () => {
+        loadStopsList().catch(() => {});
+        loadSchedules().catch(() => {});
+      };
       idle = window.requestIdleCallback ? requestIdleCallback(preload, { timeout: 3000 }) : setTimeout(preload, 0);
     }, 1500);
     return () => {

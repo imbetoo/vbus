@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { closeNotification, notificationStatus, requestNotificationPermission, unlockSound } from './alerts';
+import { startLockScreen, stopLockScreen } from './lockScreen';
 import { ensureScreenOn, keepScreenOn, releaseScreen } from './wakeLock';
 
 /**
@@ -34,6 +35,8 @@ export function startFocus(kind, payload) {
   if (session) closeNotification(FOCUS_TAGS[session.kind]);
   keepScreenOn();
   unlockSound();
+  // Widget de la pantalla de bloqueo (Media Session), también en el gesto.
+  startLockScreen();
   const id = nextId++;
   set({ id, kind, payload, view: 'full', notifications: notificationStatus() });
   requestNotificationPermission().then((notifications) => {
@@ -54,6 +57,7 @@ export function restoreFocus() {
   if (!session) return;
   ensureScreenOn();
   unlockSound();
+  startLockScreen();
   if (session.view !== 'full') set({ ...session, view: 'full' });
 }
 
@@ -62,6 +66,7 @@ export function endFocus() {
   if (!session) return;
   const { kind } = session;
   releaseScreen();
+  stopLockScreen();
   closeNotification(FOCUS_TAGS[kind]);
   set(null);
 }

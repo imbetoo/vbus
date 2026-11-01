@@ -35,6 +35,7 @@ function EditableRouteItem({
   animateIn,
   sortBy,
   timeFormat,
+  failure,
   onRemove,
   onEditCard,
   onStartEditing,
@@ -96,6 +97,7 @@ function EditableRouteItem({
                   {...route}
                   sortBy={sortBy}
                   timeFormat={timeFormat}
+                  failure={failure}
                   editing={editing}
                   onRemove={onRemove}
                   onEditCard={onEditCard}
