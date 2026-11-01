@@ -407,4 +407,6 @@ export default {
   'onboarding.install.dismissed': "No problem: you can install it any time from Settings.",
   'onboarding.done': "Got it",
   'onboarding.homeScreen': "Preview of your home screen",
+  // Barra de búsqueda de Mis rutas
+  'quick.searchBar': "Search stop or destination…",
 };

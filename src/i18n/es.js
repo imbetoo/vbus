@@ -407,4 +407,6 @@ export default {
   'onboarding.install.dismissed': "Sin problema: puedes instalarla cuando quieras desde Ajustes.",
   'onboarding.done': "Entendido",
   'onboarding.homeScreen': "Vista previa de tu pantalla de inicio",
+  // Barra de búsqueda de Mis rutas
+  'quick.searchBar': "Buscar parada o destino…",
 };

@@ -394,7 +394,7 @@ export default {
   'onboarding.feature.offline.text': "As liñas directas e as paradas, tamén en modo avión.",
   'onboarding.pickIcon': "Escolle a túa icona",
   'onboarding.continue': "Continuar",
-  'onboarding.skip': "Saltar polo de agora",
+  'onboarding.skip': "Máis tarde",
   'onboarding.back': "Atrás",
   'onboarding.install.title': "Engade vBus á túa pantalla de inicio",
   'onboarding.install.why': "Ábrese ao instante e a pantalla completa, e os avisos funcionan mellor: notificacións e pantalla acendida.",
@@ -407,4 +407,6 @@ export default {
   'onboarding.install.dismissed': "Sen problema: podes instalala cando queiras desde Axustes.",
   'onboarding.done': "Entendido",
   'onboarding.homeScreen': "Vista previa da túa pantalla de inicio",
+  // Barra de búsqueda de Mis rutas
+  'quick.searchBar': "Buscar parada ou destino…",
 };

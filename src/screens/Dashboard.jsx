@@ -1,5 +1,5 @@
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
-import { BusFront, Check, Moon, Pencil, Search, Settings } from 'lucide-react';
+import { BusFront, Check, Moon, Pencil, Settings } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { forcedScheme } from '../lib/appearance';
 import { useT } from '../i18n';
@@ -13,6 +13,7 @@ import CreateCardButton from '../components/create-card/CreateCardButton';
 import CreateCardSheet from '../components/create-card/CreateCardSheet';
 import DepartureAlarm from '../components/departure/DepartureAlarm';
 import QuickLookSheet from '../components/quick-look/QuickLookSheet';
+import SearchBar from '../components/quick-look/SearchBar';
 import Clock from '../components/settings/Clock';
 import SettingsModal from '../components/settings/SettingsModal';
 import ThemeToggle from '../components/settings/ThemeToggle';
@@ -239,21 +240,13 @@ export default function Dashboard({ settings, onSettingChange }) {
             {t('dashboard.title')}
           </h1>
         </div>
-        {/* Reloj encima de los botones, todo alineado a la derecha: consulta
-            rápida (lupa), editar (lápiz, o check mientras se edita), tema y
-            ajustes. En móviles estrechos los botones bajan a 36px para que
-            quepan los cuatro junto al título. */}
+        {/* Reloj encima de los botones, todo alineado a la derecha: editar
+            (lápiz, o check mientras se edita), tema y ajustes. En móviles
+            estrechos los botones bajan a 36px. La consulta rápida es la barra
+            de búsqueda de debajo. */}
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <Clock />
           <div className="flex items-center gap-2 max-[400px]:gap-1.5">
-            <IconButton
-              tone="adaptive"
-              icon={Search}
-              label={t('dashboard.quickLook')}
-              aria-haspopup="dialog"
-              onClick={() => setIsQuickLookOpen(true)}
-              className={HEADER_BUTTON}
-            />
             {routes.length > 0 && (
               <IconButton
                 tone="adaptive"
@@ -281,6 +274,12 @@ export default function Dashboard({ settings, onSettingChange }) {
           </div>
         </div>
       </header>
+
+      {/* Consulta rápida: barra de búsqueda fija bajo el título (fuera del
+          scroll: siempre a mano y sin taparla el estado vacío). */}
+      <div className="mt-4 shrink-0">
+        <SearchBar onClick={() => setIsQuickLookOpen(true)} />
+      </div>
 
       {/* Área de scroll: el margen negativo deja sitio a las sombras de las
           tarjetas para que el recorte del scroll no las corte por los lados.
