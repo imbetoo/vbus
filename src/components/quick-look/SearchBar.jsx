@@ -16,7 +16,7 @@ export default function SearchBar({ onClick }) {
       onClick={onClick}
       aria-haspopup="dialog"
       aria-label={`${t('dashboard.quickLook')}: ${t('quick.searchBar')}`}
-      className={`flex h-12 w-full items-center gap-2.5 rounded-2xl border-2 border-white/15 bg-graphite/80 bg-gradient-to-b from-white/[0.08] to-white/0 px-3.5 text-left shadow-glass focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white dark:border-graphite/60 ${PRESSABLE}`}
+      className={`flex h-12 w-full items-center gap-2.5 rounded-3xl border-2 border-white/15 bg-graphite/80 bg-gradient-to-b from-white/[0.08] to-white/0 px-3.5 text-left shadow-glass focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white dark:border-graphite/60 ${PRESSABLE}`}
     >
       <Search className="h-5 w-5 shrink-0 text-white/60" strokeWidth={2.5} aria-hidden="true" />
       <span className="min-w-0 flex-1 truncate text-lg font-medium text-white/50">{t('quick.searchBar')}</span>

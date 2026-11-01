@@ -576,8 +576,11 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   barra al estilo de iOS fija bajo el título y encima de las tarjetas (fuera
   del scroll): lupa y "Buscar parada o destino…" en gris tenue, con los
   mismos colores que las tarjetas (`GlassCard`: grafito al 80 %, degradado,
-  borde de 2px y `shadow-glass`, así sigue al motor de temas). Es un botón
-  (`aria-haspopup="dialog"`).
+  borde de 2px y `shadow-glass`, así sigue al motor de temas) y esquinas
+  `rounded-3xl` (24 px: casi una píldora). Es un botón
+  (`aria-haspopup="dialog"`). Espaciado compacto: `mt-3` bajo el título y
+  16 px hasta la primera tarjeta y entre tarjetas (`pb-4` en
+  `EditableRouteItem`, el mismo envoltorio que se cierra al borrar).
 - **Botones de icono:** circulares de 40px (área táctil ampliada a 48px),
   sutiles (`bg-white/70` en claro, `bg-white/15` en oscuro, sin blur).
 - **Hápticos (`src/lib/haptics.js`):** todo lo que vibra pasa por aquí,
@@ -636,7 +639,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   un ligero retardo y se desvanece rápido al plegar.
 - **Layout del Dashboard:** pantalla completa (`h-[100dvh]`, flex en
   columna): cabecera arriba, tarjetas con scroll propio en medio (sin barra,
-  con máscara en degradado que las desvanece al llegar abajo) y "Crear nueva
+  con máscara en degradado que las desvanece al llegar abajo: una franja
+  corta de 56 px pegada a "Crear nueva tarjeta", y 12 px arriba bajo la
+  barra, lo mismo que el `pt-3` de la lista) y "Crear nueva
   tarjeta" fijo abajo, respetando las safe areas. El contenedor de la lista va
   en una única capa de GPU (`transform-gpu`, `will-change-transform`) y nada
   dentro usa `backdrop-filter`: el scroll no repinta nada.
@@ -727,10 +732,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   número 1, 2, 3… al elegir), así nada salta de fila. El paso de líneas usa el
   icono `Route`.
 - **Ajustes:** modal con filas Bento y controles segmentados estilo iOS
-  (pulgar blanco que se desliza; accesibles como grupo de radios). El
-  contenido hace scroll y "Hecho" se queda fijo al pie (opaco, con el
-  `safe-area` inferior); lo que pasa por debajo se desvanece (`scroll-fade`,
-  40 px). Once ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  (pulgar blanco que se desliza; accesibles como grupo de radios). La
+  cabecera ("Ajustes" y ✕) y "Hecho" son fijos, opacos (`bg-graphite`) y
+  hermanos flex del contenido, que hace scroll entre ellos: lo que pasa por
+  debajo de la cabecera se difumina con un velo grafito de 20 px y lo que
+  llega al pie, con uno de 96 px (`h-24`, `from-graphite`), del mismo color
+  opaco que el modal en todas las paletas (también OLED y Nube); "Hecho"
+  lleva el `safe-area` inferior. Once ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
   "Icono de la app" (`appIcon`, solo sin instalar; ver "Bienvenida e icono"),
   "Idioma" (`language`: auto, gl, es, en) y "Tono de alarma" (`alarmTone`:
   classic, chime, urgent), ver sus secciones;
@@ -751,9 +759,9 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.36 • Build: 01/11/2026,
+  versión en gris pequeño y centrada ("vBus v1.37 • Build: 01/11/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.36 = PR #36), hora de compilación
+  PR: `npm version minor`; v1.37 = PR #37), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
