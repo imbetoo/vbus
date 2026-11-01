@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getBuses } from '../services/vigobus';
 import { busesOfLines } from '../lib/lines';
+import { CARD_SLOTS, cardSlot } from '../lib/cardSlots';
 import { newCards } from '../lib/routesShare';
 import { NOTE_MAX, withFreshBuses } from '../services/vigobusAdapter';
 
@@ -145,11 +146,11 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
 
   const addRoute = useCallback((route) => setRoutes((current) => [...current, route]), []);
   // "Editar tarjeta": alias (vacío = sin alias: vuelve el nombre de la parada),
-  // nota (vacía = sin nota) y `lines`, las líneas visibles en orden de prioridad. Las llegadas de las
+  // nota (vacía = sin nota), momento del día (`slot`) y `lines`, las líneas visibles en orden de prioridad. Las llegadas de las
   // líneas ocultas se quitan ya; las de las que se vuelven a mostrar llegan con
   // el siguiente refresco.
   const updateRoute = useCallback(
-    (id, { alias, lines, note }) =>
+    (id, { alias, lines, note, slot }) =>
       setRoutes((current) =>
         current.map((route) => {
           if (route.id !== id) return route;
@@ -159,6 +160,7 @@ export function useRoutes({ refreshMs = DEFAULT_REFRESH_MS } = {}) {
             ...route,
             alias: clean,
             note: (note ?? route.note ?? '').trim().slice(0, NOTE_MAX),
+            slot: CARD_SLOTS.includes(slot) ? slot : cardSlot(route),
             title: clean || route.stopName || route.title,
             lines: visible,
             buses: busesOfLines(route.buses, visible),

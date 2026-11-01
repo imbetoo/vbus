@@ -15,6 +15,8 @@ const STORAGE_KEY = 'vbus:settings';
  * - `refreshSeconds`: cada cuánto se piden de nuevo los tiempos (15, 30 o 60 s).
  * - `sortByProximity`: la tarjeta de la parada más cercana, la primera
  *   (Smart Sorting; solo cambia la vista, nunca el orden guardado).
+ * - `sortByTime`: las tarjetas del momento del día actual (su `slot`),
+ *   primero (solo la vista; la cercanía manda por encima).
  * - `vibration`: vibración y toques hápticos (también los de las alarmas).
  * - `palette`: colores del fondo y de los acentos (`PALETTES`, `appearance.js`).
  * - `motion`: velocidad de las manchas del fondo (fluido, relajado o estático).
@@ -28,6 +30,7 @@ export const DEFAULT_SETTINGS = {
   timeFormat: 'relative',
   refreshSeconds: 30,
   sortByProximity: true,
+  sortByTime: true,
   vibration: true,
   palette: 'vigo',
   motion: 'relaxed',
@@ -42,6 +45,7 @@ const VALID = {
   timeFormat: ['relative', 'absolute'],
   refreshSeconds: [15, 30, 60],
   sortByProximity: [true, false],
+  sortByTime: [true, false],
   vibration: [true, false],
   palette: PALETTES.map((palette) => palette.id),
   motion: MOTIONS.map((motion) => motion.value),

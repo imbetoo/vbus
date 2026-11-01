@@ -344,7 +344,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   - **Compartir Mis rutas (sin backend, `src/lib/routesShare.js`):** todas las
     tarjetas viajan en el propio enlace, `/?tarjetas=…`, un parámetro aparte
     del de un trayecto (`origen`/`destino`, que no cambia). Formato `{ v: 1,
-    t: [[stopId, alias, lines, color, busesToShow, note?], …] }` en JSON → UTF-8
+    t: [[stopId, alias, lines, color, busesToShow, note?, slot?], …] }` en JSON → UTF-8
     (alias con tildes y emoji) → base64url sin relleno; sin tiempos ni ids (se
     regeneran al importar; la nota, 6.º elemento opcional: los enlaces sin ella
     siguen valiendo). `decodeRoutes` nunca lanza: base64 o JSON rotos,
@@ -697,6 +697,28 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   repintan por unos metros). La que sube lleva bajo el título "📍 A 120 m ·
   La más cercana" (azul iOS, `text-sm`); el salto lo anima `Reorder`
   (`layout="position"`). Sin permiso o sin GPS, tu orden, sin errores.
+- **Orden inteligente por hora del día (`src/lib/cardSlots.js`, ajuste
+  "Ordenar tarjetas por hora del día"):** cada tarjeta guarda `slot`
+  (`any`, por defecto y en las antiguas; `morning`, `afternoon` o
+  `evening`), los mismos tramos que el saludo (`dayPart.js`: 06:00–13:59,
+  14:00–20:59 y 21:00–05:59). Se elige al crearla (paso "Personaliza la
+  tarjeta") o con el lápiz del modo edición: "¿Cuándo la usas?", control
+  segmentado Siempre / Mañana / Tarde / Noche (`SlotPicker`, `compact`:
+  texto de 13 px, 11 px por debajo de 360 de ancho; en inglés etiquetas
+  cortas Any / AM / PM / Night con el nombre completo como nombre
+  accesible) y la pista "Sube arriba de 6:00 a 14:00. Tu orden no se
+  pierde." Con el ajuste activado (`sortByTime`, por defecto), las del
+  momento actual se enseñan primero, en tu orden, y después el resto, en tu
+  orden (`withDayPartFirst`; devuelve el mismo array si nada se mueve). Es
+  solo una vista, como la cercanía: `vbus:routes` no cambia, en modo
+  edición se ve y se arrastra el orden guardado, y la cercanía por GPS
+  manda por encima (`withNearestFirst` sobre el orden por hora). Cambia
+  solo, sin recargar, a las 06:00, 14:00 y 21:00 (`useDayPart`), con el
+  salto animado por `Reorder`. Las que suben llevan "🕒 Tu ruta de la
+  mañana / tarde / noche" (azul iOS, `text-sm`; no si ya enseña "La más
+  cercana"). Viaja en "Compartir Mis rutas" como 7.º elemento opcional
+  (solo si no es `any`; uno desconocido → `any`) y no cuenta para los
+  duplicados al importar.
 - **Alias:** cada tarjeta guarda `alias` ("Trabajo 💻"; vacío = sin alias) y
   `title` (lo que se enseña: el alias o el nombre de la parada). Con alias, el
   alias es el título y el nombre oficial va al subtítulo ("Desde Rúa do Conde
@@ -746,7 +768,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   debajo de la cabecera se difumina con un velo grafito de 20 px y lo que
   llega al pie, con uno de 96 px (`h-24`, `from-graphite`), del mismo color
   opaco que el modal en todas las paletas (también OLED y Nube); "Hecho"
-  lleva el `safe-area` inferior. Once ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
+  lleva el `safe-area` inferior. Doce ajustes, en LocalStorage (`useSettings`, en `App.jsx`):
   "Icono de la app" (`appIcon`, solo sin instalar; ver "Bienvenida e icono"),
   "Idioma" (`language`: auto, gl, es, en) y "Tono de alarma" (`alarmTone`:
   classic, chime, urgent), ver sus secciones;
@@ -760,16 +782,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   (por defecto) o 60 s (el intervalo de `useRoutes` se rehace al cambiarlo); y
   "Fondo": Completo (5 manchas) o Ligero (3: azul, lavanda y
   perla) para móviles con tirones (oculto con OLED); y el interruptor "Ordenar tarjetas por
-  cercanía" (`sortByProximity`, activado por defecto). Interruptor "Vibración"
+  cercanía" (`sortByProximity`, activado por defecto) y "Ordenar tarjetas por
+  hora del día" (`sortByTime`, activado por defecto). Interruptor "Vibración"
   (`vibration`, activado por defecto): apagado, `haptics.js` no vibra nada
   (`setHapticsEnabled`, sincronizado en `App.jsx`), tampoco las alarmas ni
   su notificación; los avisos siguen sonando y notificando. "Compartir mis
   rutas guardadas" (QR y enlace: ver "Compartir Mis rutas"). Si el navegador permite instalar la app (`beforeinstallprompt`,
   `useInstallPrompt`) aparece la fila "Instalar app" con su botón; en Safari de
   iOS, la indicación "Compartir → Añadir a pantalla de inicio". Al pie, la
-  versión en gris pequeño y centrada ("vBus v1.38 • Build: 01/11/2026,
+  versión en gris pequeño y centrada ("vBus v1.39 • Build: 01/11/2026,
   22:42 · 4c8e5b7"): versión de `package.json` sin el parche (se sube con cada
-  PR: `npm version minor`; v1.38 = PR #38), hora de compilación
+  PR: `npm version minor`; v1.39 = PR #39), hora de compilación
   (Europa/Madrid) y commit de Vercel, inyectados por `vite.config.js`
   (`__BUILD_INFO__`); si no coincide con el último despliegue, el móvil usa un
   build antiguo del caché.
@@ -782,7 +805,13 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   enlace (`?tarjetas=`, `?origen=`) o un acceso directo. Paso 1: el icono
   elegido en grande, "Te damos la bienvenida a vBus", tres novedades (rutas,
   avisos, sin conexión) y "Elige tu icono" (`AppIconPicker`: Clásico,
-  Medianoche y Neón, como iconos de verdad con check; háptico `select`).
+  Medianoche y Neón a la vista, como iconos de verdad con check; háptico
+  `select`; a su derecha una flecha pequeña "Más iconos" que gira hacia
+  abajo y despliega con `Collapse`, bajo una línea, una rejilla de 3 × 2
+  con Día (Medianoche invertido: lienzo blanco y autobús negro), Coral,
+  Bosque, Ámbar, Limón (amarillo con el autobús negro) y Océano; empieza
+  abierto si el elegido es uno de ellos y las flechas del teclado recorren
+  solo los visibles; el mismo selector en Ajustes → "Icono de la app").
   Paso 2: "Añade vBus a tu pantalla de inicio", por qué (se abre al instante,
   notificaciones y pantalla encendida), una pantalla de inicio de mentira con
   el icono elegido y, según el sistema (`platform()`, solo
@@ -793,10 +822,17 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   `accepted`/`dismissed`) o, si el navegador no lo ofrece, dónde está en su
   menú. "Atrás" vuelve al paso 1. "Saltar por ahora" (siempre), Escape,
   "Entendido", instalar o el evento `appinstalled` ponen `vbus:onboarded` y
-  no vuelve. **Iconos:** `npm run icons` genera, recoloreando el SVG maestro,
-  las variantes `dark` (grafito y negro) y `neon` (magenta y morado con
-  cristal cian): `icon-<id>.svg` y los PNG con `-<id>`; `vite.config.js`
-  emite `manifest-<id>.webmanifest` (el mismo manifest con sus iconos). Al
+  no vuelve. **Iconos:** la lista vive en `src/lib/appIconList.js`
+  (`MAIN_APP_ICONS` y `EXTRA_APP_ICONS`, sin dependencias: la leen la app,
+  `vite.config.js` y el generador, que falla si no coinciden). `npm run
+  icons` genera, recoloreando el SVG maestro, las variantes `dark` (grafito
+  y negro), `neon` (magenta y morado con cristal cian), `light`, `coral`,
+  `forest`, `amber`, `lemon` y `ocean`: cada una con su mapa de `colors` y,
+  para el autobús negro, `bus` y `window` (los degradados `bus-fill` y
+  `window` se reescriben por id: el blanco de la carrocería es el mismo
+  `#FFFFFF` de los brillos). Salen `icon-<id>.svg` y los PNG con `-<id>`;
+  `vite.config.js` emite `manifest-<id>.webmanifest` (el mismo manifest con
+  sus iconos) y deja fuera del precache sus PNG. Al
   elegir (bienvenida o Ajustes → "Icono de la app", que solo sale sin
   instalar), `applyAppIcon` cambia `<link rel="manifest">` (Chromium vigila
   ese enlace) y `<link rel="apple-touch-icon">` (Safari lo lee al "Añadir a
@@ -804,7 +840,7 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
   módulo, antes del primer render. Ya instalada, el sistema conserva el
   icono que tenía. Los PNG de las variantes no van en el precache (solo los
   descarga el sistema al instalar); sus SVG y manifests sí. `vercel.json`
-  sirve los manifests con `no-cache`.
+  sirve todos los manifests (`manifest-[a-z]+.webmanifest`) con `no-cache`.
 - **Accesos directos del icono (manifest `shortcuts`):** al mantener pulsado
   el icono (Android y escritorio; iOS no los admite en apps web): "Escanear
   QR" (`/?accion=escanear`: consulta rápida con el escáner encima, la parada
@@ -913,8 +949,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 - Hecho: tarjetas inteligentes por GPS (la parada más cercana, la primera;
   tu orden intacto).
-- Orden inteligente: reordenar las tarjetas según la hora del día (p. ej.
-  mañanas: "Ir al instituto" primero; tardes: "Volver a casa" primero).
+- Hecho: orden inteligente por hora del día (cada tarjeta, su momento:
+  mañanas "Ir al instituto" primero; tardes "Volver a casa" primero).
 - Hecho: alarma de destino ("Avisarme", modo viaje en la consulta rápida).
 - Hecho: alarma de salida configurable ("Avisar cuando queden 5 min para el
   C3": campana de cada autobús en la consulta rápida y en Mis rutas, modo
@@ -941,7 +977,8 @@ sea 100 % responsivo sin romper las tarjetas en pantallas pequeñas, pero los
 
 ### Fase 4 · Onboarding — *En curso*
 
-- Hecho: bienvenida de instalación con selector de icono (Feature #18).
+- Hecho: bienvenida de instalación con selector de icono (Feature #18),
+  con seis iconos más en un desplegable.
 
 Métodos para añadir paradas:
 

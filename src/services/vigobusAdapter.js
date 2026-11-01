@@ -1,3 +1,4 @@
+import { CARD_SLOTS } from '../lib/cardSlots';
 import { isUrgent } from '../components/bus/urgency';
 import { busesOfLines, lineKey } from '../lib/lines';
 
@@ -81,7 +82,16 @@ export function uniqueLines(buses) {
  * - `busesToShow`: autobuses visibles en esta tarjeta sin desplegar (2 o 3).
  * - `color`: id del color de su icono (`cardColors.js`).
  */
-export function toRouteCard({ stop, buses, lines, title = '', note = '', busesToShow = 3, color = 'graphite' }) {
+export function toRouteCard({
+  stop,
+  buses,
+  lines,
+  title = '',
+  note = '',
+  busesToShow = 3,
+  color = 'graphite',
+  slot = 'any',
+}) {
   const alias = title.trim();
   return {
     id: crypto.randomUUID(),
@@ -93,6 +103,8 @@ export function toRouteCard({ stop, buses, lines, title = '', note = '', busesTo
     stopName: stop.name,
     // `note`: nota propia, opcional ("Coger el de las 8:10"), hasta 60 caracteres.
     note: note.trim().slice(0, NOTE_MAX),
+    // `slot`: momento del día en que sube arriba (`cardSlots.js`; `any` = nunca).
+    slot: CARD_SLOTS.includes(slot) ? slot : 'any',
     icon: 'Bus',
     lines,
     busesToShow,

@@ -42,6 +42,7 @@ function EditableRouteItem({
   onDepartureAlarm,
   onOpenLine,
   nearMeters = null,
+  forNow = null,
 }) {
   const controls = useDragControls();
   const [dragging, setDragging] = useState(false);
@@ -105,6 +106,7 @@ function EditableRouteItem({
                   onDepartureAlarm={onDepartureAlarm}
                   onOpenLine={onOpenLine}
                   nearMeters={nearMeters}
+                  forNow={forNow}
                 />
 
                 {/* Eliminar (modo edición): círculo rojo de iOS con aspa. */}

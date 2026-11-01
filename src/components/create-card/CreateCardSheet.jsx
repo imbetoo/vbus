@@ -13,6 +13,7 @@ import CardNameField from './CardNameField';
 import ColorPicker from './ColorPicker';
 import LineChips from './LineChips';
 import StepSection from './StepSection';
+import SlotPicker from './SlotPicker';
 import StopPicker from './StopPicker';
 import { t, useT } from '../../i18n';
 
@@ -127,6 +128,7 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
   const [note, setNote] = useState('');
   const [busesToShow, setBusesToShow] = useState(3);
   const [color, setColor] = useState(DEFAULT_CARD_COLOR);
+  const [slot, setSlot] = useState('any');
   // Al elegir la primera línea se despliega "Personaliza la tarjeta" una vez.
   const [customizeOpened, setCustomizeOpened] = useState(false);
   if (selectedLines.length > 0 && !customizeOpened) {
@@ -256,6 +258,10 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
           />
 
           <div className="mt-4">
+            <SlotPicker value={slot} onChange={setSlot} />
+          </div>
+
+          <div className="mt-4">
             <ColorPicker value={color} onChange={setColor} />
           </div>
         </StepSection>
@@ -265,7 +271,9 @@ function CreateCardForm({ titleId, onClose, onCreate }) {
         <PillButton
           disabled={!canCreate}
           onClick={() =>
-            onCreate(toRouteCard({ stop, buses: lookup.buses, lines: selectedLines, title: name, note, busesToShow, color }))
+            onCreate(
+              toRouteCard({ stop, buses: lookup.buses, lines: selectedLines, title: name, note, busesToShow, color, slot }),
+            )
           }
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />

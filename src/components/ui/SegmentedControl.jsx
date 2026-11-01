@@ -5,9 +5,11 @@ import { haptics } from '../../lib/haptics';
 /**
  * Control segmentado estilo iOS: una píldora de cristal con un "pulgar"
  * blanco que se desliza (solo `transform`, curva `ease-spring`) hasta la
- * opción elegida. Accesible como grupo de radios (Tab + flechas).
+ * opción elegida. Accesible como grupo de radios (Tab + flechas). `compact`:
+ * texto y relleno menores, para cuatro opciones en un móvil estrecho;
+ * `option.title`, nombre accesible completo si la etiqueta visible es corta.
  */
-export default function SegmentedControl({ label, options, value, onChange }) {
+export default function SegmentedControl({ label, options, value, onChange, compact = false }) {
   const labelId = useId();
   const index = Math.max(
     0,
@@ -46,7 +48,8 @@ export default function SegmentedControl({ label, options, value, onChange }) {
             type="button"
             {...itemProps(i)}
             onClick={() => select(option.value)}
-            className={`relative z-10 h-9 truncate rounded-full px-3 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            aria-label={option.title}
+            className={`relative z-10 h-9 truncate rounded-full ${compact ? 'px-1 text-[13px] tracking-tight max-[359px]:px-0 max-[359px]:text-[11px]' : 'px-3 text-sm'} font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               i === index ? 'text-black' : 'text-white/70 active:text-white'
             }`}
           >

@@ -1,4 +1,4 @@
-import { BusFront, GraduationCap, House, MapPin, Pencil, X } from 'lucide-react';
+import { BusFront, Clock, GraduationCap, House, MapPin, Pencil, X } from 'lucide-react';
 import { memo, useId, useState } from 'react';
 import { useNightMode } from '../../hooks/useNightMode';
 import { useT } from '../../i18n';
@@ -35,6 +35,8 @@ const busKey = (bus) => bus.id ?? `${bus.line}-${bus.destination}-${bus.time}`;
  * X de eliminar.
  * Fuera del modo edición, cada autobús lleva su campana (modo salida):
  * `onDepartureAlarm({ stop, bus, fetchedAt })`, también estable.
+ * `forNow`: si ha subido por el momento del día (`morning`, `afternoon`,
+ * `evening`): "Tu ruta de la mañana" (no se enseña si ya está la cercanía).
  * `nearMeters`: si ha subido la primera por cercanía (Smart Sorting), a
  * cuántos metros está su parada ("📍 A 120 m · La más cercana").
  * De noche (Smart Night Mode), las nocturnas con tiempo real van primero y
@@ -66,6 +68,7 @@ function RouteCard({
   onEditCard,
   onDepartureAlarm,
   nearMeters = null,
+  forNow = null,
   failure = null,
   onOpenLine = null,
 }) {
@@ -145,6 +148,13 @@ function RouteCard({
         <p className="ml-[3.75rem] mt-1 flex animate-fade-in items-center gap-1 text-sm font-semibold tabular-nums text-[#409CFF] motion-reduce:animate-none">
           <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
           {t('card.nearest', { distance: formatDistance(nearMeters) })}
+        </p>
+      )}
+
+      {forNow && nearMeters == null && !editing && (
+        <p className="ml-[3.75rem] mt-1 flex animate-fade-in items-center gap-1 text-sm font-semibold text-[#409CFF] motion-reduce:animate-none">
+          <Clock className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+          {t(`card.forNow.${forNow}`)}
         </p>
       )}
 
